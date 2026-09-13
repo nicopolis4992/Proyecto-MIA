@@ -7,9 +7,10 @@ cotización y agendamiento de citas de grooming, vía WhatsApp Business Cloud AP
 
 - [x] Estructura base del repo
 - [x] Servidor FastAPI mínimo (`GET /`, `GET /webhook` para verificación de Meta)
-- [ ] `POST /webhook` para recibir mensajes reales (SCRUM-83)
-- [ ] Envío de mensajes salientes (SCRUM-84)
-- [ ] Primer nodo de LangGraph (SCRUM-85)
+- [x] `POST /webhook` para recibir mensajes reales (SCRUM-83)
+- [x] Envío de mensajes salientes (SCRUM-84)
+- [x] Primer nodo de LangGraph + Gemini (SCRUM-85)
+- [ ] Conectar con la app real de WhatsApp Business en Meta (bloqueado por verificación de cuenta, en progreso)
 
 ## Cómo correrlo localmente
 
@@ -34,11 +35,36 @@ curl "http://localhost:8000/webhook?hub.mode=subscribe&hub.verify_token=TU_TOKEN
 Debe devolver `1234`. Si devuelve 403, revisa que `WHATSAPP_VERIFY_TOKEN`
 en tu `.env` coincida exactamente con lo que mandaste en el `curl`.
 
+## Probar el ciclo completo en local (sin WhatsApp real)
+
+Con `GEMINI_API_KEY` configurada en tu `.env`, puedes simular un mensaje
+entrante de WhatsApp sin depender de Meta:
+
+```bash
+curl -X POST http://localhost:8000/webhook `
+  -H "Content-Type: application/json" `
+  -d '{\"entry\":[{\"changes\":[{\"value\":{\"messages\":[{\"from\":\"593999999999\",\"type\":\"text\",\"text\":{\"body\":\"Hola, cuanto cuesta el bano para un perro grande?\"}}]}}]}]}'
+```
+
+(En PowerShell, si las comillas dan problemas, usa `Invoke-RestMethod` con
+un objeto convertido a JSON en vez de un string a mano.)
+
+Como todavía no hay `WHATSAPP_ACCESS_TOKEN` real, vas a ver en la consola
+del servidor un error al intentar *enviar* la respuesta (eso es esperado),
+pero confirma que Gemini sí generó una respuesta antes de fallar el envío.
+
 ## Siguiente paso
 
-1. Desplegar esto a Railway.
+1. Desplegar esto a Railway. ✅ Ya hecho.
 2. Crear la app en Meta for Developers, agregar el producto WhatsApp.
+   **Bloqueado actualmente**: la verificación de cuenta de desarrollador
+   no está enviando el código de confirmación. Mientras se resuelve,
+   el resto del sistema (webhook, orquestador, envío) ya está listo
+   para conectarse en cuanto Meta lo permita.
 3. En la configuración del webhook de la app de Meta, pegar la URL de
    Railway (`https://tu-app.up.railway.app/webhook`) y el mismo
-   `WHATSAPP_VERIFY_TOKEN` que pusiste en tu `.env`.
+   `WHATSAPP_VERIFY_TOKEN` que pusiste en tu `.env` y en Railway.
 4. Meta hará el `GET /webhook` de verificación automáticamente al guardar.
+5. Agregar `WHATSAPP_ACCESS_TOKEN` y `WHATSAPP_PHONE_NUMBER_ID` reales
+   (los da Meta al configurar el producto WhatsApp) tanto en tu `.env`
+   local como en las Variables de Railway.

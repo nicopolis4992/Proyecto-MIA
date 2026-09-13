@@ -14,7 +14,10 @@ que Meta valida este GET.
 import os
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query, Response
+from fastapi import FastAPI, Query, Request, Response
+
+from app.agent import get_reply
+from app.whatsapp_client import send_text_message
 
 load_dotenv()
 
@@ -46,3 +49,54 @@ def verify_webhook(
         return Response(content=hub_challenge, media_type="text/plain")
 
     return Response(content="Verificación fallida", status_code=403)
+
+
+def _extract_incoming_text_message(payload: dict):
+    """
+    Devuelve (remitente, texto) si el payload trae un mensaje de texto
+    entrante, o None si es otro tipo de evento (estado de entrega,
+    mensaje de otro tipo, etc). No lanza excepción por formato inesperado,
+    solo devuelve None para que el webhook igual responda 200 a Meta.
+    """
+    try:
+        value = payload["entry"][0]["changes"][0]["value"]
+        messages = value.get("messages")
+        if not messages:
+            return None
+
+        message = messages[0]
+        if message.get("type") != "text":
+            return None
+
+        return message["from"], message["text"]["body"]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+@app.post("/webhook")
+async def receive_webhook(request: Request):
+    """
+    Recibe mensajes reales de WhatsApp Cloud API (SCRUM-83).
+
+    IMPORTANTE: siempre respondemos 200 a Meta, incluso si algo falla
+    procesando el mensaje. Si devolvemos un error, Meta reintenta el
+    mismo webhook varias veces, lo que puede generar respuestas
+    duplicadas al cliente.
+    """
+    payload = await request.json()
+
+    extracted = _extract_incoming_text_message(payload)
+    if extracted is None:
+        return Response(status_code=200)
+
+    sender, incoming_text = extracted
+
+    try:
+        reply_text = get_reply(incoming_text)
+        send_text_message(to=sender, body=reply_text)
+    except Exception as exc:  # noqa: BLE001
+        # Version minima: solo logueamos. Mas adelante esto debería
+        # avisar a alguien del equipo si falla repetidamente.
+        print(f"Error procesando mensaje de {sender}: {exc}")
+
+    return Response(status_code=200)
