@@ -13,7 +13,10 @@ que Meta valida este GET.
 
 import os
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Query, Response
+
+load_dotenv()
 
 app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp")
 
