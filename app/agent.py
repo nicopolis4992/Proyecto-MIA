@@ -15,7 +15,7 @@ from typing import TypedDict
 from google import genai
 from langgraph.graph import END, StateGraph
 
-_MODEL_NAME = "gemini-2.5-flash-lite"
+_MODEL_NAME = "gemini-3.5-flash-lite"
 _client = None
 
 
