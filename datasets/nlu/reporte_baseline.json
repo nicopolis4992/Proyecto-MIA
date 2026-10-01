@@ -1,0 +1,56 @@
+{
+  "n_train": 222,
+  "n_test": 56,
+  "f1_macro_trivial": 0.188,
+  "f1_macro_cv_media": 0.8106,
+  "f1_macro_cv_desviacion": 0.0429,
+  "f1_macro_test": 0.9629,
+  "f1_ponderado_test": 0.9642,
+  "matriz_confusion": {
+    "etiquetas": [
+      "agendar_cita",
+      "consultar_servicio_producto",
+      "consulta_general"
+    ],
+    "matriz": [
+      [
+        22,
+        0,
+        0
+      ],
+      [
+        0,
+        16,
+        1
+      ],
+      [
+        1,
+        0,
+        16
+      ]
+    ]
+  },
+  "errores": [
+    {
+      "id": "MIA-0119",
+      "texto": "el domicilio tiene costo adicional?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "MIA-0220",
+      "texto": "necesito factura con datos, se puede?",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    }
+  ],
+  "control_fuga": {
+    "umbral": 0.9,
+    "similitud_media": 0.4026,
+    "similitud_p95": 0.5766,
+    "similitud_maxima": 0.6649,
+    "n_sospechosos": 0,
+    "sospechosos": []
+  },
+  "advertencia": "Metricas obtenidas sobre corpus mayoritariamente sintetico. Miden consistencia del etiquetado, no desempeno en produccion. Recalcular sobre el corpus real anotado antes de reportar en el informe."
+}

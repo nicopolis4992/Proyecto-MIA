@@ -1,32 +1,58 @@
 """
 Punto de entrada de la aplicación.
 
-Por ahora expone dos endpoints:
 - GET /            -> healthcheck simple
-- GET /webhook     -> verificación del webhook exigida por Meta antes de
-                       activar la suscripción de WhatsApp Cloud API
+- GET /webhook     -> verificación del webhook exigida por Meta
+- POST /webhook    -> recepción de mensajes (SCRUM-83): texto e imágenes
+- POST /admin/reintentar -> fuerza el reintento de la cola de salida (SCRUM-87)
 
-El endpoint POST /webhook (recepción real de mensajes, SCRUM-83) y el envío
-de mensajes salientes (SCRUM-84) se agregan en un paso posterior, una vez
-que Meta valida este GET.
+El procesamiento del mensaje (LLM, clasificación de imagen) puede tardar
+varios segundos, así que se hace en segundo plano: Meta recibe el 200 de
+inmediato y no reintenta el webhook por timeout.
 """
 
+import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Query, Request, Response
+from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
 
-from app.agent import get_reply
-from app.whatsapp_client import send_text_message
+from app.agent import procesar_mensaje
+from app.mensajeria import MensajeroWhatsApp, reintentar_pendientes
+from app.persistencia.repositorio import obtener_repositorio
+from app.whatsapp_client import download_media
 
 load_dotenv()
 
-app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp")
+logger = logging.getLogger("main")
 
 # Este token lo defines tú mismo (no lo da Meta) y debe coincidir
 # exactamente con el que registras en la configuración del webhook
 # en Meta for Developers.
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+INTERVALO_COLA_S = int(os.getenv("COLA_INTERVALO_S", "60"))
+
+
+async def _bucle_cola_salida():
+    """SCRUM-87: reintenta periódicamente los mensajes que no salieron."""
+    while True:
+        await asyncio.sleep(INTERVALO_COLA_S)
+        try:
+            await asyncio.to_thread(reintentar_pendientes, obtener_repositorio())
+        except Exception:  # noqa: BLE001
+            logger.exception("Fallo reintentando la cola de salida")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    tarea = asyncio.create_task(_bucle_cola_salida())
+    yield
+    tarea.cancel()
+
+
+app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp", lifespan=lifespan)
 
 
 @app.get("/")
@@ -51,12 +77,12 @@ def verify_webhook(
     return Response(content="Verificación fallida", status_code=403)
 
 
-def _extract_incoming_text_message(payload: dict):
+def _extract_incoming_message(payload: dict):
     """
-    Devuelve (remitente, texto) si el payload trae un mensaje de texto
-    entrante, o None si es otro tipo de evento (estado de entrega,
-    mensaje de otro tipo, etc). No lanza excepción por formato inesperado,
-    solo devuelve None para que el webhook igual responda 200 a Meta.
+    Devuelve un dict {id, from, tipo, texto, media_id, id_citado} si el
+    payload trae un mensaje de texto o imagen, o None para cualquier otro
+    evento (estados de entrega, audios, etc). No lanza excepción por formato
+    inesperado, para que el webhook igual responda 200 a Meta.
     """
     try:
         value = payload["entry"][0]["changes"][0]["value"]
@@ -65,38 +91,68 @@ def _extract_incoming_text_message(payload: dict):
             return None
 
         message = messages[0]
-        if message.get("type") != "text":
-            return None
-
-        return message["from"], message["text"]["body"]
+        tipo = message.get("type")
+        base = {
+            "id": message.get("id"),
+            "from": message["from"],
+            "tipo": tipo,
+            "id_citado": (message.get("context") or {}).get("id"),
+        }
+        if tipo == "text":
+            return {**base, "texto": message["text"]["body"], "media_id": None}
+        if tipo == "image":
+            return {**base, "texto": message["image"].get("caption", ""),
+                    "media_id": message["image"]["id"]}
+        return {**base, "texto": None, "media_id": None}
     except (KeyError, IndexError, TypeError):
         return None
 
 
+def _procesar(entrante: dict) -> None:
+    repo = obtener_repositorio()
+    mensajero = MensajeroWhatsApp(repo)
+    sender = entrante["from"]
+    try:
+        if entrante["tipo"] not in ("text", "image"):
+            mensajero.enviar(sender, "Por ahora solo puedo leer mensajes de texto y fotos 🙏")
+            return
+        imagen = download_media(entrante["media_id"]) if entrante["media_id"] else None
+        reply_text = procesar_mensaje(sender, entrante["texto"] or "", imagen, entrante["id_citado"])
+        if reply_text:
+            mensajero.enviar(sender, reply_text)
+    except Exception:  # noqa: BLE001
+        logger.exception("Error procesando mensaje de %s", sender)
+
+
 @app.post("/webhook")
-async def receive_webhook(request: Request):
+async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     Recibe mensajes reales de WhatsApp Cloud API (SCRUM-83).
 
     IMPORTANTE: siempre respondemos 200 a Meta, incluso si algo falla
     procesando el mensaje. Si devolvemos un error, Meta reintenta el
     mismo webhook varias veces, lo que puede generar respuestas
-    duplicadas al cliente.
+    duplicadas al cliente. Por la misma razón se deduplica por id.
     """
-    payload = await request.json()
-
-    extracted = _extract_incoming_text_message(payload)
-    if extracted is None:
+    try:
+        payload = await request.json()
+    except ValueError:
         return Response(status_code=200)
 
-    sender, incoming_text = extracted
+    entrante = _extract_incoming_message(payload)
+    if entrante is None:
+        return Response(status_code=200)
 
-    try:
-        reply_text = get_reply(incoming_text)
-        send_text_message(to=sender, body=reply_text)
-    except Exception as exc:  # noqa: BLE001
-        # Version minima: solo logueamos. Mas adelante esto debería
-        # avisar a alguien del equipo si falla repetidamente.
-        print(f"Error procesando mensaje de {sender}: {exc}")
+    if entrante["id"] and not obtener_repositorio().marcar_procesado(entrante["id"]):
+        logger.info("Webhook duplicado ignorado: %s", entrante["id"])
+        return Response(status_code=200)
 
+    background_tasks.add_task(_procesar, entrante)
     return Response(status_code=200)
+
+
+@app.post("/admin/reintentar")
+def forzar_reintento(x_admin_token: str = Header(default="")):
+    if not VERIFY_TOKEN or x_admin_token != VERIFY_TOKEN:
+        return Response(status_code=403)
+    return reintentar_pendientes(obtener_repositorio())

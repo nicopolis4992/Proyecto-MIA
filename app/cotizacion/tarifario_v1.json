@@ -1,0 +1,201 @@
+{
+  "metadata": {
+    "nombre": "Tarifario parametrizado — Lina's Pet Salón",
+    "version": "1.0.0",
+    "historia": "SCRUM-98",
+    "epica": "SCRUM-55 — Agente de Agenda y Aprobación Humana",
+    "vigente_desde": "2026-09-13",
+    "vigente_hasta": null,
+    "moneda": "USD",
+    "estado_validacion": "PENDIENTE_VALIDACION_PROPIETARIA",
+    "advertencia": "Los montos de este archivo son VALORES DE REFERENCIA construidos a partir de precios públicos de peluquería canina en Quito. NO son los precios reales de Lina's Pet Salón. Deben ser reemplazados uno a uno en la sesión de validación con la propietaria antes de cualquier uso frente a clientes. La estructura del tarifario sí es definitiva; los números no.",
+    "fuentes_referencia": [
+      "Veterinaria Vetgoglio (Quito norte): segmentación por peso P/M/L/XL, servicio completo desde USD 18, transporte puerta a puerta USD 5, recargo por cuidado especializado USD 10.",
+      "Guía sectorial de fijación de precios de grooming (GuauAgenda, 2026): tamaño como base y raza como ajuste; recargo de 30–60 % por desmate o nudos severos; recargo de 30–50 % por servicio a domicilio."
+    ]
+  },
+
+  "parametros_globales": {
+    "redondeo_a_multiplo_de": 0.5,
+    "banda_confianza": {
+      "incertidumbre_base": 0.04,
+      "penalizacion_tamano_no_declarado": 0.06,
+      "penalizacion_pelaje_no_declarado": 0.05,
+      "penalizacion_manto_no_declarado": 0.07,
+      "penalizacion_comportamiento_desconocido": 0.03,
+      "factor_cliente_recurrente": 0.5,
+      "incertidumbre_maxima": 0.25,
+      "comentario": "La amplitud de la banda es función directa de cuántos atributos logró capturar el agente NLU (SCRUM-63). Cada dato que el cliente declara estrecha el rango. Así, la reducción de la variabilidad de precio deja de depender del ojo de la propietaria y pasa a depender de la completitud de la conversación, que sí es medible."
+    },
+    "politica_compromiso": {
+      "umbral_precio_comprometido_usd": 2.5,
+      "comentario": "Si la semiamplitud de la banda es menor o igual a este umbral, el sistema emite un PRECIO COMPROMETIDO (valor único). Si la excede, emite un RANGO y solicita los datos faltantes. El umbral de 2.50 corresponde al 50 % de la desviación mínima actual (USD 5.00), que es la meta de reducción de variabilidad del objetivo específico 5 de la propuesta."
+    },
+    "iva": {
+      "aplica": false,
+      "tasa": 0.15,
+      "comentario": "Configurado en false por defecto. Debe confirmarse con la propietaria según su régimen tributario (RIMPE Emprendedor o Negocio Popular). Si el negocio factura con IVA, cambiar 'aplica' a true: el motor recalcula sin tocar código."
+    }
+  },
+
+  "clasificacion_tamano": [
+    {
+      "codigo": "pequeno",
+      "etiqueta": "Pequeño",
+      "peso_kg_min": 0,
+      "peso_kg_max": 9,
+      "razas_referencia": ["chihuahua", "yorkshire", "maltés", "shih tzu", "pug", "poodle toy", "bichón frisé"],
+      "comentario": "La raza es referencia orientativa para el agente, nunca reemplaza el peso o la declaración del cliente."
+    },
+    {
+      "codigo": "mediano",
+      "etiqueta": "Mediano",
+      "peso_kg_min": 9.1,
+      "peso_kg_max": 18,
+      "razas_referencia": ["schnauzer mediano", "cocker spaniel", "french bulldog", "beagle", "border collie"]
+    },
+    {
+      "codigo": "grande",
+      "etiqueta": "Grande",
+      "peso_kg_min": 18.1,
+      "peso_kg_max": 45,
+      "razas_referencia": ["golden retriever", "labrador", "husky siberiano", "pastor alemán"]
+    }
+  ],
+
+  "clasificacion_pelaje": [
+    {"codigo": "corto", "etiqueta": "Corto / liso", "factor": 1.0},
+    {"codigo": "largo", "etiqueta": "Largo", "factor": 1.15},
+    {"codigo": "rizado", "etiqueta": "Rizado / lanoso", "factor": 1.2},
+    {"codigo": "doble_capa", "etiqueta": "Doble capa", "factor": 1.25}
+  ],
+
+  "servicios": [
+    {
+      "codigo": "bano",
+      "nombre": "Baño e higiene básica",
+      "incluye": ["baño", "secado", "cepillado", "corte de uñas", "limpieza de oídos", "limpieza de almohadillas"],
+      "precio_base": {"pequeno": 14.0, "mediano": 18.0, "grande": 24.0},
+      "duracion_min": {"pequeno": 45, "mediano": 60, "grande": 90}
+    },
+    {
+      "codigo": "bano_corte",
+      "nombre": "Baño y corte (grooming completo)",
+      "incluye": ["todo lo del baño", "corte de pelo a máquina o tijera", "corte higiénico", "acabado"],
+      "precio_base": {"pequeno": 18.0, "mediano": 24.0, "grande": 32.0},
+      "duracion_min": {"pequeno": 75, "mediano": 100, "grande": 140}
+    },
+    {
+      "codigo": "corte_higienico",
+      "nombre": "Corte higiénico",
+      "incluye": ["corte de zonas íntimas", "almohadillas", "contorno de ojos"],
+      "precio_base": {"pequeno": 9.0, "mediano": 12.0, "grande": 15.0},
+      "duracion_min": {"pequeno": 25, "mediano": 35, "grande": 45}
+    },
+    {
+      "codigo": "deslanado",
+      "nombre": "Deslanado",
+      "incluye": ["baño", "secado técnico", "retiro de subpelo", "cepillado profundo"],
+      "precio_base": {"pequeno": 18.0, "mediano": 26.0, "grande": 36.0},
+      "duracion_min": {"pequeno": 70, "mediano": 100, "grande": 150},
+      "restriccion_pelaje": ["doble_capa", "largo"],
+      "comentario": "Solo aplica a mantos con subpelo. El agente no debe ofrecerlo para pelaje corto."
+    }
+  ],
+
+  "recargos": [
+    {
+      "codigo": "puerta_a_puerta",
+      "nombre": "Retiro y entrega a domicilio",
+      "tipo": "monto_fijo",
+      "por": "visita",
+      "valores_por_zona": {
+        "zona_1": {"etiqueta": "Sector inmediato", "monto": 5.0, "radio_km": 5},
+        "zona_2": {"etiqueta": "Zona intermedia", "monto": 8.0, "radio_km": 12},
+        "zona_3": {"etiqueta": "Zona extendida (valles)", "monto": 12.0, "radio_km": 25}
+      },
+      "comentario": "Se cobra UNA sola vez por visita, no por mascota: el desplazamiento del vehículo es el mismo si se retiran uno o tres perros de la misma dirección."
+    },
+    {
+      "codigo": "estado_manto",
+      "nombre": "Desenredo y retiro de nudos",
+      "tipo": "porcentaje_sobre_base",
+      "por": "mascota",
+      "niveles": {
+        "sin_nudos": 0.0,
+        "leve": 0.1,
+        "moderado": 0.25,
+        "severo": 0.45
+      },
+      "comentario": "Un manto apelmazado puede duplicar el tiempo de trabajo. Este recargo es la causa más frecuente del desvío entre cotización inicial y precio final, porque no siempre es visible en la fotografía. Cuando el cliente no lo declara, la banda de confianza se amplía en lugar de asumir el peor caso."
+    },
+    {
+      "codigo": "manejo_especial",
+      "nombre": "Manejo especial por comportamiento",
+      "tipo": "monto_fijo",
+      "por": "mascota",
+      "monto": 8.0,
+      "comentario": "Aplica a mascotas que requieren manejo a dos personas o pausas prolongadas. Se confirma en la recepción presencial, nunca por fotografía."
+    },
+    {
+      "codigo": "bano_medicado",
+      "nombre": "Baño medicado o antipulgas",
+      "tipo": "monto_fijo",
+      "por": "mascota",
+      "monto": 3.0
+    },
+    {
+      "codigo": "servicio_inmediato",
+      "nombre": "Atención el mismo día",
+      "tipo": "monto_fijo",
+      "por": "visita",
+      "monto": 5.0
+    }
+  ],
+
+  "descuentos": [
+    {
+      "codigo": "multimascota",
+      "nombre": "Descuento por mascota adicional",
+      "tipo": "porcentaje_sobre_base",
+      "escala": {"2": 0.1, "3_o_mas": 0.15},
+      "aplica_sobre": "servicios_base",
+      "comentario": "Se aplica al servicio base de la segunda mascota en adelante, nunca sobre los recargos ni sobre el traslado. El ahorro real del negocio está en el desplazamiento y en el montaje del puesto de trabajo, no en el tiempo de grooming, que es proporcional al número de mascotas."
+    }
+  ],
+
+  "reglas_operativas": {
+    "pico_y_placa": {
+      "activa": true,
+      "ciudad": "Quito",
+      "ultimo_digito_placa_vehiculo": null,
+      "comentario_digito": "Debe completarse con el último dígito de la placa del vehículo que la propietaria usa para el servicio puerta a puerta. Mientras sea null, el motor asume el día declarado en 'dia_restringido_declarado'.",
+      "dia_restringido_declarado": "jueves",
+      "calendario_restriccion": {
+        "lunes": [1, 2],
+        "martes": [3, 4],
+        "miercoles": [5, 6],
+        "jueves": [7, 8],
+        "viernes": [9, 0]
+      },
+      "ventanas_restringidas": [
+        {"desde": "06:00", "hasta": "09:30"},
+        {"desde": "16:00", "hasta": "20:00"}
+      ],
+      "aplica_fines_de_semana": false,
+      "aplica_feriados_nacionales": false,
+      "efecto": "bloquea_modalidad_puerta_a_puerta",
+      "comentario": "Hallazgo relevante para el diseño del agente de agenda: la restricción NO cubre el día completo. El jueves queda una ventana operativa libre entre 09:30 y 16:00, más el horario posterior a las 20:00. Bloquear el jueves entero, como se planteó inicialmente, eliminaría capacidad de atención que sí existe. El motor debe bloquear ventanas horarias, no días."
+    },
+    "vigencia_cotizacion_horas": 72,
+    "requiere_aprobacion_humana": true,
+    "comentario_aprobacion": "Ninguna cotización se confirma al cliente sin aprobación explícita de la propietaria (controlabilidad por el usuario, ISO/IEC 25059:2023)."
+  },
+
+  "campos_criticos_para_precision": [
+    "tamano",
+    "pelaje",
+    "estado_manto",
+    "comportamiento"
+  ]
+}

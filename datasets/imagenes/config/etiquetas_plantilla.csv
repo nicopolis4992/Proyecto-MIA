@@ -1,0 +1,5 @@
+archivo,mascota,peso_kg,pelaje,estado_manto,comportamiento,raza_slug,escala_presente,revision_manual,observaciones
+IMG_0001.jpg,Rocky,12.4,doble,normal,tranquilo,,1,1,perfil completo
+IMG_0002.jpg,Rocky,12.4,doble,normal,tranquilo,,1,1,frontal completa
+IMG_0003.jpg,Rocky,12.4,doble,normal,tranquilo,,0,1,detalle del manto
+IMG_0004.jpg,0999123456,5.8,rizado,enredado,inquieto,miniature_poodle,1,1,

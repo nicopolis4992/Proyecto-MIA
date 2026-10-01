@@ -1,0 +1,279 @@
+id,texto,intencion,entidades,origen,canal,split,num_tokens
+MIA-0001,"Buenas tardes, quisiera agendar una cita para mi perrita",agendar_cita,"{""num_mascotas"": 1}",sintetico,whatsapp,train,9
+MIA-0002,"Hola buenos dias, tiene espacio para manana?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,7
+MIA-0003,quiero separar un turno para el sabado porfa,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,8
+MIA-0004,"Buenas, hay campo hoy en la tarde?",agendar_cita,"{""temporalidad"": ""hoy en la tarde""}",sintetico,whatsapp,train,7
+MIA-0005,necesito banar a mi schnauzer esta semana,agendar_cita,"{""raza"": ""schnauzer"", ""temporalidad"": ""esta semana"", ""num_mascotas"": 1}",sintetico,whatsapp,train,7
+MIA-0006,Hola! Queria ver si me puede atender el viernes a mi french,agendar_cita,"{""raza"": ""french"", ""temporalidad"": ""el viernes""}",sintetico,whatsapp,train,12
+MIA-0007,"buenas noches disculpe la hora, para agendar bano y corte",agendar_cita,{},sintetico,whatsapp,train,10
+MIA-0008,Me puede dar turno para el lunes en la manana?,agendar_cita,"{""temporalidad"": ""el lunes en la manana""}",sintetico,whatsapp,train,10
+MIA-0009,hay disponibilidad para este fin de semana?,agendar_cita,"{""temporalidad"": ""este fin de semana""}",sintetico,whatsapp,train,7
+MIA-0010,"Buenas, quisiera una cita para mis dos perros",agendar_cita,"{""num_mascotas"": 2}",sintetico,whatsapp,train,8
+MIA-0011,"tengo dos peluditos, se puede los dos el mismo dia?",agendar_cita,"{""num_mascotas"": 2}",sintetico,whatsapp,train,10
+MIA-0012,"Hola, para agendar a mi poodle y a mi shitzu",agendar_cita,"{""raza"": ""poodle y shitzu"", ""num_mascotas"": 2}",sintetico,whatsapp,train,10
+MIA-0013,quisiera reservar para el proximo martes si se puede,agendar_cita,"{""temporalidad"": ""el proximo martes""}",sintetico,whatsapp,train,9
+MIA-0014,"buenas tardes, a que hora tiene libre manana?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,8
+MIA-0015,me confirma si puede atenderme el jueves porfa,agendar_cita,"{""temporalidad"": ""el jueves""}",sintetico,whatsapp,test,8
+MIA-0016,"Hola, quiero agendar pero que sea a domicilio",agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,8
+MIA-0017,hace el servicio de retiro? quisiera agendar asi,agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,8
+MIA-0018,Buenas! Puede venir a recoger a mi perro el sabado?,agendar_cita,"{""modalidad"": ""puerta_a_puerta"", ""temporalidad"": ""el sabado""}",sintetico,whatsapp,train,10
+MIA-0019,quisiera cita con recogida a domicilio para el miercoles,agendar_cita,"{""modalidad"": ""puerta_a_puerta"", ""temporalidad"": ""el miercoles""}",sintetico,whatsapp,train,9
+MIA-0020,"necesito que lo retiren de la casa, vivo en Cumbaya, se puede agendar?",agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,13
+MIA-0021,"Hola buenas, para agendar llevando yo al salon",agendar_cita,"{""modalidad"": ""salon""}",sintetico,whatsapp,test,8
+MIA-0022,"yo le llevo al local, hay turno manana temprano?",agendar_cita,"{""modalidad"": ""salon"", ""temporalidad"": ""manana temprano""}",sintetico,whatsapp,test,9
+MIA-0023,disculpe se puede cambiar mi cita del jueves para el viernes?,agendar_cita,"{""temporalidad"": ""del jueves para el viernes""}",sintetico,whatsapp,train,11
+MIA-0024,"Buenas, necesito reprogramar la cita de manana",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,7
+MIA-0025,puedo mover mi turno a otro dia? me salio un compromiso,agendar_cita,{},sintetico,whatsapp,train,11
+MIA-0026,"hola disculpe ya no voy a poder ir manana, se puede cambiar?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,12
+MIA-0027,"Necesito cancelar la cita del sabado, mil disculpas",agendar_cita,"{""temporalidad"": ""del sabado""}",sintetico,whatsapp,train,8
+MIA-0028,"buenas, cancelo el turno de hoy porfavor",agendar_cita,"{""temporalidad"": ""hoy""}",sintetico,whatsapp,train,7
+MIA-0029,"se me enfermo el perrito, puedo pasar la cita para la otra semana?",agendar_cita,"{""temporalidad"": ""la otra semana""}",sintetico,whatsapp,train,13
+MIA-0030,"hola, quedamos para el domingo? me confirma",agendar_cita,"{""temporalidad"": ""el domingo""}",sintetico,whatsapp,test,7
+MIA-0031,A que hora seria la cita del martes?,agendar_cita,"{""temporalidad"": ""del martes""}",sintetico,whatsapp,train,8
+MIA-0032,me recuerda a que hora tengo el turno porfa,agendar_cita,{},sintetico,whatsapp,train,9
+MIA-0033,"Buenas tardes, sigue en pie mi cita?",agendar_cita,{},sintetico,whatsapp,train,7
+MIA-0034,hola solo confirmando que manana a las 10 verdad?,agendar_cita,"{""temporalidad"": ""manana a las 10""}",sintetico,whatsapp,train,9
+MIA-0035,"quiero agendar para mi labrador, es grande",agendar_cita,"{""raza"": ""labrador"", ""tamano"": ""grande""}",sintetico,whatsapp,train,7
+MIA-0036,"tengo un golden, hay espacio el sabado?",agendar_cita,"{""raza"": ""golden"", ""temporalidad"": ""el sabado""}",sintetico,whatsapp,train,7
+MIA-0037,"Hola, para un bichon frise, cuando tiene turno?",agendar_cita,"{""raza"": ""bichon frise""}",sintetico,whatsapp,train,8
+MIA-0038,"buenas, mi perro es pequenito, quiero cita para bano",agendar_cita,"{""tamano"": ""pequeno""}",sintetico,whatsapp,test,9
+MIA-0039,necesito turno para un perro grande de pelo largo,agendar_cita,"{""tamano"": ""grande"", ""pelaje"": ""largo""}",sintetico,whatsapp,train,9
+MIA-0040,"hola quiero agendar a mi husky, es bien peludo",agendar_cita,"{""raza"": ""husky"", ""pelaje"": ""doble_capa""}",sintetico,whatsapp,train,9
+MIA-0041,"mi perrita es mediana y de pelo rizado, hay campo esta semana?",agendar_cita,"{""tamano"": ""mediano"", ""pelaje"": ""rizado"", ""temporalidad"": ""esta semana""}",sintetico,whatsapp,train,12
+MIA-0042,"Buenas quiero cita, mi perro es chiquito de pelo corto",agendar_cita,"{""tamano"": ""pequeno"", ""pelaje"": ""corto""}",sintetico,whatsapp,train,10
+MIA-0043,hola buenas tardes vera le escribo porque quiero llevarle a mi perrita a que le banen y le corten el pelo esta bien peluda ya y no se si tenga espacio esta semana o la otra me avisa porfa gracias,agendar_cita,"{""temporalidad"": ""esta semana o la otra"", ""num_mascotas"": 1}",sintetico,whatsapp,train,40
+MIA-0044,buenas disculpe queria saber si usted todavia hace el servicio de que le recoge al perro en la casa porque yo no tengo carro y me queda dificil llevarle hasta alla entonces si se puede quisiera agendar para esta semana,agendar_cita,"{""modalidad"": ""puerta_a_puerta"", ""temporalidad"": ""esta semana""}",sintetico,whatsapp,train,40
+MIA-0045,"hola! necesito turno urgente, mi perro se ensucio horrible 😅",agendar_cita,{},sintetico,whatsapp,train,10
+MIA-0046,"Buenas, tiene cupo hoy aunque sea en la noche?",agendar_cita,"{""temporalidad"": ""hoy en la noche""}",sintetico,whatsapp,train,9
+MIA-0047,"manana es feriado, atiende? quisiera agendar",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,6
+MIA-0048,abre los domingos? queria separar turno,agendar_cita,"{""temporalidad"": ""domingos""}",sintetico,whatsapp,train,6
+MIA-0049,me da un turno para el 20 porfa,agendar_cita,"{""temporalidad"": ""el 20""}",sintetico,whatsapp,train,8
+MIA-0050,quisiera agendar para el 5 de octubre,agendar_cita,"{""temporalidad"": ""el 5 de octubre""}",sintetico,whatsapp,train,7
+MIA-0051,"hola, para la proxima semana hay disponibilidad?",agendar_cita,"{""temporalidad"": ""la proxima semana""}",sintetico,whatsapp,train,7
+MIA-0052,"buenos dias, agendame para el viernes 3 pm si se puede",agendar_cita,"{""temporalidad"": ""el viernes 3 pm""}",sintetico,whatsapp,test,11
+MIA-0053,se puede a las 8 de la manana?,agendar_cita,"{""temporalidad"": ""a las 8 de la manana""}",sintetico,whatsapp,test,8
+MIA-0054,tiene turno despues de las 5? salgo tarde del trabajo,agendar_cita,"{""temporalidad"": ""despues de las 5""}",sintetico,whatsapp,train,10
+MIA-0055,"hola quiero llevarle a mi gato tambien, se puede agendar los dos?",agendar_cita,"{""num_mascotas"": 2}",sintetico,whatsapp,train,12
+MIA-0056,"Buenas! son 3 perritos, cuanto se demoraria y cuando puede?",agendar_cita,"{""num_mascotas"": 3}",sintetico,whatsapp,train,10
+MIA-0057,necesito cita para mis tres peludos el mismo dia porfa,agendar_cita,"{""num_mascotas"": 3}",sintetico,whatsapp,train,10
+MIA-0058,"hola para agendar, ya fui el mes pasado con mi yorkshire",agendar_cita,"{""raza"": ""yorkshire""}",sintetico,whatsapp,train,11
+MIA-0059,"soy cliente frecuente, me da turno para el sabado?",agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,train,9
+MIA-0060,"Buenas tardes, quiero el mismo servicio de la vez pasada, hay cupo?",agendar_cita,{},sintetico,whatsapp,train,12
+MIA-0061,"hola, reservo para manana entonces",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,5
+MIA-0062,"ok me sirve ese horario, agendeme porfa",agendar_cita,{},sintetico,whatsapp,train,7
+MIA-0063,"perfecto, entonces confirmado para el jueves",agendar_cita,"{""temporalidad"": ""el jueves""}",sintetico,whatsapp,train,6
+MIA-0064,"si, dale, apunteme para esa hora",agendar_cita,{},sintetico,whatsapp,test,6
+MIA-0065,"buenisimo, reserveme ese turno",agendar_cita,{},sintetico,whatsapp,train,4
+MIA-0066,me quedo con el de las 3 entonces,agendar_cita,"{""temporalidad"": ""las 3""}",sintetico,whatsapp,train,8
+MIA-0067,"disculpe, se puede agendar con anticipacion para diciembre?",agendar_cita,"{""temporalidad"": ""diciembre""}",sintetico,whatsapp,train,8
+MIA-0068,quiero dejar agendado antes de navidad,agendar_cita,"{""temporalidad"": ""antes de navidad""}",sintetico,whatsapp,train,6
+MIA-0069,"hola, hay turnos disponibles antes del fin de mes?",agendar_cita,"{""temporalidad"": ""antes del fin de mes""}",sintetico,whatsapp,train,9
+MIA-0070,"necesito que me atienda urgente manana, se puede?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,8
+MIA-0071,"buenas, tiene algo libre en la tarde de hoy?",agendar_cita,"{""temporalidad"": ""en la tarde de hoy""}",sintetico,whatsapp,train,9
+MIA-0072,hola quisiera agendar deslanado para mi husky,agendar_cita,"{""raza"": ""husky""}",sintetico,whatsapp,test,7
+MIA-0073,"para corte higienico, cuando tiene espacio?",agendar_cita,{},sintetico,whatsapp,train,6
+MIA-0074,"quiero agendar solo bano, sin corte",agendar_cita,{},sintetico,whatsapp,train,6
+MIA-0075,bano y corte para el sabado porfa,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,7
+MIA-0076,"me gustaria agendar el corte de unas tambien, hay campo manana?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,11
+MIA-0077,"Hola, quiero agendar pero necesito que sea despues del jueves",agendar_cita,"{""temporalidad"": ""despues del jueves""}",sintetico,whatsapp,train,10
+MIA-0078,el jueves no puede recoger verdad? entonces agendemos otro dia,agendar_cita,"{""temporalidad"": ""el jueves""}",sintetico,whatsapp,train,10
+MIA-0079,"hola buenas, mi perro es bravito, igual le puede atender? quisiera agendar",agendar_cita,{},sintetico,whatsapp,train,12
+MIA-0080,"mi perrita es nerviosa, se puede agendar en un horario tranquilo?",agendar_cita,{},sintetico,whatsapp,train,11
+MIA-0081,"buenas tardes, tiene turno esta semana? es para mi maltes",agendar_cita,"{""raza"": ""maltes"", ""temporalidad"": ""esta semana""}",sintetico,whatsapp,train,10
+MIA-0082,"hola, para agendar a un pug",agendar_cita,"{""raza"": ""pug""}",sintetico,whatsapp,train,6
+MIA-0083,"quiero cita para mi border collie, tiene harto pelo",agendar_cita,"{""raza"": ""border collie"", ""pelaje"": ""largo""}",sintetico,whatsapp,test,9
+MIA-0084,"buenas, para mi cocker spaniel, cuando puede?",agendar_cita,"{""raza"": ""cocker spaniel""}",sintetico,whatsapp,train,7
+MIA-0085,hola tiene espacio manana para un chihuahua?,agendar_cita,"{""raza"": ""chihuahua"", ""temporalidad"": ""manana""}",sintetico,whatsapp,train,7
+MIA-0086,"agendame porfa para el lunes, mi perro es mestizo mediano",agendar_cita,"{""tamano"": ""mediano"", ""temporalidad"": ""el lunes""}",sintetico,whatsapp,train,10
+MIA-0087,"buenas, quiero turno, es un criollito pequeno",agendar_cita,"{""tamano"": ""pequeno""}",sintetico,whatsapp,test,7
+MIA-0088,hola! disponible para el 15?,agendar_cita,"{""temporalidad"": ""el 15""}",sintetico,whatsapp,test,5
+MIA-0089,"necesito agendar dos citas, una para cada perro en dias distintos",agendar_cita,"{""num_mascotas"": 2}",sintetico,whatsapp,train,11
+MIA-0090,se puede agendar uno el sabado y otro el domingo?,agendar_cita,"{""num_mascotas"": 2, ""temporalidad"": ""el sabado y el domingo""}",sintetico,whatsapp,train,10
+MIA-0091,"Buenas noches, para pedir cita",agendar_cita,{},sintetico,whatsapp,test,5
+MIA-0092,hola quiero un turno,agendar_cita,{},sintetico,whatsapp,train,4
+MIA-0093,turno para manana?,agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,3
+MIA-0094,hay campo?,agendar_cita,{},sintetico,whatsapp,train,2
+MIA-0095,tiene espacio?,agendar_cita,{},sintetico,whatsapp,train,2
+MIA-0096,agenda para el sabado disponible?,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,5
+MIA-0097,me anota para el viernes porfa 🙏,agendar_cita,"{""temporalidad"": ""el viernes""}",sintetico,whatsapp,train,7
+MIA-0098,"buenas, quisiera saber que dias tiene libres esta semana",agendar_cita,"{""temporalidad"": ""esta semana""}",sintetico,whatsapp,test,9
+MIA-0099,que horarios maneja? para ver cuando agendo,agendar_cita,{},sintetico,whatsapp,train,7
+MIA-0100,cuando es lo mas pronto que me puede atender?,agendar_cita,{},sintetico,whatsapp,train,9
+MIA-0101,"hola disculpa, el turno que tenia era a las 2 o a las 3?",agendar_cita,"{""temporalidad"": ""las 2 o las 3""}",sintetico,whatsapp,train,14
+MIA-0102,"buenas, voy a llegar 15 min tarde a mi cita, no hay problema?",agendar_cita,{},sintetico,whatsapp,train,13
+MIA-0103,"hola, se me hizo tarde, todavia me puede atender?",agendar_cita,{},sintetico,whatsapp,test,9
+MIA-0104,quiero agendar para que le recojan en la manana y le dejen en la tarde,agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,15
+MIA-0105,"vivo en el Valle de los Chillos, hace domicilio hasta alla? quisiera cita",agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,13
+MIA-0106,"estoy en Sangolqui, se puede agendar con retiro?",agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,8
+MIA-0107,"hola, agendaria pero solo si puede venir a la casa",agendar_cita,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,10
+MIA-0108,"Buenas, cuanto cuesta el bano y corte?",consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0109,hola cuanto me sale banar a mi perrita?,consultar_servicio_producto,{},sintetico,whatsapp,test,8
+MIA-0110,que valor tiene el servicio completo?,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0111,cuanto cobra por un perro grande?,consultar_servicio_producto,"{""tamano"": ""grande""}",sintetico,whatsapp,train,6
+MIA-0112,"hola, precio para perro pequeno?",consultar_servicio_producto,"{""tamano"": ""pequeno""}",sintetico,whatsapp,train,5
+MIA-0113,cuanto seria para un mediano de pelo largo?,consultar_servicio_producto,"{""tamano"": ""mediano"", ""pelaje"": ""largo""}",sintetico,whatsapp,train,8
+MIA-0114,"buenas tardes, me puede pasar la lista de precios?",consultar_servicio_producto,{},sintetico,whatsapp,train,9
+MIA-0115,tiene tarifario?,consultar_servicio_producto,{},sintetico,whatsapp,train,2
+MIA-0116,cuanto cuesta el servicio a domicilio?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,6
+MIA-0117,cobra extra por ir a la casa?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,7
+MIA-0118,cuanto es el recargo del retiro a domicilio?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,8
+MIA-0119,el domicilio tiene costo adicional?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,test,5
+MIA-0120,hola le mando la foto de mi perro para que me cotice,consultar_servicio_producto,{},sintetico,whatsapp,train,12
+MIA-0121,le paso una foto y me dice cuanto seria porfa,consultar_servicio_producto,{},sintetico,whatsapp,train,10
+MIA-0122,"mire mi perrita, cuanto me cobraria?",consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0123,"aqui la foto, es mediana, cuanto me sale?",consultar_servicio_producto,"{""tamano"": ""mediano""}",sintetico,whatsapp,train,8
+MIA-0124,cuanto por dos perros?,consultar_servicio_producto,"{""num_mascotas"": 2}",sintetico,whatsapp,train,4
+MIA-0125,si llevo mis dos perritos me hace algun descuento?,consultar_servicio_producto,"{""num_mascotas"": 2}",sintetico,whatsapp,train,9
+MIA-0126,hay precio especial por 3 mascotas?,consultar_servicio_producto,"{""num_mascotas"": 3}",sintetico,whatsapp,test,6
+MIA-0127,que incluye el bano?,consultar_servicio_producto,{},sintetico,whatsapp,train,4
+MIA-0128,el servicio incluye corte de unas?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0129,le limpian los oidos tambien?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0130,hacen limpieza de glandulas?,consultar_servicio_producto,{},sintetico,whatsapp,train,4
+MIA-0131,el corte incluye secado?,consultar_servicio_producto,{},sintetico,whatsapp,train,4
+MIA-0132,que diferencia hay entre bano y grooming completo?,consultar_servicio_producto,{},sintetico,whatsapp,train,8
+MIA-0133,hacen deslanado?,consultar_servicio_producto,{},sintetico,whatsapp,train,2
+MIA-0134,cuanto cuesta el deslanado de un husky?,consultar_servicio_producto,"{""raza"": ""husky""}",sintetico,whatsapp,train,7
+MIA-0135,hacen corte higienico solamente? cuanto?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0136,cortan unas por separado? que precio?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0137,tienen bano medicado? cuanto vale?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0138,hacen bano antipulgas?,consultar_servicio_producto,{},sintetico,whatsapp,train,3
+MIA-0139,tienen tratamiento para pulgas y garrapatas? precio?,consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0140,cuanto se demora el servicio?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0141,cuanto tiempo tarda un bano y corte?,consultar_servicio_producto,{},sintetico,whatsapp,train,7
+MIA-0142,es rapido? tengo que esperar o le dejo?,consultar_servicio_producto,{},sintetico,whatsapp,train,8
+MIA-0143,me puedo quedar mientras le atiende?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0144,cuanto dura el grooming de un perro grande?,consultar_servicio_producto,"{""tamano"": ""grande""}",sintetico,whatsapp,train,8
+MIA-0145,"hola, atienden gatos? cuanto cobran?",consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0146,banan gatos tambien?,consultar_servicio_producto,{},sintetico,whatsapp,test,3
+MIA-0147,cuanto es el bano de gato?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0148,tienen los snacks naturales? cuanto la bolsa,consultar_servicio_producto,{},sintetico,whatsapp,train,7
+MIA-0149,"hola queria comprar snacks para mi perro, que sabores hay?",consultar_servicio_producto,{},sintetico,whatsapp,train,10
+MIA-0150,los snacks son solo bajo pedido?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0151,cuanto cuesta una bolsa de snacks?,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0152,hacen envio de los snacks?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0153,los snacks sirven para gatos tambien?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0154,que productos usan para el bano? mi perro tiene piel sensible,consultar_servicio_producto,{},sintetico,whatsapp,train,11
+MIA-0155,usan shampoo hipoalergenico?,consultar_servicio_producto,{},sintetico,whatsapp,train,3
+MIA-0156,que marca de shampoo utilizan?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0157,el shampoo es especial para pelo blanco?,consultar_servicio_producto,{},sintetico,whatsapp,train,7
+MIA-0158,venden shampoo o solo dan el servicio?,consultar_servicio_producto,{},sintetico,whatsapp,train,7
+MIA-0159,tienen productos para vender?,consultar_servicio_producto,{},sintetico,whatsapp,test,4
+MIA-0160,"hola, cuanto cuesta el servicio si mi perro tiene nudos?",consultar_servicio_producto,{},sintetico,whatsapp,test,10
+MIA-0161,"mi perro esta bien enredado, cobra mas por eso?",consultar_servicio_producto,{},sintetico,whatsapp,test,9
+MIA-0162,si esta muy peludo sube el precio?,consultar_servicio_producto,{},sintetico,whatsapp,train,7
+MIA-0163,cuanto seria un poodle mediano bano y corte?,consultar_servicio_producto,"{""raza"": ""poodle"", ""tamano"": ""mediano""}",sintetico,whatsapp,test,8
+MIA-0164,precio para un schnauzer?,consultar_servicio_producto,"{""raza"": ""schnauzer""}",sintetico,whatsapp,train,4
+MIA-0165,cuanto cobra por un golden retriever?,consultar_servicio_producto,"{""raza"": ""golden retriever""}",sintetico,whatsapp,test,6
+MIA-0166,un yorkie cuanto sale?,consultar_servicio_producto,"{""raza"": ""yorkie""}",sintetico,whatsapp,test,4
+MIA-0167,para un french bulldog cuanto es?,consultar_servicio_producto,"{""raza"": ""french bulldog""}",sintetico,whatsapp,train,6
+MIA-0168,"hola, cuanto por un pastor aleman?",consultar_servicio_producto,"{""raza"": ""pastor aleman""}",sintetico,whatsapp,train,6
+MIA-0169,cuanto cuesta banar a un chihuahua?,consultar_servicio_producto,"{""raza"": ""chihuahua""}",sintetico,whatsapp,train,6
+MIA-0170,hola buenas noches disculpe queria consultarle cuanto me cobraria por banarle y cortarle el pelo a mi perrita es una shitzu de unos 7 kilos mas o menos y tiene el pelo largo gracias,consultar_servicio_producto,"{""raza"": ""shitzu"", ""pelaje"": ""largo""}",sintetico,whatsapp,train,34
+MIA-0171,buenas vera tengo dos perros uno grande y uno chiquito queria saber cuanto me saldria llevarles a los dos el mismo dia y si me hace algun descuento por ser dos,consultar_servicio_producto,"{""num_mascotas"": 2}",sintetico,whatsapp,train,31
+MIA-0172,hacen tinturado o cortes de fantasia?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0173,hacen cortes de raza?,consultar_servicio_producto,{},sintetico,whatsapp,train,4
+MIA-0174,puedo pedir un corte especifico?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0175,le puede dejar el pelo largo en las patas?,consultar_servicio_producto,{},sintetico,whatsapp,train,9
+MIA-0176,hacen perfume o lacito al final?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0177,dan algun servicio de spa?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0178,tienen paquetes mensuales?,consultar_servicio_producto,{},sintetico,whatsapp,train,3
+MIA-0179,hay descuento si voy seguido?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0180,manejan membresia o plan?,consultar_servicio_producto,{},sintetico,whatsapp,train,4
+MIA-0181,hacen promociones?,consultar_servicio_producto,{},sintetico,whatsapp,train,2
+MIA-0182,tienen alguna promo este mes?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0183,cuanto sale si solo quiero que le corten las unas y limpien oidos?,consultar_servicio_producto,{},sintetico,whatsapp,test,13
+MIA-0184,hacen hospedaje? cuanto cobran la noche,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0185,reciben perros para que se queden el fin de semana?,consultar_servicio_producto,{},sintetico,whatsapp,train,10
+MIA-0186,ofrecen guarderia?,consultar_servicio_producto,{},sintetico,whatsapp,train,2
+MIA-0187,atienden perros bravos? cobran mas?,consultar_servicio_producto,{},sintetico,whatsapp,train,5
+MIA-0188,"mi perro muerde un poco, hay recargo?",consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0189,cuanto cuesta para un perro que no se deja?,consultar_servicio_producto,{},sintetico,whatsapp,train,9
+MIA-0190,el precio que me dio es el final o puede cambiar?,consultar_servicio_producto,{},sintetico,whatsapp,train,11
+MIA-0191,ese valor ya es todo incluido?,consultar_servicio_producto,{},sintetico,whatsapp,train,6
+MIA-0192,el precio incluye el transporte?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,train,5
+MIA-0193,Hola buenas tardes,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0194,buenos dias,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0195,Hola!,consulta_general,{},sintetico,whatsapp,train,1
+MIA-0196,buenas noches,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0197,"hola, hay alguien?",consulta_general,{},sintetico,whatsapp,test,3
+MIA-0198,disculpe la molestia,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0199,donde estan ubicados?,consulta_general,{},sintetico,whatsapp,test,3
+MIA-0200,cual es la direccion?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0201,me pasa la ubicacion porfa,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0202,por que sector queda el local?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0203,estan en el norte o en el sur?,consulta_general,{},sintetico,whatsapp,train,8
+MIA-0204,hay como llegar en bus?,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0205,tienen parqueadero?,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0206,me manda el mapa porfa 🙏,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0207,que horarios atienden?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0208,hasta que hora estan abiertos?,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0209,atienden los domingos?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0210,trabajan los feriados?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0211,a que hora abren?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0212,estan abiertos ahorita?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0213,manana atienden normal?,consulta_general,"{""temporalidad"": ""manana""}",sintetico,whatsapp,train,3
+MIA-0214,aceptan transferencia?,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0215,puedo pagar con tarjeta?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0216,solo efectivo?,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0217,a que cuenta le hago la transferencia?,consulta_general,{},sintetico,whatsapp,train,7
+MIA-0218,me pasa el numero de cuenta porfa,consulta_general,{},sintetico,whatsapp,train,7
+MIA-0219,hacen factura?,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0220,"necesito factura con datos, se puede?",consulta_general,{},sintetico,whatsapp,test,6
+MIA-0221,le puedo pagar cuando le recoja?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0222,"ya le hice la transferencia, le mando el comprobante",consulta_general,{},sintetico,whatsapp,train,9
+MIA-0223,adjunto el comprobante de pago,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0224,ya esta listo mi perrito?,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0225,como va mi perrita?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0226,ya le termino?,consulta_general,{},sintetico,whatsapp,test,3
+MIA-0227,a que hora le puedo ir a recoger?,consulta_general,{},sintetico,whatsapp,test,8
+MIA-0228,me avisa cuando este listo porfa,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0229,ya voy en camino a recogerle,consulta_general,{},sintetico,whatsapp,test,6
+MIA-0230,estoy afuera del local,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0231,ya llegue,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0232,como se porto?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0233,se dejo banar bien?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0234,quedo hermoso! muchas gracias 😍,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0235,"gracias, quedo lindisimo",consulta_general,{},sintetico,whatsapp,train,3
+MIA-0236,mil gracias por el servicio,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0237,"excelente trabajo, muy agradecida",consulta_general,{},sintetico,whatsapp,train,4
+MIA-0238,gracias!!,consulta_general,{},sintetico,whatsapp,train,1
+MIA-0239,ok gracias,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0240,"perfecto, gracias",consulta_general,{},sintetico,whatsapp,test,2
+MIA-0241,"le felicito, trabaja muy bien",consulta_general,{},sintetico,whatsapp,train,5
+MIA-0242,ya le recomende a una amiga,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0243,me puede pasar las fotos del antes y despues?,consulta_general,{},sintetico,whatsapp,train,9
+MIA-0244,tiene fotos de cortes para escoger?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0245,puedo ver su instagram?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0246,cual es su instagram?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0247,tiene pagina web?,consulta_general,{},sintetico,whatsapp,train,3
+MIA-0248,me sigue en instagram? le etiquete,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0249,mi perro necesita vacunas para ir?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0250,piden carnet de vacunas?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0251,tiene que ir desparasitado?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0252,le puedo dejar comiendo antes?,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0253,tiene que ir con correa?,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0254,llevo su toalla o ustedes ponen?,consulta_general,{},sintetico,whatsapp,test,6
+MIA-0255,puedo dejarle su juguete?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0256,"hola, usted es la senora del salon verdad?",consulta_general,{},sintetico,whatsapp,train,8
+MIA-0257,con quien tengo el gusto?,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0258,este es el numero del salon?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0259,es usted la duena?,consulta_general,{},sintetico,whatsapp,train,4
+MIA-0260,disculpe me equivoque de chat,consulta_general,{},sintetico,whatsapp,train,5
+MIA-0261,"perdon, mensaje equivocado",consulta_general,{},sintetico,whatsapp,train,3
+MIA-0262,"bueno, cualquier cosa le aviso",consulta_general,{},sintetico,whatsapp,train,5
+MIA-0263,"listo, quedo pendiente",consulta_general,{},sintetico,whatsapp,train,3
+MIA-0264,"ok, muchas gracias, hasta luego",consulta_general,{},sintetico,whatsapp,test,5
+MIA-0265,que tenga buen dia,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0266,feliz navidad! gracias por todo este ano 🎄,consulta_general,{},sintetico,whatsapp,train,8
+MIA-0267,felices fiestas!,consulta_general,{},sintetico,whatsapp,train,2
+MIA-0268,"mi perro quedo con la piel irritada, es normal?",consulta_general,{},sintetico,whatsapp,train,9
+MIA-0269,le quedo un poco corto el pelo,consulta_general,{},sintetico,whatsapp,train,7
+MIA-0270,no me gusto mucho el corte esta vez,consulta_general,{},sintetico,whatsapp,train,8
+MIA-0271,"disculpe, mi perro se rasca mucho desde el bano",consulta_general,{},sintetico,whatsapp,train,9
+MIA-0272,se le olvido ponerle el collar,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0273,creo que dejo olvidada su correa alla,consulta_general,{},sintetico,whatsapp,train,7
+MIA-0274,hola buenas disculpe que le moleste pero queria preguntarle si usted sabe de alguien que haga adiestramiento porque mi perro esta bien inquieto y no se a quien preguntarle gracias,consulta_general,{},sintetico,whatsapp,train,30
+MIA-0275,conoce algun veterinario bueno por el sector?,consulta_general,{},sintetico,whatsapp,train,7
+MIA-0276,sabe de alguien que venda cachorros de la misma raza?,consulta_general,{},sintetico,whatsapp,train,10
+MIA-0277,usted da clases de peluqueria canina?,consulta_general,{},sintetico,whatsapp,train,6
+MIA-0278,esta buscando ayudante? tengo experiencia,consulta_general,{},sintetico,whatsapp,test,5

@@ -1,0 +1,7 @@
+# Dependencias de los pipelines de datos (datasets/nlu y datasets/imagenes).
+# No se instalan en el despliegue; el servicio solo usa requirements.txt.
+-r requirements.txt
+pillow==12.3.0
+ImageHash==4.3.2
+numpy==2.5.3
+scikit-learn==1.9.1

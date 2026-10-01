@@ -1,15 +1,11 @@
 """
 Punto de entrada de agentes usado por main.py.
 
-Version anterior (SCRUM-85): llamaba directo a Gemini, un solo nodo sin
-enrutamiento.
-
-Version actual (SCRUM-65): delega en el orquestador multiagente, que
-clasifica la intencion del mensaje (SCRUM-60), extrae entidades (SCRUM-61)
-y enruta a agente_rag / agente_agenda / agente_general segun corresponda.
-
-main.py no necesita cambiar: sigue llamando a get_reply(texto) exactamente
-igual que antes.
+Version SCRUM-85: llamaba directo a Gemini, un solo nodo sin enrutamiento.
+Version SCRUM-65: delegaba en el orquestador con NLU (texto -> texto).
+Version actual (prototipo S4): `procesar_mensaje` recibe tambien el
+remitente (para la sesion y para distinguir a la propietaria), la imagen si
+la hay y el id del mensaje citado (respuestas de aprobacion).
 """
 
-from app.agents.orchestrator_graph import get_reply  # noqa: F401
+from app.agents.orchestrator_graph import get_reply, procesar_mensaje  # noqa: F401

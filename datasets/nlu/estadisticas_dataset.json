@@ -1,0 +1,48 @@
+{
+  "total_enunciados": 278,
+  "duplicados_eliminados": 0,
+  "vocabulario_unico": 538,
+  "distribucion_por_intencion": {
+    "agendar_cita": 107,
+    "consultar_servicio_producto": 85,
+    "consulta_general": 86
+  },
+  "proporcion_por_intencion": {
+    "agendar_cita": 0.3849,
+    "consultar_servicio_producto": 0.3058,
+    "consulta_general": 0.3094
+  },
+  "razon_desbalance_max_min": 1.26,
+  "distribucion_por_split": {
+    "train": 222,
+    "test": 56
+  },
+  "cruce_split_intencion": {
+    "test|agendar_cita": 22,
+    "test|consulta_general": 17,
+    "test|consultar_servicio_producto": 17,
+    "train|agendar_cita": 85,
+    "train|consulta_general": 69,
+    "train|consultar_servicio_producto": 68
+  },
+  "longitud_tokens": {
+    "min": 1,
+    "mediana": 7,
+    "media": 7.15,
+    "p90": 11,
+    "max": 40
+  },
+  "cobertura_entidades": {
+    "num_mascotas": 15,
+    "temporalidad": 59,
+    "raza": 23,
+    "modalidad": 17,
+    "tamano": 13,
+    "pelaje": 7
+  },
+  "origen": {
+    "sintetico": 278
+  },
+  "semilla_aleatoria": 42,
+  "proporcion_test": 0.2
+}

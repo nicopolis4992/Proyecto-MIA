@@ -1,0 +1,24 @@
+{
+  "metadata": {
+    "historia": "SCRUM-104",
+    "version": "1.0.0",
+    "estado": "PROVISIONAL - recalibrar umbrales con el conjunto de validacion de SCRUM-105",
+    "comentario": "Politica de fallback cuando la foto no permite una clasificacion confiable. Los umbrales se separan por backend porque la confianza de la CNN esta calibrada (temperature scaling) y la de Gemini es autodeclarada."
+  },
+  "calidad": {
+    "lado_menor_min_px": 200,
+    "brillo_min": 35,
+    "brillo_max": 235,
+    "nitidez_min": 40
+  },
+  "umbrales_confianza": {
+    "cnn_onnx": {"tamano": 0.70, "pelaje": 0.60},
+    "gemini_zero_shot": {"tamano": 0.80, "pelaje": 0.75}
+  },
+  "max_fotos_por_mascota": 2,
+  "comportamiento": {
+    "dimension_bajo_umbral": "Se descarta SOLO esa dimension (queda None). El motor de cotizacion ensancha la banda y pide el dato al cliente, en vez de cotizar con una prediccion dudosa.",
+    "ambas_bajo_umbral": "Se pide otra foto mientras no se supere max_fotos_por_mascota.",
+    "intentos_agotados": "Se cotiza con el rango amplio y la cita se marca requiere_revision_manual para que la propietaria estime el valor al aprobar."
+  }
+}

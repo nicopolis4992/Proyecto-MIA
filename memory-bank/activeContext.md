@@ -26,7 +26,15 @@ SCRUM-65 y SCRUM-61 estaban originalmente etiquetadas S3 (vencio 20 sep)
 pero dependian de SCRUM-60 que ya estaba en S4. Se movieron ambas a S4
 para alinear con su dependencia real.
 
-## Siguiente foco
+## Actualizacion 30 sep
+Prototipo integrado de punta a punta (ver progress.md). El orquestador ahora
+tiene entradas directas para la propietaria (aprobacion) y para fotos
+(cotizacion), y `procesar_mensaje(remitente, texto, imagen, id_citado)`
+reemplaza a `get_reply(texto)` en main.py (get_reply se mantiene por
+compatibilidad). Dependencias de agentes se construyen perezosamente en el
+primer mensaje (`crear_dependencias`), inyectables para pruebas/simulador.
+
+## Siguiente foco (anterior al 30 sep)
 1. Implementar el Agente RAG real (SCRUM-66 a 71): construir base de
    conocimiento del negocio, generar embeddings, indexar en pgvector,
    recuperar contexto, generar respuesta fundamentada, evaluar calidad.

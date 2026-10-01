@@ -1,0 +1,121 @@
+slug,nombre_es,peso_min_kg,peso_max_kg,tamano,tamano_ambiguo,pelaje,pelaje_observacion,uso,motivo_exclusion
+chihuahua,Chihuahua,1.5,3.0,pequeno,0,corto,,completa,
+japanese_spaniel,Spaniel japonés (Chin),1.8,4.1,pequeno,0,largo,,completa,
+maltese_dog,Bichón maltés,3.0,4.0,pequeno,0,largo,,completa,
+pekinese,Pekinés,3.2,6.4,pequeno,0,largo,,completa,
+shih-tzu,Shih Tzu,4.0,7.3,pequeno,0,largo,,completa,
+blenheim_spaniel,Cavalier King Charles (Blenheim),5.9,8.2,pequeno,0,largo,,completa,
+papillon,Papillón,2.3,4.5,pequeno,0,largo,,completa,
+toy_terrier,Terrier inglés toy,2.7,3.6,pequeno,0,corto,,completa,
+rhodesian_ridgeback,Rhodesian Ridgeback,32.0,39.0,grande,0,corto,,completa,
+afghan_hound,Lebrel afgano,23.0,27.0,grande,0,largo,,completa,
+basset,Basset Hound,20.0,29.0,grande,0,corto,,completa,
+beagle,Beagle,9.0,11.3,mediano,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+bloodhound,Sabueso de San Huberto,36.0,50.0,fuera_de_rango,1,corto,,excluida,supera los 45 kg que cotiza el tarifario v1
+bluetick,Bluetick Coonhound,20.0,36.0,grande,0,corto,,completa,
+black-and-tan_coonhound,Coonhound negro y fuego,29.0,34.0,grande,0,corto,,completa,
+walker_hound,Treeing Walker Coonhound,20.0,32.0,grande,0,corto,,completa,
+english_foxhound,Foxhound inglés,29.0,34.0,grande,0,corto,,completa,
+redbone,Redbone Coonhound,20.0,32.0,grande,0,corto,,completa,
+borzoi,Borzoi,27.0,48.0,fuera_de_rango,1,largo,,excluida,supera los 45 kg que cotiza el tarifario v1
+irish_wolfhound,Lebrel irlandés,48.0,70.0,fuera_de_rango,0,doble,duro,excluida,supera los 45 kg que cotiza el tarifario v1
+italian_greyhound,Galgo italiano,3.0,5.0,pequeno,0,corto,,completa,
+whippet,Whippet,9.0,19.0,grande,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+ibizan_hound,Podenco ibicenco,20.0,25.0,grande,0,corto,,completa,
+norwegian_elkhound,Elkhound noruego,20.0,25.0,grande,0,doble,,completa,
+otterhound,Otterhound,30.0,52.0,fuera_de_rango,1,doble,duro,excluida,supera los 45 kg que cotiza el tarifario v1
+saluki,Saluki,16.0,29.0,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+scottish_deerhound,Deerhound escocés,34.0,50.0,fuera_de_rango,1,doble,duro,excluida,supera los 45 kg que cotiza el tarifario v1
+weimaraner,Braco de Weimar,25.0,40.0,grande,0,corto,,completa,
+staffordshire_bullterrier,Staffordshire Bull Terrier,11.0,17.0,mediano,0,corto,,completa,
+american_staffordshire_terrier,American Staffordshire Terrier,18.0,32.0,grande,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+bedlington_terrier,Bedlington Terrier,8.0,10.0,mediano,1,rizado,,solo_pelaje,el rango de peso cruza un corte del tarifario
+border_terrier,Border Terrier,5.0,7.0,pequeno,0,doble,duro,completa,
+kerry_blue_terrier,Kerry Blue Terrier,15.0,18.0,mediano,0,rizado,,completa,
+irish_terrier,Terrier irlandés,11.0,12.0,mediano,0,doble,duro,completa,
+norfolk_terrier,Norfolk Terrier,5.0,5.5,pequeno,0,doble,duro,completa,
+norwich_terrier,Norwich Terrier,5.0,5.5,pequeno,0,doble,duro,completa,
+yorkshire_terrier,Yorkshire Terrier,2.0,3.2,pequeno,0,largo,,completa,
+wire-haired_fox_terrier,Fox Terrier de pelo duro,7.0,9.0,pequeno,0,doble,duro,completa,
+lakeland_terrier,Lakeland Terrier,7.0,8.0,pequeno,0,doble,duro,completa,
+sealyham_terrier,Sealyham Terrier,8.0,9.5,mediano,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+airedale,Airedale Terrier,19.0,25.0,grande,0,doble,duro,completa,
+cairn,Cairn Terrier,6.0,7.5,pequeno,0,doble,duro,completa,
+australian_terrier,Terrier australiano,5.0,7.0,pequeno,0,doble,duro,completa,
+dandie_dinmont,Dandie Dinmont Terrier,8.0,11.0,mediano,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+boston_bull,Boston Terrier,4.5,11.0,mediano,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+miniature_schnauzer,Schnauzer miniatura,5.4,9.1,mediano,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+giant_schnauzer,Schnauzer gigante,25.0,48.0,fuera_de_rango,1,doble,duro,excluida,supera los 45 kg que cotiza el tarifario v1
+standard_schnauzer,Schnauzer estándar,14.0,20.0,grande,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+scotch_terrier,Terrier escocés,8.5,10.0,mediano,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+tibetan_terrier,Terrier tibetano,8.0,14.0,mediano,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+silky_terrier,Silky Terrier,3.5,4.5,pequeno,0,largo,,completa,
+soft-coated_wheaten_terrier,Wheaten Terrier de pelo suave,13.6,20.4,grande,1,rizado,,solo_pelaje,el rango de peso cruza un corte del tarifario
+west_highland_white_terrier,West Highland White Terrier,6.8,9.1,mediano,1,doble,duro,solo_pelaje,el rango de peso cruza un corte del tarifario
+lhasa,Lhasa Apso,5.4,8.2,pequeno,0,largo,,completa,
+flat-coated_retriever,Retriever de pelo liso,25.0,36.0,grande,0,largo,,completa,
+curly-coated_retriever,Retriever de pelo rizado,29.0,43.0,grande,0,rizado,,completa,
+golden_retriever,Golden Retriever,25.0,34.0,grande,0,doble,,completa,
+labrador_retriever,Labrador Retriever,25.0,36.0,grande,0,doble,,completa,
+chesapeake_bay_retriever,Retriever de la bahía de Chesapeake,25.0,36.0,grande,0,doble,,completa,
+german_short-haired_pointer,Braco alemán de pelo corto,20.0,32.0,grande,0,corto,,completa,
+vizsla,Vizsla,20.0,29.0,grande,0,corto,,completa,
+english_setter,Setter inglés,20.0,36.0,grande,0,largo,,completa,
+irish_setter,Setter irlandés,24.0,32.0,grande,0,largo,,completa,
+gordon_setter,Setter Gordon,20.0,36.0,grande,0,largo,,completa,
+brittany_spaniel,Epagneul bretón,13.6,18.1,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+clumber,Clumber Spaniel,25.0,39.0,grande,0,largo,,completa,
+english_springer,Springer Spaniel inglés,18.0,25.0,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+welsh_springer_spaniel,Springer Spaniel galés,16.0,20.0,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+cocker_spaniel,Cocker Spaniel,9.5,14.5,mediano,0,largo,,completa,
+sussex_spaniel,Sussex Spaniel,16.0,20.0,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+irish_water_spaniel,Spaniel de agua irlandés,20.0,30.0,grande,0,rizado,,completa,
+kuvasz,Kuvasz,32.0,52.0,fuera_de_rango,1,doble,,excluida,supera los 45 kg que cotiza el tarifario v1
+schipperke,Schipperke,3.0,9.0,pequeno,0,doble,,completa,
+groenendael,Pastor belga Groenendael,20.0,30.0,grande,0,largo,,completa,
+malinois,Pastor belga Malinois,20.0,30.0,grande,0,corto,,completa,
+briard,Briard,25.0,45.0,grande,0,largo,,completa,
+kelpie,Kelpie australiano,14.0,20.0,grande,1,doble,,solo_pelaje,el rango de peso cruza un corte del tarifario
+komondor,Komondor,36.0,61.0,fuera_de_rango,1,rizado,acordonado,excluida,supera los 45 kg que cotiza el tarifario v1
+old_english_sheepdog,Bobtail (Antiguo pastor inglés),27.0,45.0,grande,0,largo,,completa,
+shetland_sheepdog,Pastor de Shetland,5.0,11.0,mediano,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+collie,Collie,18.0,30.0,grande,1,largo,,solo_pelaje,el rango de peso cruza un corte del tarifario
+border_collie,Border Collie,14.0,20.0,grande,1,doble,,solo_pelaje,el rango de peso cruza un corte del tarifario
+bouvier_des_flandres,Bouvier de Flandes,27.0,40.0,grande,0,doble,duro,completa,
+rottweiler,Rottweiler,35.0,60.0,fuera_de_rango,1,corto,,excluida,supera los 45 kg que cotiza el tarifario v1
+german_shepherd,Pastor alemán,22.0,40.0,grande,0,doble,,completa,
+doberman,Dóberman,27.0,45.0,grande,0,corto,,completa,
+miniature_pinscher,Pinscher miniatura,3.5,5.0,pequeno,0,corto,,completa,
+greater_swiss_mountain_dog,Gran boyero suizo,39.0,64.0,fuera_de_rango,1,doble,,excluida,supera los 45 kg que cotiza el tarifario v1
+bernese_mountain_dog,Boyero de Berna,32.0,52.0,fuera_de_rango,1,largo,,excluida,supera los 45 kg que cotiza el tarifario v1
+appenzeller,Boyero de Appenzell,22.0,32.0,grande,0,doble,,completa,
+entlebucher,Boyero de Entlebuch,20.0,30.0,grande,0,corto,,completa,
+boxer,Bóxer,25.0,32.0,grande,0,corto,,completa,
+bull_mastiff,Bullmastiff,45.0,59.0,fuera_de_rango,1,corto,,excluida,supera los 45 kg que cotiza el tarifario v1
+tibetan_mastiff,Dogo del Tíbet,34.0,73.0,fuera_de_rango,1,doble,,excluida,supera los 45 kg que cotiza el tarifario v1
+french_bulldog,Bulldog francés,8.0,14.0,mediano,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+great_dane,Gran danés,45.0,90.0,fuera_de_rango,1,corto,,excluida,supera los 45 kg que cotiza el tarifario v1
+saint_bernard,San Bernardo,54.0,82.0,fuera_de_rango,0,doble,,excluida,supera los 45 kg que cotiza el tarifario v1
+eskimo_dog,Perro esquimal,27.0,47.0,fuera_de_rango,1,doble,,excluida,supera los 45 kg que cotiza el tarifario v1
+malamute,Malamute de Alaska,34.0,43.0,grande,0,doble,,completa,
+siberian_husky,Husky siberiano,16.0,27.0,grande,1,doble,,solo_pelaje,el rango de peso cruza un corte del tarifario
+samoyed,Samoyedo,16.0,30.0,grande,1,doble,,solo_pelaje,el rango de peso cruza un corte del tarifario
+pomeranian,Pomerania,1.9,3.5,pequeno,0,doble,,completa,
+chow,Chow Chow,20.0,32.0,grande,0,doble,,completa,
+keeshond,Keeshond,14.0,20.0,grande,1,doble,,solo_pelaje,el rango de peso cruza un corte del tarifario
+affenpinscher,Affenpinscher,3.0,6.0,pequeno,0,doble,duro,completa,
+basenji,Basenji,9.0,12.0,mediano,1,corto,,solo_pelaje,el rango de peso cruza un corte del tarifario
+pug,Pug,6.3,8.1,pequeno,0,corto,,completa,
+leonberg,Leonberger,41.0,75.0,fuera_de_rango,1,largo,,excluida,supera los 45 kg que cotiza el tarifario v1
+newfoundland,Terranova,45.0,68.0,fuera_de_rango,1,largo,,excluida,supera los 45 kg que cotiza el tarifario v1
+great_pyrenees,Montaña de los Pirineos,39.0,73.0,fuera_de_rango,1,largo,,excluida,supera los 45 kg que cotiza el tarifario v1
+brabancon_griffon,Grifón de Bruselas,3.5,6.0,pequeno,0,doble,duro,completa,
+pembroke,Welsh Corgi Pembroke,10.0,14.0,mediano,0,doble,,completa,
+cardigan,Welsh Corgi Cardigan,11.0,17.0,mediano,0,doble,,completa,
+toy_poodle,Caniche toy,2.0,3.5,pequeno,0,rizado,,completa,
+miniature_poodle,Caniche miniatura,5.0,8.0,pequeno,0,rizado,,completa,
+standard_poodle,Caniche estándar,20.0,32.0,grande,0,rizado,,completa,
+mexican_hairless,Xoloitzcuintle,4.0,25.0,grande,1,corto,sin pelo; tres variedades de talla,solo_pelaje,el rango de peso cruza un corte del tarifario
+dingo,Dingo,13.0,20.0,grande,1,corto,no doméstico,excluida,cánido no doméstico: no es cliente posible del salón
+dhole,Dhole (perro salvaje asiático),12.0,20.0,grande,1,corto,no doméstico,excluida,cánido no doméstico: no es cliente posible del salón
+african_hunting_dog,Licaón,18.0,36.0,grande,1,corto,no doméstico,excluida,cánido no doméstico: no es cliente posible del salón

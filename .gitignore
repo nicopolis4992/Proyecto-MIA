@@ -1,2 +1,14 @@
-venv/ .env __pycache__/ *.pyc
+venv/
 .env
+__pycache__/
+*.pyc
+READ/
+
+# Datos crudos y procesados: fotos, export de WhatsApp y salidas de los
+# pipelines contienen datos personales (LOPDP). Nunca se versionan.
+datos/
+datos_crudos/
+corpus_anonimizado.csv
+
+# Base SQLite local del prototipo (conversaciones y citas: datos personales)
+data/

@@ -5,3 +5,8 @@ httpx==0.28.1
 google-genai==2.23.0
 langgraph==1.2.11
 pytest==9.1.1
+# Cotizacion por imagen (SCRUM-103/104): control de calidad de la foto
+pillow==12.3.0
+numpy==2.5.3
+# Al tener el modelo CNN entrenado (SCRUM-102), agregar: onnxruntime
+# Para RAG_BACKEND=pgvector (Supabase), agregar: psycopg[binary]

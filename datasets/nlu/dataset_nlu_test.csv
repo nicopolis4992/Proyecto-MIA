@@ -1,0 +1,57 @@
+id,texto,intencion,entidades,origen,canal,split,num_tokens
+MIA-0002,"Hola buenos dias, tiene espacio para manana?",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,7
+MIA-0003,quiero separar un turno para el sabado porfa,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,8
+MIA-0015,me confirma si puede atenderme el jueves porfa,agendar_cita,"{""temporalidad"": ""el jueves""}",sintetico,whatsapp,test,8
+MIA-0021,"Hola buenas, para agendar llevando yo al salon",agendar_cita,"{""modalidad"": ""salon""}",sintetico,whatsapp,test,8
+MIA-0022,"yo le llevo al local, hay turno manana temprano?",agendar_cita,"{""modalidad"": ""salon"", ""temporalidad"": ""manana temprano""}",sintetico,whatsapp,test,9
+MIA-0024,"Buenas, necesito reprogramar la cita de manana",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,7
+MIA-0030,"hola, quedamos para el domingo? me confirma",agendar_cita,"{""temporalidad"": ""el domingo""}",sintetico,whatsapp,test,7
+MIA-0038,"buenas, mi perro es pequenito, quiero cita para bano",agendar_cita,"{""tamano"": ""pequeno""}",sintetico,whatsapp,test,9
+MIA-0052,"buenos dias, agendame para el viernes 3 pm si se puede",agendar_cita,"{""temporalidad"": ""el viernes 3 pm""}",sintetico,whatsapp,test,11
+MIA-0053,se puede a las 8 de la manana?,agendar_cita,"{""temporalidad"": ""a las 8 de la manana""}",sintetico,whatsapp,test,8
+MIA-0061,"hola, reservo para manana entonces",agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,5
+MIA-0064,"si, dale, apunteme para esa hora",agendar_cita,{},sintetico,whatsapp,test,6
+MIA-0072,hola quisiera agendar deslanado para mi husky,agendar_cita,"{""raza"": ""husky""}",sintetico,whatsapp,test,7
+MIA-0075,bano y corte para el sabado porfa,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,7
+MIA-0083,"quiero cita para mi border collie, tiene harto pelo",agendar_cita,"{""raza"": ""border collie"", ""pelaje"": ""largo""}",sintetico,whatsapp,test,9
+MIA-0087,"buenas, quiero turno, es un criollito pequeno",agendar_cita,"{""tamano"": ""pequeno""}",sintetico,whatsapp,test,7
+MIA-0088,hola! disponible para el 15?,agendar_cita,"{""temporalidad"": ""el 15""}",sintetico,whatsapp,test,5
+MIA-0091,"Buenas noches, para pedir cita",agendar_cita,{},sintetico,whatsapp,test,5
+MIA-0093,turno para manana?,agendar_cita,"{""temporalidad"": ""manana""}",sintetico,whatsapp,test,3
+MIA-0096,agenda para el sabado disponible?,agendar_cita,"{""temporalidad"": ""el sabado""}",sintetico,whatsapp,test,5
+MIA-0098,"buenas, quisiera saber que dias tiene libres esta semana",agendar_cita,"{""temporalidad"": ""esta semana""}",sintetico,whatsapp,test,9
+MIA-0103,"hola, se me hizo tarde, todavia me puede atender?",agendar_cita,{},sintetico,whatsapp,test,9
+MIA-0108,"Buenas, cuanto cuesta el bano y corte?",consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0109,hola cuanto me sale banar a mi perrita?,consultar_servicio_producto,{},sintetico,whatsapp,test,8
+MIA-0110,que valor tiene el servicio completo?,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0119,el domicilio tiene costo adicional?,consultar_servicio_producto,"{""modalidad"": ""puerta_a_puerta""}",sintetico,whatsapp,test,5
+MIA-0126,hay precio especial por 3 mascotas?,consultar_servicio_producto,"{""num_mascotas"": 3}",sintetico,whatsapp,test,6
+MIA-0139,tienen tratamiento para pulgas y garrapatas? precio?,consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0146,banan gatos tambien?,consultar_servicio_producto,{},sintetico,whatsapp,test,3
+MIA-0151,cuanto cuesta una bolsa de snacks?,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0159,tienen productos para vender?,consultar_servicio_producto,{},sintetico,whatsapp,test,4
+MIA-0160,"hola, cuanto cuesta el servicio si mi perro tiene nudos?",consultar_servicio_producto,{},sintetico,whatsapp,test,10
+MIA-0161,"mi perro esta bien enredado, cobra mas por eso?",consultar_servicio_producto,{},sintetico,whatsapp,test,9
+MIA-0163,cuanto seria un poodle mediano bano y corte?,consultar_servicio_producto,"{""raza"": ""poodle"", ""tamano"": ""mediano""}",sintetico,whatsapp,test,8
+MIA-0165,cuanto cobra por un golden retriever?,consultar_servicio_producto,"{""raza"": ""golden retriever""}",sintetico,whatsapp,test,6
+MIA-0166,un yorkie cuanto sale?,consultar_servicio_producto,"{""raza"": ""yorkie""}",sintetico,whatsapp,test,4
+MIA-0183,cuanto sale si solo quiero que le corten las unas y limpien oidos?,consultar_servicio_producto,{},sintetico,whatsapp,test,13
+MIA-0184,hacen hospedaje? cuanto cobran la noche,consultar_servicio_producto,{},sintetico,whatsapp,test,6
+MIA-0188,"mi perro muerde un poco, hay recargo?",consultar_servicio_producto,{},sintetico,whatsapp,test,7
+MIA-0197,"hola, hay alguien?",consulta_general,{},sintetico,whatsapp,test,3
+MIA-0199,donde estan ubicados?,consulta_general,{},sintetico,whatsapp,test,3
+MIA-0204,hay como llegar en bus?,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0215,puedo pagar con tarjeta?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0220,"necesito factura con datos, se puede?",consulta_general,{},sintetico,whatsapp,test,6
+MIA-0225,como va mi perrita?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0226,ya le termino?,consulta_general,{},sintetico,whatsapp,test,3
+MIA-0227,a que hora le puedo ir a recoger?,consulta_general,{},sintetico,whatsapp,test,8
+MIA-0229,ya voy en camino a recogerle,consulta_general,{},sintetico,whatsapp,test,6
+MIA-0233,se dejo banar bien?,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0236,mil gracias por el servicio,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0240,"perfecto, gracias",consulta_general,{},sintetico,whatsapp,test,2
+MIA-0254,llevo su toalla o ustedes ponen?,consulta_general,{},sintetico,whatsapp,test,6
+MIA-0257,con quien tengo el gusto?,consulta_general,{},sintetico,whatsapp,test,5
+MIA-0264,"ok, muchas gracias, hasta luego",consulta_general,{},sintetico,whatsapp,test,5
+MIA-0265,que tenga buen dia,consulta_general,{},sintetico,whatsapp,test,4
+MIA-0278,esta buscando ayudante? tengo experiencia,consulta_general,{},sintetico,whatsapp,test,5

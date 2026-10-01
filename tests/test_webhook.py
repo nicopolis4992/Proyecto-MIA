@@ -13,77 +13,88 @@ from app.main import app  # noqa: E402
 client = TestClient(app)
 
 
-def _text_message_payload(sender: str, text: str) -> dict:
+def _payload(sender: str, mensaje: dict) -> dict:
     """Payload simplificado, con la misma forma que envía WhatsApp Cloud API."""
-    return {
-        "entry": [
-            {
-                "changes": [
-                    {
-                        "value": {
-                            "messages": [
-                                {
-                                    "from": sender,
-                                    "type": "text",
-                                    "text": {"body": text},
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }
+    return {"entry": [{"changes": [{"value": {"messages": [{"from": sender, **mensaje}]}}]}]}
 
 
-@patch("app.main.send_text_message")
-@patch("app.main.get_reply")
-def test_webhook_responde_a_mensaje_de_texto(mock_get_reply, mock_send):
-    mock_get_reply.return_value = "¡Hola! Gracias por escribirnos."
+def _texto(sender, text, wa_id="wamid.1", context=None):
+    m = {"id": wa_id, "type": "text", "text": {"body": text}}
+    if context:
+        m["context"] = {"id": context}
+    return _payload(sender, m)
 
-    response = client.post(
-        "/webhook", json=_text_message_payload("593999999999", "Hola, quiero una cita")
-    )
+
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje")
+def test_webhook_responde_a_mensaje_de_texto(mock_procesar, mock_send):
+    mock_procesar.return_value = "¡Hola! Gracias por escribirnos."
+
+    response = client.post("/webhook", json=_texto("593999999999", "Hola, quiero una cita", "wamid.t1"))
 
     assert response.status_code == 200
-    mock_get_reply.assert_called_once_with("Hola, quiero una cita")
-    mock_send.assert_called_once_with(
-        to="593999999999", body="¡Hola! Gracias por escribirnos."
-    )
+    mock_procesar.assert_called_once_with("593999999999", "Hola, quiero una cita", None, None)
+    mock_send.assert_called_once_with(to="593999999999", body="¡Hola! Gracias por escribirnos.")
 
 
-@patch("app.main.send_text_message")
-@patch("app.main.get_reply")
-def test_webhook_ignora_eventos_sin_mensajes(mock_get_reply, mock_send):
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje")
+def test_webhook_pasa_el_mensaje_citado(mock_procesar, mock_send):
+    mock_procesar.return_value = None
+    client.post("/webhook", json=_texto("593900000001", "listo", "wamid.t2", context="wamid.cita"))
+    mock_procesar.assert_called_once_with("593900000001", "listo", None, "wamid.cita")
+    mock_send.assert_not_called()
+
+
+@patch("app.main.download_media", return_value=b"jpeg")
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje", return_value="cotizacion")
+def test_webhook_descarga_y_procesa_imagenes(mock_procesar, mock_send, mock_media):
+    payload = _payload("593", {"id": "wamid.t3", "type": "image", "image": {"id": "media9", "caption": "mi perro"}})
+    client.post("/webhook", json=payload)
+    mock_media.assert_called_once_with("media9")
+    mock_procesar.assert_called_once_with("593", "mi perro", b"jpeg", None)
+
+
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje", return_value="ok")
+def test_webhook_ignora_reintentos_de_meta(mock_procesar, mock_send):
+    """Meta reenvía el mismo webhook si no recibe 200 a tiempo: no responder dos veces."""
+    client.post("/webhook", json=_texto("593", "hola", "wamid.dup"))
+    client.post("/webhook", json=_texto("593", "hola", "wamid.dup"))
+    assert mock_procesar.call_count == 1
+
+
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje")
+def test_webhook_ignora_eventos_sin_mensajes(mock_procesar, mock_send):
     """Ej: notificaciones de estado (entregado/leído), no mensajes nuevos."""
     payload = {"entry": [{"changes": [{"value": {"statuses": [{"status": "delivered"}]}}]}]}
 
     response = client.post("/webhook", json=payload)
 
     assert response.status_code == 200
-    mock_get_reply.assert_not_called()
+    mock_procesar.assert_not_called()
     mock_send.assert_not_called()
 
 
-@patch("app.main.send_text_message")
-@patch("app.main.get_reply")
-def test_webhook_no_revienta_con_payload_invalido(mock_get_reply, mock_send):
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje")
+def test_webhook_no_revienta_con_payload_invalido(mock_procesar, mock_send):
     response = client.post("/webhook", json={"algo": "inesperado"})
 
     assert response.status_code == 200
-    mock_get_reply.assert_not_called()
+    mock_procesar.assert_not_called()
     mock_send.assert_not_called()
 
 
-@patch("app.main.send_text_message")
-@patch("app.main.get_reply")
-def test_webhook_responde_200_aunque_falle_el_envio(mock_get_reply, mock_send):
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje")
+def test_webhook_responde_200_aunque_falle_el_procesamiento(mock_procesar, mock_send):
     """Si Gemini o WhatsApp fallan, igual respondemos 200 a Meta (no reintentos)."""
-    mock_get_reply.side_effect = RuntimeError("Gemini no disponible")
+    mock_procesar.side_effect = RuntimeError("Gemini no disponible")
 
-    response = client.post(
-        "/webhook", json=_text_message_payload("593999999999", "Hola")
-    )
+    response = client.post("/webhook", json=_texto("593999999999", "Hola", "wamid.t4"))
 
     assert response.status_code == 200
     mock_send.assert_not_called()
