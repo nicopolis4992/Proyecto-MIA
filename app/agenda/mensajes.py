@@ -61,8 +61,24 @@ def _nombres(cita: dict) -> str:
     return nombres[0] if len(nombres) == 1 else ", ".join(nombres[:-1]) + " y " + nombres[-1]
 
 
+_tarifario = None
+
+
+def _raza_legible(raza: str | None) -> str | None:
+    """La raza tal como la entiende el motor ("shitsu" -> "shih tzu")."""
+    global _tarifario
+    if not raza:
+        return None
+    if _tarifario is None:
+        from app.cotizacion.cotizador import Cotizador
+        _tarifario = Cotizador().t
+    resueltas, _ = _tarifario.resolver_razas(raza)
+    claves = [c for c, _ in resueltas if c]
+    return " x ".join(claves) if claves and len(claves) == len(resueltas) else raza
+
+
 def _descripcion_mascota(m: dict) -> str:
-    rasgos = [m.get("raza"), ETIQUETA_TAMANO.get(m.get("tamano")), ETIQUETA_GRUPO.get(m.get("grupo"))]
+    rasgos = [_raza_legible(m.get("raza")), ETIQUETA_TAMANO.get(m.get("tamano")), ETIQUETA_GRUPO.get(m.get("grupo"))]
     return ", ".join(r for r in rasgos if r) or "sin datos"
 
 

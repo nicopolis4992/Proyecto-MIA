@@ -243,7 +243,9 @@ def construir_grafo(d: Dependencias):
 
 
 def crear_dependencias(client=None, repo=None, mensajero=None, propietaria: str | None = None,
-                       agente_rag=None, clasificador=None) -> Dependencias:
+                       agente_rag=None, clasificador=None, calendario=None) -> Dependencias:
+    """`calendario=False` desactiva Google Calendar (simulador, pruebas)."""
+    from app.agenda.calendario import crear_calendario
     from app.config import crear_cliente_gemini
     from app.mensajeria import MensajeroWhatsApp
     from app.persistencia.repositorio import obtener_repositorio
@@ -255,12 +257,16 @@ def crear_dependencias(client=None, repo=None, mensajero=None, propietaria: str 
     mensajero = mensajero or MensajeroWhatsApp(repo)
     propietaria = PROPIETARIA_WHATSAPP if propietaria is None else propietaria
     cotizador = Cotizador(RUTA_TARIFARIO)
+    if calendario is None:
+        calendario = crear_calendario()
+    elif calendario is False:
+        calendario = None
     cfg = cargar_config()
     return Dependencias(
         client=client, repo=repo, mensajero=mensajero, cotizador=cotizador,
         agente_rag=agente_rag or crear_agente_rag(client),
-        agenda=AgenteAgenda(client, repo, mensajero, cotizador, cfg, propietaria),
-        aprobacion=ProcesadorAprobacion(client, repo, mensajero, cotizador, cfg, propietaria),
+        agenda=AgenteAgenda(client, repo, mensajero, cotizador, cfg, propietaria, calendario),
+        aprobacion=ProcesadorAprobacion(client, repo, mensajero, cotizador, cfg, propietaria, calendario),
         clasificador=clasificador or crear_clasificador(client),
         propietaria=propietaria,
     )
@@ -286,13 +292,14 @@ def _grafo():
 
 
 def procesar_mensaje(remitente: str, texto: str = "", imagen: bytes | None = None,
-                     id_citado: str | None = None) -> str | None:
+                     id_citado: str | None = None, grafo=None) -> str | None:
     """
     Punto de entrada del webhook. Devuelve el texto a responder al remitente
-    (o None si el agente ya envio lo necesario por su cuenta).
+    (o None si el agente ya envio lo necesario por su cuenta). `grafo`
+    permite usar un grafo con otras dependencias (la demo web).
     """
     try:
-        estado_final = _grafo().invoke({
+        estado_final = (grafo or _grafo()).invoke({
             "remitente": remitente, "mensaje": texto, "imagen": imagen,
             "id_citado": id_citado, "nlu": None, "respuesta": None,
         })

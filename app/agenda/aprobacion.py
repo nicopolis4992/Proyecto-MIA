@@ -119,9 +119,11 @@ def interpretar_respuesta(texto: str, cita: dict, client) -> Decision:
 
 
 class ProcesadorAprobacion:
-    def __init__(self, client, repo, mensajero, cotizador, cfg_agenda: dict, propietaria: str):
+    def __init__(self, client, repo, mensajero, cotizador, cfg_agenda: dict, propietaria: str,
+                 calendario=None):
         self.client, self.repo, self.mensajero = client, repo, mensajero
         self.cotizador, self.cfg, self.propietaria = cotizador, cfg_agenda, propietaria
+        self.calendario = calendario
 
     # -- seleccion de la cita a la que responde -----------------------------
 
@@ -182,17 +184,27 @@ class ProcesadorAprobacion:
         self.repo.registrar_evento(cita["id"], "confirmada",
                                    {"mensaje_cliente": texto, "wa_id": msg_id, "encolado": msg_id is None})
         self._limpiar_sesion_cliente(cita)
-        return f"✅ Cita #{cita['id']} confirmada. Ya le avisé al cliente."
+        extra = ""
+        if self.calendario is not None:
+            try:
+                evento_id = self.calendario.registrar_cita(cita)
+                self.repo.registrar_evento(cita["id"], "registrada_en_calendario", {"evento_id": evento_id})
+                extra = " Quedó en el calendario 📅"
+            except Exception as exc:  # noqa: BLE001 - la cita ya esta confirmada
+                logger.exception("No se pudo registrar la cita #%s en Google Calendar", cita["id"])
+                self.repo.registrar_evento(cita["id"], "error_calendario", {"error": str(exc)})
+                extra = " ⚠️ No pude agregarla al calendario: agrégala a mano."
+        return f"✅ Cita #{cita['id']} confirmada. Ya le avisé al cliente.{extra}"
 
     def _rechazar(self, cita: dict, decision: Decision, ahora: datetime | None) -> str:
         self.repo.actualizar_cita(cita["id"], estado="rechazada")
         self.repo.registrar_evento(cita["id"], "rechazada", {"motivo": decision.motivo})
         desde = datetime.fromisoformat(cita["fecha_hora"]) if cita.get("fecha_hora") else ahora
         duracion = (cita.get("cotizacion") or {}).get("duracion_agenda_min", 60)
-        from app.agenda.disponibilidad import ocupado_segun_repositorio
+        from app.agenda.disponibilidad import ocupado_combinado
 
         alternativas = proponer_alternativas(desde, duracion, cita["modalidad"], self.cotizador, self.cfg,
-                                             ocupado_segun_repositorio(self.repo), ahora)
+                                             ocupado_combinado(self.repo, self.calendario), ahora)
         self.mensajero.enviar(cita["cliente_telefono"],
                               mensajes.reprogramacion_cliente(cita, alternativas))
         # El cliente queda de nuevo en el flujo de agenda, con todo lo que ya

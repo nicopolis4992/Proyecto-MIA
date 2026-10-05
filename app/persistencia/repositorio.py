@@ -169,6 +169,18 @@ class Repositorio:
         ).fetchall()
         return [self._deserializar(f) for f in filas]
 
+    def vaciar(self) -> None:
+        """Borra todos los datos (solo para la base de la demo)."""
+        with self._lock:
+            for tabla in ("sesiones", "citas", "eventos_cita", "mensajes_salientes", "mensajes_procesados"):
+                self._con.execute(f"DELETE FROM {tabla}")
+            self._con.execute("DELETE FROM sqlite_sequence")
+            self._con.commit()
+
+    def todas_las_citas(self) -> list[dict]:
+        filas = self._ejecutar("SELECT * FROM citas ORDER BY fecha_hora").fetchall()
+        return [self._deserializar(f) for f in filas]
+
     def registrar_evento(self, cita_id: int, tipo: str, detalle: Any = None) -> None:
         self._ejecutar(
             "INSERT INTO eventos_cita (cita_id, tipo, detalle, fecha) VALUES (?, ?, ?, ?)",

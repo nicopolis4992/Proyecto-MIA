@@ -35,7 +35,7 @@ from datetime import datetime
 from google.genai import types
 
 from app.agenda import mensajes
-from app.agenda.disponibilidad import ocupado_segun_repositorio, proponer_alternativas, validar_horario
+from app.agenda.disponibilidad import ocupado_combinado, proponer_alternativas, validar_horario
 from app.config import MODELO_LLM, ZONA_HORARIA
 from app.cotizacion.cotizador import Cotizador
 
@@ -137,6 +137,7 @@ class AgenteAgenda:
     cotizador: Cotizador
     cfg: dict
     propietaria: str
+    calendario: object = None
 
     def __post_init__(self):
         self._prompt = construir_prompt(self.cotizador)
@@ -267,7 +268,7 @@ class AgenteAgenda:
         cotizacion = self.cotizador.cotizar(para_motor(r["mascotas"]), r["modalidad"], r.get("sector"))
         inicio = datetime.fromisoformat(r["fecha_hora"])
         duracion = cotizacion["duracion_agenda_min"]
-        ocupado = ocupado_segun_repositorio(self.repo)
+        ocupado = ocupado_combinado(self.repo, self.calendario)
         ok, motivo = validar_horario(inicio, duracion, r["modalidad"], self.cotizador, self.cfg, ocupado, ahora)
         if not ok:
             alternativas = proponer_alternativas(inicio, duracion, r["modalidad"], self.cotizador, self.cfg,

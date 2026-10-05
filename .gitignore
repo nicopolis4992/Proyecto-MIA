@@ -12,3 +12,7 @@ corpus_anonimizado.csv
 
 # Base SQLite local del prototipo (conversaciones y citas: datos personales)
 data/
+
+# Credenciales de Google (cuenta de servicio)
+credenciales/
+*.json.key

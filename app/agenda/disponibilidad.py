@@ -75,6 +75,22 @@ def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, co
     return candidatos
 
 
+def ocupado_combinado(repo, calendario=None) -> Callable[[datetime, int], bool]:
+    """Ocupado si choca con la base local o con Google Calendar (si esta configurado)."""
+    local = ocupado_segun_repositorio(repo)
+
+    def _ocupado(inicio: datetime, duracion_min: int) -> bool:
+        if local(inicio, duracion_min):
+            return True
+        if calendario is not None:
+            try:
+                return calendario.ocupado(inicio, duracion_min)
+            except Exception:  # noqa: BLE001 - sin calendario se sigue con la base local
+                return False
+        return False
+    return _ocupado
+
+
 def ocupado_segun_repositorio(repo) -> Callable[[datetime, int], bool]:
     """Choque con citas aprobadas/confirmadas en la base local (provisional)."""
     def _ocupado(inicio: datetime, duracion_min: int) -> bool:

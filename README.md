@@ -85,3 +85,31 @@ Checklist para pasar a clientes reales:
 3. En Railway: `PROPIETARIA_WHATSAPP` = número real de la propietaria y
    `MIA_MODO=produccion`.
 4. Verificar en `GET /` que responde `"modo": "produccion"`.
+
+## Panel web (demo + agenda + dashboard de la propietaria)
+
+```bash
+uvicorn app.main:app --reload --port 8000
+# abrir http://localhost:8000/panel
+```
+
+- **Panel de la dueña:** ingresos estimados, citas confirmadas y por aprobar,
+  tiempo hasta confirmar, % de cotizaciones con precio exacto, servicios más
+  pedidos, próximas citas y detalle de cada cita con su trazabilidad.
+- **Agenda:** vista semanal de las citas por estado.
+- **Demo en vivo:** chat de la clienta y de la propietaria con el mismo
+  sistema que atiende WhatsApp (Gemini real), sin enviar nada a Meta.
+  "Cargar datos de ejemplo" crea citas **simuladas** para ver el panel lleno.
+
+Para abrirlo en Railway define `DEMO_CLAVE` y entra con `https://<app>/panel?clave=<DEMO_CLAVE>`.
+
+## Google Calendar (citas aprobadas → calendario)
+
+1. En [console.cloud.google.com](https://console.cloud.google.com): crear un proyecto,
+   habilitar **Google Calendar API**, crear una **cuenta de servicio** y descargar su clave JSON.
+2. En Google Calendar: crear el calendario "Lina's Pet Salón (pruebas)", y en
+   *Compartir con personas* agregar el correo de la cuenta de servicio con
+   permiso **Hacer cambios en eventos**. Copiar el *ID del calendario*.
+3. Variables: `GOOGLE_CALENDAR_ID` y `GOOGLE_SERVICE_ACCOUNT_JSON` (o `_FILE` en local).
+4. Al aprobar una cita (WhatsApp o demo), aparece en el calendario y la
+   disponibilidad consulta los horarios ocupados.

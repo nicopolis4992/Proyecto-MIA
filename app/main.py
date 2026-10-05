@@ -5,6 +5,7 @@ Punto de entrada de la aplicación.
 - GET /webhook     -> verificación del webhook exigida por Meta
 - POST /webhook    -> recepción de mensajes (SCRUM-83): texto e imágenes
 - POST /admin/reintentar -> fuerza el reintento de la cola de salida (SCRUM-87)
+- GET /panel        -> demo web + agenda + dashboard de la propietaria
 
 El procesamiento del mensaje (LLM, clasificación de imagen) puede tardar
 varios segundos, así que se hace en segundo plano: Meta recibe el 200 de
@@ -22,6 +23,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
 from app import config
 from app.agent import procesar_mensaje
 from app.mensajeria import MensajeroWhatsApp, reintentar_pendientes
+from app.panel.rutas import router as router_panel
 from app.persistencia.repositorio import obtener_repositorio
 from app.whatsapp_client import download_media
 
@@ -54,6 +56,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp", lifespan=lifespan)
+app.include_router(router_panel)  # demo web + dashboard de la propietaria
 
 
 @app.get("/")
