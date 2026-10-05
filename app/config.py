@@ -28,7 +28,26 @@ ZONA_HORARIA = timezone(timedelta(hours=-5), name="America/Guayaquil")
 # Numero de WhatsApp de la propietaria (formato internacional sin '+',
 # ej. 593999999999). Los mensajes de este numero se tratan como respuestas
 # de aprobacion (SCRUM-77), nunca como mensajes de cliente.
-PROPIETARIA_WHATSAPP = os.getenv("PROPIETARIA_WHATSAPP", "")
+PROPIETARIA_WHATSAPP = os.getenv("PROPIETARIA_WHATSAPP", "").strip().lstrip("+")
+
+# Modo de operacion:
+# - "pruebas" (por defecto): piloto interno del equipo. Solo se atiende a los
+#   numeros de NUMEROS_PERMITIDOS (mas PROPIETARIA_WHATSAPP, que en pruebas
+#   es el telefono de un integrante del equipo haciendo de propietaria).
+#   Cualquier otro numero se ignora: ningun cliente real recibe respuestas.
+# - "produccion": se atiende a todos. Pasar a este modo solo cuando la
+#   propietaria haya validado precios y contenido, y PROPIETARIA_WHATSAPP
+#   sea su numero real.
+MODO = os.getenv("MIA_MODO", "pruebas").strip().lower()
+NUMEROS_PERMITIDOS = {
+    n.strip().lstrip("+") for n in os.getenv("NUMEROS_PERMITIDOS", "").split(",") if n.strip()
+}
+
+
+def numero_autorizado(telefono: str) -> bool:
+    if MODO == "produccion":
+        return True
+    return telefono in NUMEROS_PERMITIDOS or (bool(PROPIETARIA_WHATSAPP) and telefono == PROPIETARIA_WHATSAPP)
 
 # Base SQLite provisional mientras el esquema de Supabase (SCRUM-74) no
 # este disponible. En Railway el disco es efimero: sirve para el prototipo.

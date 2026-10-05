@@ -68,3 +68,20 @@ pero confirma que Gemini sí generó una respuesta antes de fallar el envío.
 5. Agregar `WHATSAPP_ACCESS_TOKEN` y `WHATSAPP_PHONE_NUMBER_ID` reales
    (los da Meta al configurar el producto WhatsApp) tanto en tu `.env`
    local como en las Variables de Railway.
+
+## Piloto interno (modo pruebas) y paso a producción
+
+Por defecto el bot corre en `MIA_MODO=pruebas`: solo responde a los números de
+`NUMEROS_PERMITIDOS` y a `PROPIETARIA_WHATSAPP`, que en esta fase es el teléfono
+de un integrante del equipo haciendo de propietaria. Cualquier otro número se
+ignora, así que ningún cliente real recibe mensajes.
+
+Sin WhatsApp, `python simulador.py --guion` corre el mismo flujo en consola.
+
+Checklist para pasar a clientes reales:
+1. La propietaria valida precios (`tarifario_v1.json`), contenido del RAG
+   (`app/rag/conocimiento/`) y horario (`app/agenda/config_agenda.json`).
+2. Re-indexar: `python -m app.rag.indexador`.
+3. En Railway: `PROPIETARIA_WHATSAPP` = número real de la propietaria y
+   `MIA_MODO=produccion`.
+4. Verificar en `GET /` que responde `"modo": "produccion"`.

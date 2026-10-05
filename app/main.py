@@ -19,6 +19,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
 
+from app import config
 from app.agent import procesar_mensaje
 from app.mensajeria import MensajeroWhatsApp, reintentar_pendientes
 from app.persistencia.repositorio import obtener_repositorio
@@ -57,7 +58,7 @@ app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp", lifespan=lifespan)
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "service": "linas-pet-salon-bot"}
+    return {"status": "ok", "service": "linas-pet-salon-bot", "modo": config.MODO}
 
 
 @app.get("/webhook")
@@ -141,6 +142,11 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
 
     entrante = _extract_incoming_message(payload)
     if entrante is None:
+        return Response(status_code=200)
+
+    if not config.numero_autorizado(entrante["from"]):
+        # Modo pruebas: numeros fuera del equipo no reciben ninguna respuesta.
+        logger.info("Modo %s: mensaje de numero no autorizado ignorado", config.MODO)
         return Response(status_code=200)
 
     if entrante["id"] and not obtener_repositorio().marcar_procesado(entrante["id"]):

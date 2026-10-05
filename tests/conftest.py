@@ -5,6 +5,9 @@ from types import SimpleNamespace
 
 # Las pruebas nunca tocan la base local ni las APIs reales.
 os.environ["MIA_DB_PATH"] = ":memory:"
+# Las pruebas existentes simulan clientes cualquiera; el filtro del modo
+# pruebas se prueba aparte en test_webhook.py.
+os.environ["MIA_MODO"] = "produccion"
 os.environ.setdefault("WHATSAPP_ESPERA_BASE_S", "0")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 

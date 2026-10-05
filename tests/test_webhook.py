@@ -98,3 +98,21 @@ def test_webhook_responde_200_aunque_falle_el_procesamiento(mock_procesar, mock_
 
     assert response.status_code == 200
     mock_send.assert_not_called()
+
+
+@patch("app.mensajeria.send_text_message")
+@patch("app.main.procesar_mensaje", return_value="ok")
+def test_modo_pruebas_solo_atiende_numeros_autorizados(mock_procesar, mock_send, monkeypatch):
+    from app import config
+
+    monkeypatch.setattr(config, "MODO", "pruebas")
+    monkeypatch.setattr(config, "NUMEROS_PERMITIDOS", {"593911111111"})
+    monkeypatch.setattr(config, "PROPIETARIA_WHATSAPP", "593922222222")
+
+    client.post("/webhook", json=_texto("593933333333", "hola", "wamid.p1"))  # cliente real
+    mock_procesar.assert_not_called()
+    mock_send.assert_not_called()
+
+    client.post("/webhook", json=_texto("593911111111", "hola", "wamid.p2"))  # integrante
+    client.post("/webhook", json=_texto("593922222222", "listo", "wamid.p3"))  # "propietaria" de prueba
+    assert mock_procesar.call_count == 2
