@@ -53,7 +53,8 @@ def numero_autorizado(telefono: str) -> bool:
 # este disponible. En Railway el disco es efimero: sirve para el prototipo.
 RUTA_DB = os.getenv("MIA_DB_PATH", str(RAIZ_APP.parent / "data" / "mia.sqlite3"))
 
-RUTA_TARIFARIO = RAIZ_APP / "cotizacion" / "tarifario_v1.json"
+# v2 (04-oct): precios reales de la propietaria. v1 queda como referencia historica.
+RUTA_TARIFARIO = RAIZ_APP / "cotizacion" / "tarifario_v2.json"
 
 
 def ahora() -> datetime:

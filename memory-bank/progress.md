@@ -28,6 +28,17 @@
 - Persistencia provisional SQLite (app/persistencia/) hasta SCRUM-74.
 - `python simulador.py --guion` corre la demo completa sin Meta.
 
+## Tarifario v2 integrado (4 oct)
+- app/cotizacion/tarifario_v2.json + motor_cotizacion_v2.py (Daniel Loza) con
+  correcciones: pesos sin huecos, deslanado no aplicable, razas con alias y
+  tolerancia a errores, cruces/mestizos, sinonimos sin KeyError.
+- app/cotizacion/cotizador.py: fachada que usan los agentes.
+- Clasificador de imagen predice tamano + grupo de manto (A-D) + estado.
+- Modo pruebas (MIA_MODO, NUMEROS_PERMITIDOS) para piloto interno sin la
+  propietaria.
+- Dataset de Facebook (SCRUM-101, 312 imagenes) revisado: sin etiquetas
+  todavia; marco/logo de plantilla es atajo potencial para la CNN.
+
 ## Que falta (S4, vence 4 oct)
 - Contenido validado de la base de conocimiento (SCRUM-66/99) y evaluacion
   del RAG (SCRUM-71). Hoy hay un borrador provisional en app/rag/conocimiento/.
@@ -54,7 +65,6 @@
   largo plazo.
 - Disponibilidad real (Google Calendar, SCRUM-72) no integrada: solo se
   valida horario laboral provisional y choques con citas en la base local.
-- Desajuste de vocabulario/factores de pelaje entre datasets/imagenes/src/
-  clases.py (doble 1.15, largo 1.20) y tarifario_v1.json (doble_capa 1.25,
-  largo 1.15). El clasificador traduce doble->doble_capa; los factores los
-  decide el tarifario. Pendiente alinear con Daniel Loza.
+- datasets/imagenes/src/clases.py (SCRUM-101) sigue en el vocabulario de
+  pelaje v1; el tarifario v2 usa grupo de manto A-D. Hay que re-etiquetar
+  (o mapear raza -> grupo) antes de entrenar la CNN.

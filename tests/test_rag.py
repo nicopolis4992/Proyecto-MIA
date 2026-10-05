@@ -44,14 +44,15 @@ def _almacen(tmp_path):
 def test_fragmentos_incluyen_negocio_y_tarifario():
     ids = {f.id for f in todos_los_fragmentos()}
     assert "negocio#cotizacion_con_foto" in ids
-    assert "tarifario#servicio_bano" in ids
+    assert "tarifario#servicio_completo" in ids
     assert "tarifario#restriccion_vehicular" in ids
 
 
 def test_precios_del_rag_salen_del_tarifario():
     """SCRUM-70: un solo origen de verdad para precios."""
-    bano = next(f for f in todos_los_fragmentos() if f.id == "tarifario#servicio_bano")
-    assert "USD 14.00" in bano.texto and "USD 24.00" in bano.texto
+    completo = next(f for f in todos_los_fragmentos() if f.id == "tarifario#servicio_completo")
+    # Piso de catalogo (12) y el maximo sin nudos de un grande de maquina (12 x 3.75 = 45).
+    assert "USD 12.00" in completo.texto and "USD 45.00" in completo.texto
 
 
 def test_reindexado_incremental(tmp_path):
@@ -76,8 +77,8 @@ def test_reindexado_incremental(tmp_path):
 def test_recupera_el_fragmento_correcto(tmp_path):
     almacen, emb = _almacen(tmp_path), EmbedderFalso()
     reindexar(almacen, emb)
-    top = recuperar("descuento por mascota adicional segunda mascota", almacen, emb, k=1, umbral=0.0)
-    assert top[0].id == "tarifario#multimascota"
+    top = recuperar("se descuenta si trae varias mascotas en la misma cita", almacen, emb, k=1, umbral=0.0)
+    assert top[0].id in {"tarifario#multimascota", "negocio#varias_mascotas_en_la_misma_cita"}
 
 
 def test_sin_contexto_no_llama_al_llm(tmp_path):
@@ -93,8 +94,8 @@ def test_sin_contexto_no_llama_al_llm(tmp_path):
 def test_con_contexto_pasa_fragmentos_al_llm(tmp_path):
     almacen, emb = _almacen(tmp_path), EmbedderFalso()
     reindexar(almacen, emb)
-    cliente = ClienteFalso("El baño para perro grande cuesta USD 24.00.")
-    r = responder("precio del servicio baño e higiene básica", cliente, almacen, emb, umbral=0.1)
+    cliente = ClienteFalso("El Baño Completo para un perro grande va de USD 13.50 a USD 45.00.")
+    r = responder("precio del Baño Completo", cliente, almacen, emb, umbral=0.1)
     assert r.fundamentada and r.fuentes
     assert "CONTEXTO" in cliente.llamadas[0]["contents"]
-    assert "USD 24.00" in cliente.llamadas[0]["contents"]
+    assert "USD 45.00" in cliente.llamadas[0]["contents"]

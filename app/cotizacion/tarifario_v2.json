@@ -1,0 +1,830 @@
+{
+  "version": "2.0.0",
+  "fecha": "2026-10-04",
+  "reemplaza": "tarifario_v1.json (precios de referencia del mercado de Quito)",
+  "moneda": "USD",
+  "redondeo": 0.5,
+  "convencion_fuentes": {
+    "PROPIETARIA": "Dato dicho por la propietaria (texto o audios del 04/10/2026)",
+    "CATALOGO": "Catálogo de servicios publicado por el negocio",
+    "INTERPOLADO": "Calculado por el equipo a partir de datos de la propietaria; validar con ella",
+    "SUPUESTO": "Valor provisional del equipo sin respaldo de la propietaria; reemplazar",
+    "PENDIENTE": "Sin dato; el motor lo trata como incertidumbre y no compromete precio"
+  },
+  "servicios": {
+    "express": {
+      "nombre": "Baño Express",
+      "piso": 7,
+      "fuente": "CATALOGO",
+      "incluye": [
+        "baño",
+        "secado",
+        "perfume",
+        "accesorios"
+      ]
+    },
+    "basico": {
+      "nombre": "Baño Básico",
+      "piso": 9,
+      "fuente": "CATALOGO",
+      "incluye": [
+        "baño",
+        "secado",
+        "corte zona lagrimal",
+        "despeje zona genital",
+        "perfume",
+        "accesorios"
+      ]
+    },
+    "completo": {
+      "nombre": "Baño Completo",
+      "piso": 12,
+      "fuente": "CATALOGO",
+      "incluye": [
+        "baño",
+        "peinado o corte",
+        "secado",
+        "despeje zonas interdigitales",
+        "despeje zona genital",
+        "corte de uñas",
+        "limpieza de oídos",
+        "perfume",
+        "hidratación de almohadillas",
+        "accesorios"
+      ]
+    },
+    "premium": {
+      "nombre": "Baño Premium",
+      "piso": 15,
+      "fuente": "CATALOGO",
+      "incluye": [
+        "baño",
+        "baño medicado (caspa o alergia)",
+        "antipulgas o potenciador de color",
+        "peinado o corte",
+        "secado",
+        "limpieza de oídos",
+        "corte de uñas",
+        "despeje zona genital",
+        "despeje zona interdigital",
+        "perfume",
+        "hidratación de almohadillas",
+        "accesorios"
+      ]
+    }
+  },
+  "nota_servicios": "Los pisos son precios 'desde' para el caso más fácil. El agente nunca presenta un piso como precio final.",
+  "servicio_minimo_por_pedido": {
+    "_uso": "El NLU mapea lo que pide la clienta al servicio mínimo que lo incluye (los servicios son acumulativos).",
+    "corte zona lagrimal": "basico",
+    "despeje zona genital": "basico",
+    "corte": "completo",
+    "peinado": "completo",
+    "corte de uñas": "completo",
+    "limpieza de oídos": "completo",
+    "hidratación de almohadillas": "completo",
+    "baño medicado": "premium",
+    "antipulgas": "premium",
+    "potenciador de color": "premium"
+  },
+  "tamanos": {
+    "pequeno": {
+      "peso_kg": [
+        0,
+        9.0
+      ],
+      "fuente": "PROPIETARIA"
+    },
+    "mediano": {
+      "peso_kg": [
+        9.01,
+        18.0
+      ],
+      "fuente": "PROPIETARIA"
+    },
+    "grande": {
+      "peso_kg": [
+        18.01,
+        45.0
+      ],
+      "fuente": "PROPIETARIA"
+    },
+    "_nota": "La propietaria acepta los rangos, pero no pesa a los perros: decide por raza y apariencia. El motor clasifica por limite superior (peso <= maximo), asi no quedan huecos entre rangos."
+  },
+  "grupos_manto": {
+    "A_maquina": {
+      "descripcion": "Pelo largo de crecimiento continuo; se pasa máquina",
+      "fuente": "PROPIETARIA",
+      "como_lo_describe_la_clienta": "Le crece el pelo y hay que cortárselo (shih tzu, schnauzer, poodle)"
+    },
+    "B_deslanado": {
+      "descripcion": "Doble capa; no se pasa máquina; se hace deslanado",
+      "fuente": "PROPIETARIA",
+      "como_lo_describe_la_clienta": "Pelo tupido con subpelo, bota mucho pelo (husky, pug, labrador)"
+    },
+    "C_cepillado": {
+      "descripcion": "Pelo largo sin máquina; mucho cepillado; corte a tijera",
+      "fuente": "PROPIETARIA",
+      "como_lo_describe_la_clienta": "Pelo largo que se cepilla, sin máquina (golden)"
+    },
+    "D_corto": {
+      "descripcion": "Pelo corto; sin máquina; esencialmente baño",
+      "fuente": "PROPIETARIA",
+      "como_lo_describe_la_clienta": "Pelo corto (chihuahua de pelo corto, pitbull, rottweiler)"
+    },
+    "_nota": "La agrupación es una propuesta del equipo construida con los ejemplos de los audios; VALIDAR con la propietaria."
+  },
+  "razas": {
+    "_uso": "raza -> grupo de manto y tamaño típico. tamano null = la raza no basta para decidirlo (hay que preguntar). 'alias' = otras formas de escribirla; el motor ademas tolera errores de tipeo (difflib, umbral en 'umbral_similitud_raza').",
+    "shih tzu": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA",
+      "alias": [
+        "shitzu",
+        "shitsu",
+        "shih-tzu",
+        "shih tsu",
+        "chitzu",
+        "shitzú"
+      ]
+    },
+    "yorkie": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA (tamaño); grupo SUPUESTO",
+      "alias": [
+        "yorkshire",
+        "yorkshire terrier",
+        "yorki"
+      ]
+    },
+    "caniche pequeno": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA (tamaño); grupo SUPUESTO",
+      "alias": [
+        "poodle toy",
+        "caniche toy",
+        "poodle pequeno",
+        "poodle mini",
+        "caniche mini"
+      ]
+    },
+    "schnauzer": {
+      "grupo": "A_maquina",
+      "tamano": null,
+      "fuente": "PROPIETARIA: 'hay pequeños y otros más grandes'",
+      "alias": [
+        "schnauser",
+        "snauzer",
+        "schnauzer miniatura",
+        "schnauzer mini"
+      ]
+    },
+    "pequines": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA (tamaño); grupo SUPUESTO",
+      "alias": [
+        "pekines",
+        "pekinés",
+        "pequinés"
+      ]
+    },
+    "chihuahua": {
+      "grupo": "D_corto",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA (tamaño); grupo SUPUESTO (existe variedad de pelo largo)",
+      "alias": [
+        "chiguagua",
+        "chihuaha",
+        "chiwawa",
+        "chihuahueño"
+      ]
+    },
+    "salchicha": {
+      "grupo": "D_corto",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA (tamaño); grupo SUPUESTO (existe variedad de pelo largo)",
+      "alias": [
+        "dachshund",
+        "teckel",
+        "perro salchicha"
+      ]
+    },
+    "pug": {
+      "grupo": "B_deslanado",
+      "tamano": "pequeno",
+      "fuente": "PROPIETARIA",
+      "alias": [
+        "carlino"
+      ]
+    },
+    "husky": {
+      "grupo": "B_deslanado",
+      "tamano": "grande",
+      "fuente": "PROPIETARIA",
+      "alias": [
+        "husky siberiano",
+        "siberian husky",
+        "huski"
+      ]
+    },
+    "golden": {
+      "grupo": "C_cepillado",
+      "tamano": "grande",
+      "fuente": "PROPIETARIA",
+      "alias": [
+        "golden retriever",
+        "golden retriver",
+        "goldencito"
+      ]
+    },
+    "pastor ingles": {
+      "grupo": "A_maquina",
+      "tamano": "grande",
+      "fuente": "PROPIETARIA",
+      "alias": [
+        "old english sheepdog",
+        "bobtail"
+      ]
+    },
+    "mestizo": {
+      "grupo": null,
+      "tamano": null,
+      "fuente": "PROPIETARIA: llegan bastantes mestizos; grupo y tamaño se preguntan",
+      "alias": [
+        "mestiza",
+        "criollo",
+        "criolla",
+        "chusco",
+        "chusca",
+        "sin raza",
+        "mezcla",
+        "cruzado",
+        "cruzada",
+        "de la calle",
+        "callejero",
+        "callejera"
+      ]
+    },
+    "poodle": {
+      "grupo": "A_maquina",
+      "tamano": null,
+      "alias": [
+        "caniche",
+        "french poodle",
+        "poodle estandar"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "maltes": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "alias": [
+        "maltés",
+        "bichon maltes",
+        "maltese"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "bichon frise": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "alias": [
+        "bichon",
+        "bichón",
+        "bichon frisé"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "lhasa apso": {
+      "grupo": "A_maquina",
+      "tamano": "pequeno",
+      "alias": [
+        "lhasa",
+        "lasa apso"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "cocker": {
+      "grupo": "A_maquina",
+      "tamano": "mediano",
+      "alias": [
+        "cocker spaniel",
+        "cocker ingles",
+        "cocker americano"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "pomerania": {
+      "grupo": "B_deslanado",
+      "tamano": "pequeno",
+      "alias": [
+        "pomerano",
+        "pomeranian",
+        "lulu",
+        "lulú"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "labrador": {
+      "grupo": "B_deslanado",
+      "tamano": "grande",
+      "alias": [
+        "labrador retriever",
+        "lab"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "pastor aleman": {
+      "grupo": "B_deslanado",
+      "tamano": "grande",
+      "alias": [
+        "pastor alemán",
+        "ovejero aleman",
+        "german shepherd"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "samoyedo": {
+      "grupo": "B_deslanado",
+      "tamano": "grande",
+      "alias": [
+        "samoyed"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "border collie": {
+      "grupo": "C_cepillado",
+      "tamano": "mediano",
+      "alias": [
+        "border"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "beagle": {
+      "grupo": "D_corto",
+      "tamano": null,
+      "alias": [
+        "beagel",
+        "biggle"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "bulldog frances": {
+      "grupo": "D_corto",
+      "tamano": null,
+      "alias": [
+        "bulldog francés",
+        "frenchie",
+        "bulldog"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "pitbull": {
+      "grupo": "D_corto",
+      "tamano": null,
+      "alias": [
+        "pit bull",
+        "pitbul",
+        "american pitbull"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "rottweiler": {
+      "grupo": "D_corto",
+      "tamano": "grande",
+      "alias": [
+        "rotweiler",
+        "rottweiller",
+        "rot"
+      ],
+      "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
+    },
+    "_nota_cruces": "Cruces ('schnauzer con poodle') se cotizan con la union de tamaños y grupos de ambas razas. 'Mestizo de X' usa los valores de X como raza predominante y lo avisa."
+  },
+  "factor_tamano_grupo": {
+    "_uso": "precio_base = piso(servicio) x factor[tamano][grupo]. Un solo factor por celda para todos los servicios.",
+    "pequeno": {
+      "A_maquina": {
+        "factor": 1.25,
+        "fuente": "PROPIETARIA",
+        "evidencia": "shih tzu en buen estado, peluquería: 15 = 12 x 1,25"
+      },
+      "B_deslanado": {
+        "factor": 1.0,
+        "fuente": "SUPUESTO",
+        "evidencia": "sin dato de baño de catálogo para razas de doble capa pequeñas"
+      },
+      "C_cepillado": {
+        "factor": 1.25,
+        "fuente": "INTERPOLADO",
+        "evidencia": "igual a A en pequeño; sin dato propio"
+      },
+      "D_corto": {
+        "factor": 1.0,
+        "fuente": "SUPUESTO",
+        "evidencia": "piso del catálogo"
+      }
+    },
+    "mediano": {
+      "A_maquina": {
+        "factor": 1.5,
+        "fuente": "PROPIETARIA",
+        "evidencia": "mestiza mediana ~14 kg, peluquería con rapado: 18–22 (18 = 12 x 1,5 sin motas)"
+      },
+      "B_deslanado": {
+        "factor": 1.3,
+        "fuente": "INTERPOLADO",
+        "evidencia": "entre pequeño (1,00) y grande (estimado)"
+      },
+      "C_cepillado": {
+        "factor": 1.65,
+        "fuente": "INTERPOLADO",
+        "evidencia": "punto medio entre pequeño C (1,25) y grande C (2,08)"
+      },
+      "D_corto": {
+        "factor": 1.05,
+        "fuente": "INTERPOLADO",
+        "evidencia": "punto medio entre pequeño D (1,00) y grande D (1,13)"
+      }
+    },
+    "grande": {
+      "A_maquina": {
+        "factor": 3.75,
+        "fuente": "PROPIETARIA",
+        "evidencia": "pastor inglés, peluquería completa con máquina: 45 = 12 x 3,75. Solo baño: 25 (el factor da 26,25 en Express)"
+      },
+      "B_deslanado": {
+        "factor": 2.0,
+        "fuente": "SUPUESTO",
+        "evidencia": "sin dato de servicio de catálogo para husky; solo de deslanado"
+      },
+      "C_cepillado": {
+        "factor": 2.08,
+        "fuente": "PROPIETARIA",
+        "evidencia": "golden, peluquería completa sin máquina: 25 = 12 x 2,08"
+      },
+      "D_corto": {
+        "factor": 1.13,
+        "fuente": "PROPIETARIA",
+        "evidencia": "mestizo de rottweiler, baño medicado antipulgas (Premium): 17 = 15 x 1,13"
+      }
+    }
+  },
+  "servicios_especiales": {
+    "_nota": "No están en el catálogo. PENDIENTE: si se suman a un servicio del catálogo o se cobran aparte. Aquí se modelan como servicio aparte (así los describió la propietaria).",
+    "deslanado": {
+      "pequeno": {
+        "precio": [
+          12,
+          12
+        ],
+        "fuente": "PROPIETARIA",
+        "evidencia": "pug: 12"
+      },
+      "mediano": {
+        "precio": [
+          15,
+          25
+        ],
+        "fuente": "INTERPOLADO"
+      },
+      "grande": {
+        "precio": [
+          25,
+          35
+        ],
+        "fuente": "PROPIETARIA",
+        "evidencia": "husky: 25–35, 3–4 horas"
+      },
+      "grupos_aplicables": [
+        "B_deslanado"
+      ]
+    }
+  },
+  "recargo_estado_manto": {
+    "_uso": "Porcentaje sobre el precio base. 'severo' = desenredo de pelo recuperable.",
+    "sin_motas": {
+      "pequeno": 0.0,
+      "mediano": 0.0,
+      "grande": 0.0,
+      "fuente": "PROPIETARIA"
+    },
+    "moderado": {
+      "pequeno": {
+        "pct": 0.17,
+        "fuente": "INTERPOLADO",
+        "evidencia": "mitad del severo"
+      },
+      "mediano": {
+        "pct": 0.22,
+        "fuente": "PROPIETARIA",
+        "evidencia": "mestiza mediana: 18 -> 22"
+      },
+      "grande": {
+        "pct": 0.28,
+        "fuente": "INTERPOLADO",
+        "evidencia": "mitad del severo"
+      }
+    },
+    "severo": {
+      "pequeno": {
+        "pct": 0.33,
+        "fuente": "PROPIETARIA",
+        "evidencia": "shih tzu en mal estado: 15 -> hasta 20"
+      },
+      "mediano": {
+        "pct": 0.45,
+        "fuente": "INTERPOLADO",
+        "evidencia": "punto medio entre pequeño y grande"
+      },
+      "grande": {
+        "pct": 0.56,
+        "fuente": "PROPIETARIA",
+        "evidencia": "pastor inglés con muchos nudos: 45 -> hasta 70, todo el día"
+      }
+    },
+    "no_recuperable": {
+      "accion": "rapado en lugar de desenredo; precio a confirmar por la propietaria",
+      "fuente": "PROPIETARIA: el desenredo se hace 'siempre que el pelaje se pueda recuperar'"
+    }
+  },
+  "recargo_comportamiento": {
+    "tranquilo": {
+      "pct": [
+        0.0,
+        0.0
+      ],
+      "fuente": "PROPIETARIA"
+    },
+    "dificil": {
+      "pct": [
+        0.0,
+        0.2
+      ],
+      "fuente": "PENDIENTE",
+      "evidencia": "La propietaria confirma que sube 'un poco' con perros nerviosos, miedosos o con sospecha de agresividad; no dio monto. El rango 0–20 % es provisional y solo ensancha la banda."
+    },
+    "agresivo_declarado": {
+      "accion": "RECHAZAR",
+      "fuente": "PROPIETARIA: 'perros agresivos no trabajamos'"
+    }
+  },
+  "peso_max_kg": 45,
+  "exclusiones": [
+    {
+      "regla": "peso_kg > 45",
+      "accion": "RECHAZAR",
+      "fuente": "PROPIETARIA"
+    },
+    {
+      "regla": "dueño declara que el perro es agresivo",
+      "accion": "RECHAZAR",
+      "fuente": "PROPIETARIA"
+    }
+  ],
+  "traslado": {
+    "cobro": "una vez por visita",
+    "cobro_fuente": "SUPUESTO (regla de v1); la propietaria no respondió si con varios perros se cobra una sola vez",
+    "zonas": {
+      "aledano": {
+        "precio": [
+          0,
+          3
+        ],
+        "sectores": [],
+        "fuente": "PROPIETARIA",
+        "nota": "Falta definir qué sectores son aledaños: depende de la ubicación del local"
+      },
+      "zona_5": {
+        "precio": [
+          5,
+          5
+        ],
+        "sectores": [
+          "El Condado",
+          "Condado Alto",
+          "Cotocollao"
+        ],
+        "fuente": "PROPIETARIA"
+      },
+      "la_carolina": {
+        "precio": [
+          10,
+          15
+        ],
+        "sectores": [
+          "La Carolina"
+        ],
+        "fuente": "PROPIETARIA",
+        "nota": "Cobró 10; menciona 'hasta 15' para un cliente. Ambiguo"
+      }
+    },
+    "fuera_de_zona": {
+      "accion": "CONSULTAR_PROPIETARIA",
+      "fuente": "SUPUESTO"
+    }
+  },
+  "descuentos": {
+    "multi_mascota": {
+      "minimo_mascotas": 4,
+      "monto_por_mascota": [
+        1,
+        2
+      ],
+      "aplica_sobre": "precio de cada mascota (valor original)",
+      "fuente": "PROPIETARIA: 'cuando son más de 3 ... se descuenta 1-2$ por cada uno'",
+      "pendiente": "Confirmar si 'más de 3' significa desde 3 o desde 4"
+    },
+    "fidelidad_mensual": {
+      "monto": [
+        1,
+        2
+      ],
+      "condicion": "cliente que trae a sus perros mensualmente y LO PIDE",
+      "aplicacion": "no automática: el agente no lo ofrece; se registra si la clienta lo pide y lo decide la propietaria en la aprobación",
+      "fuente": "PROPIETARIA"
+    }
+  },
+  "iva": {
+    "tasa": 0.15,
+    "regimen": null,
+    "precios_catalogo_incluyen_iva": null,
+    "clientes_antiguos": "mantienen el precio anterior",
+    "fuente": "PROPIETARIA (factura desde ahora; régimen RIMPE PENDIENTE)",
+    "comportamiento_motor": "Mientras regimen sea null, el motor no suma IVA y marca 'iva_pendiente'."
+  },
+  "pico_y_placa": {
+    "dia": "jueves",
+    "digitos": [
+      7,
+      8
+    ],
+    "ventanas": [
+      [
+        "06:00",
+        "09:30"
+      ],
+      [
+        "16:00",
+        "20:00"
+      ]
+    ],
+    "aplica_fines_de_semana": false,
+    "aplica_feriados": false,
+    "fuente": "PROPIETARIA (jueves) + ordenanza de Quito (ventanas)",
+    "nota": "Solo restringe el servicio puerta a puerta; la lista de feriados debe cargarse aparte"
+  },
+  "duracion_min": {
+    "_nota": "Casi todo es SUPUESTO. SCRUM-103 debe devolver duración; reemplazar cuando la propietaria la entregue.",
+    "express": {
+      "pequeno": [
+        45,
+        60
+      ],
+      "mediano": [
+        60,
+        75
+      ],
+      "grande": [
+        75,
+        105
+      ],
+      "fuente": "SUPUESTO"
+    },
+    "basico": {
+      "pequeno": [
+        60,
+        75
+      ],
+      "mediano": [
+        75,
+        90
+      ],
+      "grande": [
+        90,
+        120
+      ],
+      "fuente": "SUPUESTO"
+    },
+    "completo": {
+      "pequeno": [
+        90,
+        120
+      ],
+      "mediano": [
+        120,
+        150
+      ],
+      "grande": [
+        150,
+        240
+      ],
+      "fuente": "SUPUESTO"
+    },
+    "premium": {
+      "pequeno": [
+        105,
+        135
+      ],
+      "mediano": [
+        135,
+        165
+      ],
+      "grande": [
+        165,
+        255
+      ],
+      "fuente": "SUPUESTO"
+    },
+    "deslanado": {
+      "pequeno": [
+        60,
+        90
+      ],
+      "mediano": [
+        120,
+        180
+      ],
+      "grande": [
+        180,
+        240
+      ],
+      "fuente": "PROPIETARIA (grande: husky 3–4 h); resto SUPUESTO"
+    },
+    "extra_estado_severo": {
+      "pequeno": 60,
+      "mediano": 120,
+      "grande": 360,
+      "fuente": "PROPIETARIA (grande: desenredo 'todo el día'); resto SUPUESTO"
+    }
+  },
+  "banda_confianza": {
+    "metodo": "enumeracion_de_escenarios",
+    "descripcion": "Para cada atributo no declarado se recorren todos sus valores posibles; el rango es [mínimo, máximo] de los precios resultantes. Reemplaza los puntos fijos por atributo de v1.",
+    "umbral_semiamplitud_comprometido": 1.0,
+    "umbral_fuente": "INTERPOLADO: 50 % de la desviación mínima reportada por la propietaria (USD 2). v1 usaba 2,50 (50 % de USD 5). DECISIÓN DEL EQUIPO pendiente."
+  },
+  "umbral_similitud_raza": 0.8,
+  "equivalencias": {
+    "_uso": "Valores que puede traer el NLU o la clienta y su valor valido. Lo que no este aqui ni sea valido se trata como NO DECLARADO (ensancha el rango y genera aviso), nunca como error.",
+    "tamano": {
+      "pequeño": "pequeno",
+      "chico": "pequeno",
+      "pequeña": "pequeno",
+      "mini": "pequeno",
+      "mediana": "mediano",
+      "grande": "grande",
+      "grandote": "grande",
+      "gigante": "grande"
+    },
+    "estado": {
+      "sin nudos": "sin_motas",
+      "sin_nudos": "sin_motas",
+      "bien": "sin_motas",
+      "leve": "moderado",
+      "pocos nudos": "moderado",
+      "nudos": "moderado",
+      "motas": "moderado",
+      "moderado": "moderado",
+      "enredado": "severo",
+      "muchos nudos": "severo",
+      "apelmazado": "severo",
+      "severo": "severo",
+      "no recuperable": "no_recuperable"
+    },
+    "comportamiento": {
+      "tranquila": "tranquilo",
+      "calmado": "tranquilo",
+      "bueno": "tranquilo",
+      "nervioso": "dificil",
+      "nerviosa": "dificil",
+      "miedoso": "dificil",
+      "inquieto": "dificil",
+      "muerde a veces": "dificil",
+      "agresivo": "agresivo_declarado",
+      "agresiva": "agresivo_declarado",
+      "bravo": "agresivo_declarado"
+    },
+    "servicio": {
+      "bano express": "express",
+      "bano basico": "basico",
+      "bano completo": "completo",
+      "peluqueria": "completo",
+      "grooming": "completo",
+      "bano premium": "premium",
+      "deslanar": "deslanado"
+    }
+  },
+  "preguntas_cliente": {
+    "_uso": "Como pregunta el agente cada dato faltante, en lenguaje de la clienta. El orden lo decide el motor por impacto en USD.",
+    "servicio": "¿Qué servicio le gustaría? Tenemos Baño Express (desde $7), Básico (desde $9), Completo con corte (desde $12) y Premium con baño medicado (desde $15).",
+    "tamano": "¿Más o menos cuánto pesa, o es pequeño, mediano o grande? Si prefiere, envíeme una foto de cuerpo entero 📸",
+    "raza_o_grupo_manto": "¿De qué raza es? Si es mestizo, cuénteme cómo es su pelo: ¿corto, le crece y hay que cortárselo, o es tupido y bota mucho pelo?",
+    "estado_manto": "¿Tiene nudos o el pelo enredado?",
+    "comportamiento": "¿Cómo se porta durante el baño: tranquilo o se pone nervioso?"
+  }
+}

@@ -1,8 +1,10 @@
 """
-Clasificador de tamano y tipo de pelaje a partir de una foto (SCRUM-102).
+Clasificador de tamano, grupo de manto y estado del pelo a partir de una foto (SCRUM-102).
 
 Dos implementaciones con la misma salida (`Clasificacion`), en el
-vocabulario del tarifario (SCRUM-98), no en el del dataset:
+vocabulario del tarifario v2 (SCRUM-98): tamano, grupo de manto (A-D) y
+estado del manto. Predicen por apariencia, no por raza, asi que funcionan
+igual con mestizos:
 
 - ClasificadorOnnx: la CNN ajustada por transfer learning en Colab
   (entrenamiento/clasificador_imagen/entrenar_colab.py), exportada a ONNX
@@ -34,11 +36,9 @@ logger = logging.getLogger("vision")
 DIR_MODELOS = Path(__file__).parent / "modelos"
 RUTA_ONNX = Path(os.getenv("VISION_MODELO_ONNX", DIR_MODELOS / "clasificador_v1.onnx"))
 
-# El dataset de SCRUM-101 usa "doble" para el pelaje de doble capa; el
-# tarifario usa "doble_capa". La traduccion vive solo aqui.
-PELAJE_DATASET_A_TARIFARIO = {"doble": "doble_capa"}
 TAMANOS = ("pequeno", "mediano", "grande")
-PELAJES = ("corto", "largo", "rizado", "doble_capa")
+GRUPOS = ("A_maquina", "B_deslanado", "C_cepillado", "D_corto")
+ESTADOS = ("sin_motas", "moderado", "severo")
 
 
 @dataclass
@@ -46,10 +46,12 @@ class Clasificacion:
     es_perro: bool
     tamano: str | None
     confianza_tamano: float
-    pelaje: str | None
-    confianza_pelaje: float
+    grupo: str | None
+    confianza_grupo: float
     backend: str
     version: str
+    estado: str | None = None
+    confianza_estado: float = 0.0
     probabilidades: dict = field(default_factory=dict)
     observacion: str | None = None
 
@@ -73,7 +75,9 @@ class ClasificadorOnnx:
         self.meta = json.loads(Path(ruta_modelo).with_suffix(".json").read_text(encoding="utf-8"))
         self.entrada = self.sesion.get_inputs()[0].name
         self.clases_tamano = self.meta["clases_tamano"]
-        self.clases_pelaje = [PELAJE_DATASET_A_TARIFARIO.get(c, c) for c in self.meta["clases_pelaje"]]
+        self.clases_grupo = self.meta["clases_grupo"]
+        self.clases_estado = self.meta.get("clases_estado")  # cabeza opcional
+        self.salidas = [o.name for o in self.sesion.get_outputs()]
 
     def _preprocesar(self, datos: bytes) -> np.ndarray:
         lado = self.meta.get("tamano_entrada", 224)
@@ -92,20 +96,26 @@ class ClasificadorOnnx:
         return a.transpose(2, 0, 1)[None]
 
     def clasificar(self, datos: bytes) -> Clasificacion:
-        logits_t, logits_p = self.sesion.run(["tamano", "pelaje"], {self.entrada: self._preprocesar(datos)})
+        salidas = self.sesion.run(self.salidas, {self.entrada: self._preprocesar(datos)})
+        logits = dict(zip(self.salidas, salidas))
         temp = self.meta.get("temperatura", {})
-        p_t = _softmax(logits_t[0], temp.get("tamano", 1.0))
-        p_p = _softmax(logits_p[0], temp.get("pelaje", 1.0))
-        it, ip = int(p_t.argmax()), int(p_p.argmax())
+        probs, mejor = {}, {}
+        for cabeza, clases in (("tamano", self.clases_tamano), ("grupo", self.clases_grupo),
+                               ("estado", self.clases_estado)):
+            if clases is None or cabeza not in logits:
+                continue
+            p = _softmax(logits[cabeza][0], temp.get(cabeza, 1.0))
+            i = int(p.argmax())
+            mejor[cabeza] = (clases[i], float(p[i]))
+            probs[cabeza] = dict(zip(clases, map(float, p.round(4))))
+        estado, conf_estado = mejor.get("estado", (None, 0.0))
         return Clasificacion(
             es_perro=True,  # la CNN no detecta "no perro": lo cubre la baja confianza
-            tamano=self.clases_tamano[it], confianza_tamano=float(p_t[it]),
-            pelaje=self.clases_pelaje[ip], confianza_pelaje=float(p_p[ip]),
+            tamano=mejor["tamano"][0], confianza_tamano=mejor["tamano"][1],
+            grupo=mejor["grupo"][0], confianza_grupo=mejor["grupo"][1],
+            estado=estado, confianza_estado=conf_estado,
             backend="cnn_onnx", version=self.meta.get("version", "desconocida"),
-            probabilidades={
-                "tamano": dict(zip(self.clases_tamano, map(float, p_t.round(4)))),
-                "pelaje": dict(zip(self.clases_pelaje, map(float, p_p.round(4)))),
-            },
+            probabilidades=probs,
         )
 
 
@@ -119,12 +129,20 @@ Devuelve:
 - num_perros: cuantos perros se ven.
 - tamano: estimacion del tamano del perro principal segun su peso adulto aparente:
   "pequeno" (hasta 9 kg), "mediano" (9 a 18 kg), "grande" (18 a 45 kg).
-- pelaje: "corto" (pelo corto y liso), "largo" (pelo largo y liso o sedoso),
-  "rizado" (rizado o lanoso, tipo poodle o bichon), "doble_capa" (manto denso
-  con subpelo, tipo husky, pastor aleman, golden, pomerania).
-- confianza_tamano y confianza_pelaje entre 0 y 1. Usa valores bajos si la
-  foto no muestra el cuerpo completo, no hay referencia de escala, el perro
-  esta lejos o mojado, o el pelaje esta recien cortado.
+- grupo (tipo de manto, segun como se trabaja en la peluqueria):
+  "A_maquina": pelo largo de crecimiento continuo que se corta con maquina
+    (shih tzu, schnauzer, poodle, yorkie, maltes y sus mestizos).
+  "B_deslanado": doble capa con subpelo denso, no se pasa maquina
+    (husky, pug, labrador, pastor aleman, pomerania).
+  "C_cepillado": pelo largo sin maquina, mucho cepillado y corte a tijera
+    (golden, border collie).
+  "D_corto": pelo corto pegado al cuerpo (chihuahua de pelo corto, pitbull,
+    rottweiler, mestizos de pelo corto).
+- estado: "sin_motas" (pelo suelto y limpio), "moderado" (algunos nudos o
+  zonas apelmazadas), "severo" (muy enredado o apelmazado en gran parte).
+- confianza_tamano, confianza_grupo y confianza_estado entre 0 y 1. Usa
+  valores bajos si la foto no muestra el cuerpo completo, no hay referencia
+  de escala, el perro esta lejos o mojado, o el pelo esta recien cortado.
 - observacion: una frase corta solo si hay algo relevante (ej. nudos visibles,
   foto de cachorro, varios perros). Si no, null.
 No identifiques la raza ni opines sobre la salud del animal."""
@@ -147,12 +165,14 @@ class ClasificadorGemini:
                 "num_perros": types.Schema(type=types.Type.INTEGER),
                 "tamano": types.Schema(type=types.Type.STRING, enum=list(TAMANOS)),
                 "confianza_tamano": types.Schema(type=types.Type.NUMBER),
-                "pelaje": types.Schema(type=types.Type.STRING, enum=list(PELAJES)),
-                "confianza_pelaje": types.Schema(type=types.Type.NUMBER),
+                "grupo": types.Schema(type=types.Type.STRING, enum=list(GRUPOS)),
+                "confianza_grupo": types.Schema(type=types.Type.NUMBER),
+                "estado": types.Schema(type=types.Type.STRING, enum=list(ESTADOS)),
+                "confianza_estado": types.Schema(type=types.Type.NUMBER),
                 "observacion": types.Schema(type=types.Type.STRING, nullable=True),
             },
-            required=["es_perro", "num_perros", "tamano", "confianza_tamano",
-                      "pelaje", "confianza_pelaje", "observacion"],
+            required=["es_perro", "num_perros", "tamano", "confianza_tamano", "grupo",
+                      "confianza_grupo", "estado", "confianza_estado", "observacion"],
         )
         mime = "image/png" if datos[:4] == b"\x89PNG" else "image/jpeg"
         resp = self.client.models.generate_content(
@@ -166,7 +186,8 @@ class ClasificadorGemini:
         return Clasificacion(
             es_perro=bool(d["es_perro"]) and d.get("num_perros", 1) >= 1,
             tamano=d["tamano"], confianza_tamano=float(d["confianza_tamano"]),
-            pelaje=d["pelaje"], confianza_pelaje=float(d["confianza_pelaje"]),
+            grupo=d["grupo"], confianza_grupo=float(d["confianza_grupo"]),
+            estado=d["estado"], confianza_estado=float(d["confianza_estado"]),
             backend="gemini_zero_shot", version=self.modelo,
             observacion=d.get("observacion"),
             probabilidades={"num_perros": d.get("num_perros")},

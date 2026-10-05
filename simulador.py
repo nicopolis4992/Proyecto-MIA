@@ -55,12 +55,12 @@ def _mostrar(quien: str, texto: str | None) -> None:
 
 
 def _citas(repo) -> None:
-    from app.agenda.mensajes import fecha_legible, total_de
+    from app.agenda.mensajes import fecha_legible, texto_total
 
     for estado in ("pendiente_aprobacion", "aprobada", "rechazada", "confirmada"):
         for c in repo.citas_por_estado(estado):
             print(f"  #{c['id']} [{c['estado']}] {fecha_legible(c['fecha_hora'])} "
-                  f"total={total_de(c)} cliente={c['cliente_telefono']}")
+                  f"total={texto_total(c)} cliente={c['cliente_telefono']}")
 
 
 def turno(og, mensajero, remitente: str, texto: str = "", foto: Path | None = None) -> None:
@@ -74,12 +74,14 @@ def turno(og, mensajero, remitente: str, texto: str = "", foto: Path | None = No
 def guion(og, repo, mensajero, foto: Path | None) -> None:
     pasos = [
         (CLIENTE, "Hola, buenas tardes!", None),
-        (CLIENTE, "Cuanto cuesta el baño para un perro grande?", None),
-        (CLIENTE, "Quiero agendar un baño y corte para mi perrita Luna", None),
+        (CLIENTE, "Cuanto cuesta el baño completo para un perro grande?", None),
+        (CLIENTE, "Quiero agendar un baño completo con corte para mi perrita Luna, es mestiza", None),
     ]
     pasos.append((CLIENTE, "", foto) if foto else (CLIENTE, "Es mediana, pesa como 12 kilos", None))
     pasos += [
-        (CLIENTE, "Que la recojan en mi casa por favor, vivo en La Carolina", None),
+        (CLIENTE, "Su pelo le crece y hay que cortárselo", None),
+        (CLIENTE, "Tiene algunos nudos pero es tranquila", None),
+        (CLIENTE, "Que la recojan en mi casa por favor, vivo en el Condado", None),
         (CLIENTE, "El jueves a las 5 de la tarde", None),
         (CLIENTE, "1", None),
         (PROPIETARIA, "a las 12 estaría mejor", None),

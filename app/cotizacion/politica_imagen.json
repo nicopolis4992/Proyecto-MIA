@@ -1,8 +1,9 @@
 {
   "metadata": {
     "historia": "SCRUM-104",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "estado": "PROVISIONAL - recalibrar umbrales con el conjunto de validacion de SCRUM-105",
+    "comentario_v2": "v2 (04-oct): dimensiones del tarifario v2 (tamano, grupo de manto, estado). El estado por foto exige confianza alta: los nudos no siempre se ven y es el recargo mas grande.",
     "comentario": "Politica de fallback cuando la foto no permite una clasificacion confiable. Los umbrales se separan por backend porque la confianza de la CNN esta calibrada (temperature scaling) y la de Gemini es autodeclarada."
   },
   "calidad": {
@@ -12,13 +13,13 @@
     "nitidez_min": 40
   },
   "umbrales_confianza": {
-    "cnn_onnx": {"tamano": 0.70, "pelaje": 0.60},
-    "gemini_zero_shot": {"tamano": 0.80, "pelaje": 0.75}
+    "cnn_onnx": {"tamano": 0.70, "grupo": 0.60, "estado": 0.70},
+    "gemini_zero_shot": {"tamano": 0.80, "grupo": 0.75, "estado": 0.80}
   },
   "max_fotos_por_mascota": 2,
   "comportamiento": {
     "dimension_bajo_umbral": "Se descarta SOLO esa dimension (queda None). El motor de cotizacion ensancha la banda y pide el dato al cliente, en vez de cotizar con una prediccion dudosa.",
-    "ambas_bajo_umbral": "Se pide otra foto mientras no se supere max_fotos_por_mascota.",
+    "tamano_y_grupo_bajo_umbral": "Se pide otra foto mientras no se supere max_fotos_por_mascota.",
     "intentos_agotados": "Se cotiza con el rango amplio y la cita se marca requiere_revision_manual para que la propietaria estime el valor al aprobar."
   }
 }

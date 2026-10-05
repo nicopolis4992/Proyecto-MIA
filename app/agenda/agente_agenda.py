@@ -1,22 +1,28 @@
 """
 Agente de agenda conversacional (reemplaza nodo_agenda_stub).
 
-Recolecta, a lo largo de varios mensajes, los datos que la cita necesita
-(servicio, nombre de la mascota, tamano, modalidad, sector, fecha y hora),
-cotiza con el motor parametrizado, valida el horario y registra la cita en
-estado pendiente_aprobacion enviando el resumen a la propietaria. NUNCA
-confirma la cita: eso solo ocurre en aprobacion.py cuando ella aprueba.
+Recolecta, a lo largo de varios mensajes, los datos que la cita necesita,
+cotiza con el tarifario v2, valida el horario y registra la cita en estado
+pendiente_aprobacion enviando el resumen a la propietaria. NUNCA confirma la
+cita: eso solo ocurre en aprobacion.py cuando ella aprueba.
+
+Que se pregunta y en que orden:
+1. Servicio y nombre de la mascota (siempre).
+2. Los datos que mueven el precio, en el orden de impacto en USD que calcula
+   el motor (normalmente tamano primero). Cada pregunta se hace UNA vez y en
+   lenguaje de la clienta (tarifario_v2.json > preguntas_cliente). Si no sabe
+   o no responde, se sigue con el rango: la propietaria ajusta al aprobar.
+   Nudos y comportamiento se preguntan juntos para no alargar la charla.
+3. Modalidad, sector (si es puerta a puerta) y fecha/hora.
+
+Mestizos y cruces: la clienta puede decir "es mestizo", "cruce de schnauzer
+con poodle" o describir el pelo ("le crece y hay que cortarlo"); el LLM lo
+traduce a raza / grupo de manto y el motor hace el resto.
 
 Por que existe aqui: el epic de Agenda (SCRUM-55) es de Daniel Ocampo, pero
-sin un flujo minimo de punta a punta no hay prototipo para el 4-oct. Los
-puntos de integracion pendientes son:
-  - disponibilidad.ocupado -> Google Calendar (SCRUM-72)
-  - mensajes.resumen_para_propietaria -> SCRUM-75
-  - envio con fallback a correo -> SCRUM-76 / SCRUM-86
-
-Extraccion: una llamada a Gemini con salida estructurada que recibe el
-estado actual de la reserva y el mensaje, y devuelve la reserva completa
-actualizada. Las preguntas al cliente salen de plantillas (no del LLM).
+sin un flujo minimo de punta a punta no hay prototipo. Puntos de integracion
+pendientes: disponibilidad.ocupado -> Google Calendar (SCRUM-72),
+mensajes.resumen_para_propietaria -> SCRUM-75, envio con correo -> SCRUM-76/86.
 """
 
 from __future__ import annotations
@@ -31,65 +37,96 @@ from google.genai import types
 from app.agenda import mensajes
 from app.agenda.disponibilidad import ocupado_segun_repositorio, proponer_alternativas, validar_horario
 from app.config import MODELO_LLM, ZONA_HORARIA
-from app.cotizacion.motor_cotizacion import ErrorTarifario, Mascota, Motor, Solicitud
+from app.cotizacion.cotizador import Cotizador
 
 logger = logging.getLogger("agenda")
 
-SERVICIOS = ["bano", "bano_corte", "corte_higienico", "deslanado"]
+CAMPOS_MOTOR = ("nombre", "servicio", "raza", "tamano", "grupo", "estado", "comportamiento", "peso_kg")
+GRUPOS = ["A_maquina", "B_deslanado", "C_cepillado", "D_corto"]
 
-PROMPT = """Eres el modulo que extrae datos para agendar una cita en una
-peluqueria canina de Quito. Recibes la RESERVA ACTUAL (JSON) y el MENSAJE del
-cliente. Devuelve la reserva COMPLETA actualizada: conserva los datos que ya
-estaban y agrega o corrige solo lo que el mensaje dice explicitamente. No
+
+def construir_prompt(cotizador: Cotizador) -> str:
+    d = cotizador.datos
+    servicios = "\n".join(f'  - "{k}": {v["nombre"]} (incluye {", ".join(v["incluye"])})'
+                          for k, v in d["servicios"].items())
+    pedidos = "\n".join(f'  - "{k}" -> "{v}"' for k, v in d["servicio_minimo_por_pedido"].items()
+                        if not k.startswith("_"))
+    grupos = "\n".join(f'  - "{k}": {v["como_lo_describe_la_clienta"]}'
+                       for k, v in d["grupos_manto"].items() if not k.startswith("_"))
+    return f"""Eres el modulo que extrae datos para agendar una cita en una
+peluqueria canina de Quito. Recibes la RESERVA ACTUAL (JSON) y el MENSAJE de
+la clienta. Devuelve la reserva COMPLETA actualizada: conserva lo que ya
+estaba y agrega o corrige solo lo que el mensaje dice explicitamente. No
 inventes datos.
 
-- servicio: "bano" (bano/higiene), "bano_corte" (bano y corte, grooming
-  completo, peluqueada), "corte_higienico", "deslanado".
-- tamano: "pequeno" (hasta 9 kg), "mediano" (9-18 kg), "grande" (18-45 kg),
-  solo si el cliente lo dice o da el peso (peso_kg).
-- pelaje: "corto", "largo", "rizado", "doble_capa", solo si lo dice.
-- estado_manto: "sin_nudos", "leve", "moderado", "severo", solo si lo dice.
-- Si menciona varias mascotas, una entrada por mascota.
-- fecha_hora: ISO 8601 "YYYY-MM-DDTHH:MM" resolviendo expresiones relativas
-  ("manana a las 3" = dia siguiente 15:00) respecto a FECHA ACTUAL. Horas sin
-  am/pm se interpretan entre 08:00 y 19:59.
-- modalidad: "salon" si lo lleva el cliente, "puerta_a_puerta" si pide que
-  lo retiren o recojan a domicilio.
-- sector: barrio o sector de Quito si lo menciona.
-- eligio_alternativa: si el cliente elige una de las OPCIONES OFRECIDAS
-  (por numero o describiendola), su numero (1, 2, 3). Si no, null.
-- cancelar: true solo si dice que ya no quiere agendar."""
+servicio (por mascota):
+{servicios}
+  - "deslanado": retiro de subpelo (solo perros de doble capa).
+Si pide algo puntual, usa el servicio minimo que lo incluye:
+{pedidos}
+Si solo dice "baño" sin mas detalle, deja servicio en null (se le pregunta).
 
-_MASCOTA = types.Schema(
-    type=types.Type.OBJECT,
-    properties={
-        "nombre": types.Schema(type=types.Type.STRING, nullable=True),
-        "servicio": types.Schema(type=types.Type.STRING, enum=SERVICIOS, nullable=True),
-        "tamano": types.Schema(type=types.Type.STRING, enum=["pequeno", "mediano", "grande"], nullable=True),
-        "peso_kg": types.Schema(type=types.Type.NUMBER, nullable=True),
-        "pelaje": types.Schema(type=types.Type.STRING, enum=["corto", "largo", "rizado", "doble_capa"], nullable=True),
-        "estado_manto": types.Schema(type=types.Type.STRING, enum=["sin_nudos", "leve", "moderado", "severo"], nullable=True),
-    },
-    required=["nombre", "servicio", "tamano", "peso_kg", "pelaje", "estado_manto"],
-)
-ESQUEMA = types.Schema(
-    type=types.Type.OBJECT,
-    properties={
-        "mascotas": types.Schema(type=types.Type.ARRAY, items=_MASCOTA),
-        "fecha_hora": types.Schema(type=types.Type.STRING, nullable=True),
-        "modalidad": types.Schema(type=types.Type.STRING, enum=["salon", "puerta_a_puerta"], nullable=True),
-        "sector": types.Schema(type=types.Type.STRING, nullable=True),
-        "cliente_nombre": types.Schema(type=types.Type.STRING, nullable=True),
-        "eligio_alternativa": types.Schema(type=types.Type.INTEGER, nullable=True),
-        "cancelar": types.Schema(type=types.Type.BOOLEAN),
-    },
-    required=["mascotas", "fecha_hora", "modalidad", "sector", "cliente_nombre",
-              "eligio_alternativa", "cancelar"],
-)
+raza: texto tal como lo dice la clienta (ej. "shitzu", "mestizo",
+"cruce de schnauzer con poodle"). No la corrijas ni la inventes.
+tamano: "pequeno" (hasta 9 kg), "mediano" (9-18 kg), "grande" (18-45 kg),
+solo si lo dice; si da el peso, ponlo en peso_kg.
+grupo (tipo de pelo), solo si la clienta describe el pelo:
+{grupos}
+estado: "sin_motas" (sin nudos), "moderado" (algunos nudos), "severo" (muy
+enredado o apelmazado), solo si lo dice.
+comportamiento: "tranquilo", "dificil" (nervioso, miedoso, inquieto),
+"agresivo_declarado" (si dice que muerde o es agresivo).
+Si menciona varias mascotas, una entrada por mascota.
+
+fecha_hora: ISO 8601 "YYYY-MM-DDTHH:MM" resolviendo expresiones relativas
+("manana a las 3" = dia siguiente 15:00) respecto a FECHA ACTUAL. Horas sin
+am/pm se interpretan entre 08:00 y 19:59.
+modalidad: "salon" si lo lleva la clienta, "puerta_a_puerta" si pide que lo
+retiren o recojan a domicilio.
+sector: barrio o sector de Quito si lo menciona.
+eligio_alternativa: si elige una de las OPCIONES OFRECIDAS (por numero o
+describiendola), su numero (1, 2, 3). Si no, null.
+cancelar: true solo si dice que ya no quiere agendar."""
+
+
+def construir_esquema(cotizador: Cotizador) -> types.Schema:
+    S, T = types.Schema, types.Type
+    mascota = S(
+        type=T.OBJECT,
+        properties={
+            "nombre": S(type=T.STRING, nullable=True),
+            "servicio": S(type=T.STRING, enum=cotizador.servicios_validos(), nullable=True),
+            "raza": S(type=T.STRING, nullable=True),
+            "tamano": S(type=T.STRING, enum=["pequeno", "mediano", "grande"], nullable=True),
+            "peso_kg": S(type=T.NUMBER, nullable=True),
+            "grupo": S(type=T.STRING, enum=GRUPOS, nullable=True),
+            "estado": S(type=T.STRING, enum=["sin_motas", "moderado", "severo", "no_recuperable"], nullable=True),
+            "comportamiento": S(type=T.STRING, enum=["tranquilo", "dificil", "agresivo_declarado"], nullable=True),
+        },
+        required=list(CAMPOS_MOTOR),
+    )
+    return S(
+        type=T.OBJECT,
+        properties={
+            "mascotas": S(type=T.ARRAY, items=mascota),
+            "fecha_hora": S(type=T.STRING, nullable=True),
+            "modalidad": S(type=T.STRING, enum=["salon", "puerta_a_puerta"], nullable=True),
+            "sector": S(type=T.STRING, nullable=True),
+            "cliente_nombre": S(type=T.STRING, nullable=True),
+            "eligio_alternativa": S(type=T.INTEGER, nullable=True),
+            "cancelar": S(type=T.BOOLEAN),
+        },
+        required=["mascotas", "fecha_hora", "modalidad", "sector", "cliente_nombre",
+                  "eligio_alternativa", "cancelar"],
+    )
 
 
 def reserva_vacia() -> dict:
     return {"mascotas": [], "fecha_hora": None, "modalidad": None, "sector": None, "cliente_nombre": None}
+
+
+def para_motor(mascotas: list[dict]) -> list[dict]:
+    return [{k: m[k] for k in CAMPOS_MOTOR if m.get(k) is not None} for m in mascotas]
 
 
 @dataclass
@@ -97,9 +134,13 @@ class AgenteAgenda:
     client: object
     repo: object
     mensajero: object
-    motor: Motor
+    cotizador: Cotizador
     cfg: dict
     propietaria: str
+
+    def __post_init__(self):
+        self._prompt = construir_prompt(self.cotizador)
+        self._esquema = construir_esquema(self.cotizador)
 
     # -- extraccion ---------------------------------------------------------
 
@@ -114,8 +155,8 @@ class AgenteAgenda:
         resp = self.client.models.generate_content(
             model=MODELO_LLM, contents=contenido,
             config=types.GenerateContentConfig(
-                system_instruction=PROMPT, response_mime_type="application/json",
-                response_schema=ESQUEMA, temperature=0.0),
+                system_instruction=self._prompt, response_mime_type="application/json",
+                response_schema=self._esquema, temperature=0.0),
         )
         return json.loads(resp.text)
 
@@ -131,8 +172,7 @@ class AgenteAgenda:
         logger.info("Agenda | %s | extraido=%s", telefono, datos)
 
         if datos.get("cancelar"):
-            self.repo.guardar_sesion(telefono, {k: v for k, v in sesion.items()
-                                                if k == "cita_en_aprobacion"})
+            self._terminar(telefono, sesion)
             return "Entendido, no agendo nada por ahora. Cuando guste me escribe 🐾"
 
         reserva = self._fusionar(sesion["reserva"], datos)
@@ -141,7 +181,12 @@ class AgenteAgenda:
             reserva["fecha_hora"] = alternativas[n - 1]
         sesion["reserva"] = reserva
 
-        pregunta = self._siguiente_pregunta(sesion)
+        respuesta = self.continuar(telefono, sesion, ahora)
+        return respuesta
+
+    def continuar(self, telefono: str, sesion: dict, ahora: datetime) -> str:
+        """Decide el siguiente paso con la reserva actual (tambien tras una foto)."""
+        pregunta = self.siguiente_pregunta(sesion)
         if pregunta:
             self.repo.guardar_sesion(telefono, sesion)
             return pregunta
@@ -152,18 +197,11 @@ class AgenteAgenda:
         for campo in ("fecha_hora", "modalidad", "sector", "cliente_nombre"):
             if nuevo.get(campo):
                 r[campo] = nuevo[campo]
-        mascotas = []
         previas = anterior.get("mascotas") or []
+        mascotas = []
         for i, m in enumerate(nuevo.get("mascotas") or []):
             base = dict(previas[i]) if i < len(previas) else {}
-            for k, v in m.items():
-                if v is not None:
-                    base[k] = v
-            if base.get("peso_kg") and not base.get("tamano"):
-                try:
-                    base["tamano"] = self.motor.tamano_por_peso(float(base["peso_kg"]))
-                except ErrorTarifario:
-                    pass
+            base.update({k: v for k, v in m.items() if v is not None})
             mascotas.append(base)
         # Si el LLM devuelve menos mascotas que antes, no se pierden datos.
         mascotas.extend(previas[len(mascotas):])
@@ -176,20 +214,38 @@ class AgenteAgenda:
                 r["fecha_hora"] = None
         return r
 
-    def _siguiente_pregunta(self, sesion: dict) -> str | None:
+    def siguiente_pregunta(self, sesion: dict) -> str | None:
         r = sesion["reserva"]
         mascotas = r["mascotas"]
         if not mascotas or any(not m.get("servicio") for m in mascotas):
-            return ("¡Con gusto le agendo! 🐶 ¿Qué servicio necesita: baño, baño y corte, "
-                    "corte higiénico o deslanado?")
-        sin_nombre = [m for m in mascotas if not m.get("nombre")]
-        if sin_nombre:
+            return "¡Con gusto le agendo! 🐶 " + self.cotizador.pregunta("servicio")
+        if any(not m.get("nombre") for m in mascotas):
             return "¿Cómo se llama su perrito?" if len(mascotas) == 1 else "¿Cómo se llaman sus perritos?"
-        sin_tamano = [m for m in mascotas if not m.get("tamano")]
-        if sin_tamano and not sesion.get("revision_manual") and not sesion.get("pidio_tamano"):
-            sesion["pidio_tamano"] = True
-            return (f"Para darle el valor, ¿me envía una foto de cuerpo entero de {sin_tamano[0]['nombre']}? "
-                    "O si prefiere, dígame si es pequeño, mediano o grande (o cuánto pesa).")
+
+        # Rechazos y servicios que no aplican se resuelven antes de seguir.
+        previa = self.cotizador.cotizar(para_motor(mascotas))
+        for m_cot, m in zip(previa["mascotas"], mascotas):
+            if m_cot.get("rechazada"):
+                sesion["rechazo"] = m_cot["motivo"]
+                return None
+            if m_cot.get("no_aplica"):
+                m["servicio"] = None
+                return previa["mensaje_cliente"] + " ¿Le parece bien?"
+
+        preguntado = sesion.setdefault("preguntado", [])
+        for atributo in previa["preguntas_pendientes"]:
+            if atributo in preguntado:
+                continue
+            if atributo == "tamano" and (sesion.get("revision_manual") or sesion.get("fotos_intentos")):
+                continue
+            if atributo in ("estado_manto", "comportamiento"):
+                preguntado += ["estado_manto", "comportamiento"]
+                return f"{self.cotizador.pregunta('estado_manto')} {self.cotizador.pregunta('comportamiento')}"
+            preguntado.append(atributo)
+            texto = self.cotizador.pregunta(atributo)
+            nombre = mascotas[0].get("nombre")
+            return texto if len(mascotas) > 1 or not nombre else f"Sobre {nombre}: {texto}"
+
         if not r.get("modalidad"):
             return "¿Lo trae usted al salón o prefiere el servicio puerta a puerta (lo retiramos y entregamos)?"
         if r["modalidad"] == "puerta_a_puerta" and not r.get("sector"):
@@ -198,40 +254,23 @@ class AgenteAgenda:
             return "¿Qué día y a qué hora le gustaría la cita?"
         return None
 
-    def _solicitud(self, r: dict) -> Solicitud:
-        return Solicitud(
-            mascotas=[Mascota(servicio=m["servicio"], nombre=m.get("nombre"), tamano=m.get("tamano"),
-                              pelaje=m.get("pelaje"), estado_manto=m.get("estado_manto"))
-                      for m in r["mascotas"]],
-            modalidad=r["modalidad"],
-            # La zona exacta depende de la distancia; la propietaria la ajusta
-            # al aprobar si el sector no es cercano.
-            zona="zona_1" if r["modalidad"] == "puerta_a_puerta" else None,
-            fecha_hora=datetime.fromisoformat(r["fecha_hora"]).replace(tzinfo=None),
-        )
+    def _terminar(self, telefono: str, sesion: dict) -> None:
+        self.repo.guardar_sesion(telefono, {k: v for k, v in sesion.items() if k == "cita_en_aprobacion"})
 
     def _cerrar_reserva(self, telefono: str, sesion: dict, ahora: datetime) -> str:
-        r = sesion["reserva"]
-        try:
-            cotizacion = self.motor.cotizar(self._solicitud(r))
-        except ErrorTarifario as exc:
-            self.repo.guardar_sesion(telefono, sesion)
-            logger.warning("Cotizacion invalida: %s", exc)
-            if "no aplica a pelaje" in str(exc):
-                for m in r["mascotas"]:
-                    if m.get("servicio") == "deslanado":
-                        m["servicio"] = None
-                self.repo.guardar_sesion(telefono, sesion)
-                return ("El deslanado solo aplica a perritos de pelo largo o doble capa. "
-                        "¿Le parece mejor un baño o un baño y corte?")
-            return "Tuve un problema calculando el valor; le paso con la propietaria para ayudarle."
+        if sesion.get("rechazo"):
+            motivo = sesion["rechazo"]
+            self._terminar(telefono, sesion)
+            return f"Lo siento mucho 🙏 {motivo} Gracias por escribirnos."
 
+        r = sesion["reserva"]
+        cotizacion = self.cotizador.cotizar(para_motor(r["mascotas"]), r["modalidad"], r.get("sector"))
         inicio = datetime.fromisoformat(r["fecha_hora"])
-        duracion = cotizacion["duracion_total_estimada_min"]
+        duracion = cotizacion["duracion_agenda_min"]
         ocupado = ocupado_segun_repositorio(self.repo)
-        ok, motivo = validar_horario(inicio, duracion, r["modalidad"], self.motor, self.cfg, ocupado, ahora)
+        ok, motivo = validar_horario(inicio, duracion, r["modalidad"], self.cotizador, self.cfg, ocupado, ahora)
         if not ok:
-            alternativas = proponer_alternativas(inicio, duracion, r["modalidad"], self.motor, self.cfg,
+            alternativas = proponer_alternativas(inicio, duracion, r["modalidad"], self.cotizador, self.cfg,
                                                  ocupado, ahora)
             sesion["alternativas"] = [a.isoformat() for a in alternativas]
             r["fecha_hora"] = None
@@ -241,7 +280,7 @@ class AgenteAgenda:
         cita_id = self.repo.crear_cita(
             cliente_telefono=telefono, cliente_nombre=r.get("cliente_nombre"),
             mascotas=r["mascotas"], fecha_hora=inicio, modalidad=r["modalidad"],
-            zona="zona_1" if r["modalidad"] == "puerta_a_puerta" else None, sector=r.get("sector"),
+            zona=(cotizacion.get("traslado") or {}).get("zona"), sector=r.get("sector"),
             cotizacion=cotizacion, requiere_revision_manual=bool(sesion.get("revision_manual")),
         )
         if sesion.get("traza_foto"):
@@ -256,4 +295,4 @@ class AgenteAgenda:
 
         self.repo.guardar_sesion(telefono, {"cita_en_aprobacion": cita_id})
         return (f"¡Perfecto! Tengo todo para el {mensajes.fecha_legible(inicio)}. "
-                f"{cotizacion['mensaje_sugerido']} Le confirmo en un momento, apenas se revise la agenda 🙌")
+                f"{cotizacion['mensaje_cliente']} Le confirmo en un momento, apenas se revise la agenda 🙌")

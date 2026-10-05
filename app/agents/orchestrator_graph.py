@@ -46,7 +46,7 @@ from app.agenda.aprobacion import ProcesadorAprobacion
 from app.agenda.disponibilidad import cargar_config
 from app.config import MODELO_LLM, PROPIETARIA_WHATSAPP, RUTA_TARIFARIO, ahora
 from app.cotizacion.cotizador_imagen import procesar_foto
-from app.cotizacion.motor_cotizacion import Mascota, Motor
+from app.cotizacion.cotizador import Cotizador
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("orquestador")
@@ -70,7 +70,7 @@ class Dependencias:
     client: object
     repo: object
     mensajero: object
-    motor: Motor
+    cotizador: Cotizador
     agente_rag: object
     agenda: AgenteAgenda
     aprobacion: ProcesadorAprobacion
@@ -88,11 +88,25 @@ def enrutar_entrada(estado: EstadoConversacion, propietaria: str) -> Literal["ap
     return "nlu"
 
 
+_INTERROGATIVOS = ("cuanto", "cuánto", "que ", "qué", "como ", "cómo", "donde", "dónde", "cuando",
+                   "cuándo", "cual", "cuál", "tienen", "hacen", "puedo", "pueden", "aceptan", "hay ")
+
+
+def parece_pregunta(texto: str) -> bool:
+    t = texto.strip().lower()
+    return "?" in t or "¿" in t or t.startswith(_INTERROGATIVOS)
+
+
 def enrutar_por_intencion(
     estado: EstadoConversacion,
 ) -> Literal["agente_rag", "agente_agenda", "agente_general"]:
     intencion = estado["nlu"].intencion
 
+    # Con una reserva en curso, describir a la mascota ("su pelo le crece y
+    # hay que cortarlo") suena a "consultar" para el NLU, pero es la respuesta
+    # a una pregunta del agente de agenda. Solo una pregunta explicita va al RAG.
+    if intencion == "consultar" and estado.get("en_flujo_agenda") and not parece_pregunta(estado["mensaje"]):
+        return "agente_agenda"
     if intencion == "consultar":
         return "agente_rag"
     if intencion == "agendar":
@@ -164,9 +178,10 @@ def nodo_cotizacion_imagen(estado: EstadoConversacion, d: Dependencias) -> Estad
     m = mascotas[idx]
 
     intento = sesion.get("fotos_intentos", 0) + 1
-    servicios = [m["servicio"]] if m.get("servicio") else ["bano", "bano_corte"]
-    base = Mascota(servicio=servicios[0], nombre=m.get("nombre"), estado_manto=m.get("estado_manto"))
-    r = procesar_foto(estado["imagen"], d.clasificador, d.motor, intento, servicios, base)
+    # Sin servicio elegido se muestran los dos mas pedidos.
+    servicios = [m["servicio"]] if m.get("servicio") else ["basico", "completo"]
+    base = {k: v for k, v in m.items() if k != "servicio" and v is not None}
+    r = procesar_foto(estado["imagen"], d.clasificador, d.cotizador, intento, servicios, base)
 
     if r.accion == "pedir_otra_foto":
         sesion["fotos_intentos"] = intento
@@ -174,17 +189,18 @@ def nodo_cotizacion_imagen(estado: EstadoConversacion, d: Dependencias) -> Estad
         estado["respuesta"] = r.mensaje
         return estado
 
-    m["tamano"] = r.tamano or m.get("tamano")
-    m["pelaje"] = r.pelaje or m.get("pelaje")
+    for k, v in r.atributos.items():
+        if not m.get(k):  # lo declarado por la clienta no se pisa
+            m[k] = v
     mascotas[idx] = m
     reserva["mascotas"] = mascotas
     sesion.update(fotos_intentos=0, flujo="agendando", traza_foto=r.traza,
                   revision_manual=sesion.get("revision_manual") or r.revision_manual)
+    # Ya se intento con foto: no se vuelve a pedir el tamano por texto.
+    sesion.setdefault("preguntado", []).append("tamano")
 
     if ya_agendando:
-        siguiente = d.agenda._siguiente_pregunta(sesion)
-        d.repo.guardar_sesion(tel, sesion)
-        cierre = siguiente or d.agenda._cerrar_reserva(tel, sesion, ahora())
+        cierre = d.agenda.continuar(tel, sesion, ahora())
     else:
         d.repo.guardar_sesion(tel, sesion)
         cierre = "¿Le gustaría agendar una cita? 🐾"
@@ -238,13 +254,13 @@ def crear_dependencias(client=None, repo=None, mensajero=None, propietaria: str 
     repo = repo or obtener_repositorio()
     mensajero = mensajero or MensajeroWhatsApp(repo)
     propietaria = PROPIETARIA_WHATSAPP if propietaria is None else propietaria
-    motor = Motor(RUTA_TARIFARIO)
+    cotizador = Cotizador(RUTA_TARIFARIO)
     cfg = cargar_config()
     return Dependencias(
-        client=client, repo=repo, mensajero=mensajero, motor=motor,
+        client=client, repo=repo, mensajero=mensajero, cotizador=cotizador,
         agente_rag=agente_rag or crear_agente_rag(client),
-        agenda=AgenteAgenda(client, repo, mensajero, motor, cfg, propietaria),
-        aprobacion=ProcesadorAprobacion(client, repo, mensajero, motor, cfg, propietaria),
+        agenda=AgenteAgenda(client, repo, mensajero, cotizador, cfg, propietaria),
+        aprobacion=ProcesadorAprobacion(client, repo, mensajero, cotizador, cfg, propietaria),
         clasificador=clasificador or crear_clasificador(client),
         propietaria=propietaria,
     )

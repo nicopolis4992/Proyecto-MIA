@@ -3,11 +3,11 @@ Validacion de horarios y propuesta de alternativas.
 
 Combina tres restricciones:
 1. Horario laboral (config_agenda.json, provisional).
-2. Restriccion vehicular para puerta a puerta (Motor.validar_pico_y_placa,
-   parametrizada en el tarifario).
+2. Restriccion vehicular para puerta a puerta (parametrizada en el
+   tarifario v2, seccion pico_y_placa; evaluada por el Cotizador).
 3. Ocupacion del calendario: PUNTO DE INTEGRACION con SCRUM-72 (Google
-   Calendar, Daniel Ocampo). Mientras no exista, `ocupado` devuelve False
-   salvo que choque con otra cita ya aprobada/confirmada en la base local.
+   Calendar, Daniel Ocampo). Mientras no exista, `ocupado` solo detecta
+   choques con citas aprobadas/confirmadas en la base local.
 """
 
 from __future__ import annotations
@@ -16,8 +16,6 @@ import json
 from datetime import datetime, time, timedelta
 from pathlib import Path
 from typing import Callable
-
-from app.cotizacion.motor_cotizacion import Mascota, Motor, Solicitud
 
 RUTA_CONFIG = Path(__file__).parent / "config_agenda.json"
 DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]
@@ -36,19 +34,15 @@ def _dentro_de_horario(inicio: datetime, duracion_min: int, cfg: dict) -> bool:
     return inicio.time() >= abre and fin.time() <= cierra and fin.date() == inicio.date()
 
 
-def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, motor: Motor,
+def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, cotizador,
                     cfg: dict, ocupado: Callable[[datetime, int], bool] | None = None,
                     ahora: datetime | None = None) -> tuple[bool, str | None]:
     """Devuelve (valido, motivo_legible)."""
     if ahora and inicio < ahora + timedelta(hours=cfg["antelacion_minima_horas"]):
         return False, "ese horario ya pasó o es demasiado pronto"
-    # La restriccion vehicular se informa primero: es el motivo que el
-    # cliente puede resolver cambiando a modalidad salon.
-    ppp = motor.validar_pico_y_placa(
-        Solicitud(mascotas=[Mascota(servicio="bano")], modalidad=modalidad,
-                  fecha_hora=inicio.replace(tzinfo=None))
-    )
-    if ppp["bloquea"]:
+    # La restriccion vehicular se informa primero: es el motivo que la
+    # clienta puede resolver cambiando a modalidad salon.
+    if modalidad == "puerta_a_puerta" and cotizador.restringido(inicio):
         return False, ("a esa hora el vehículo tiene restricción de circulación para el retiro "
                        "a domicilio; si prefiere traerlo al salón, puedo revisar ese horario")
     if not _dentro_de_horario(inicio, duracion_min, cfg):
@@ -58,7 +52,7 @@ def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, motor: 
     return True, None
 
 
-def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, motor: Motor,
+def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, cotizador,
                           cfg: dict, ocupado: Callable[[datetime, int], bool] | None = None,
                           ahora: datetime | None = None, dias_busqueda: int = 7) -> list[datetime]:
     """Primeros N horarios validos a partir de `desde`, priorizando el mismo dia."""
@@ -69,10 +63,10 @@ def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, mo
     for _ in range(dias_busqueda):
         franja = cfg["horario_laboral"].get(DIAS[dia.weekday()])
         if franja:
-            t = dia.replace(hour=time.fromisoformat(franja[0]).hour,
-                            minute=time.fromisoformat(franja[0]).minute)
+            apertura = time.fromisoformat(franja[0])
+            t = dia.replace(hour=apertura.hour, minute=apertura.minute)
             while t.date() == dia.date():
-                if t != desde and validar_horario(t, duracion_min, modalidad, motor, cfg, ocupado, ahora)[0]:
+                if t != desde and validar_horario(t, duracion_min, modalidad, cotizador, cfg, ocupado, ahora)[0]:
                     candidatos.append(t)
                     if len(candidatos) >= n:
                         return candidatos
@@ -92,7 +86,7 @@ def ocupado_segun_repositorio(repo) -> Callable[[datetime, int], bool]:
                 ci = datetime.fromisoformat(c["fecha_hora"])
                 if ci.tzinfo is None and inicio.tzinfo is not None:
                     ci = ci.replace(tzinfo=inicio.tzinfo)
-                cf = ci + timedelta(minutes=(c.get("cotizacion") or {}).get("duracion_total_estimada_min", 60))
+                cf = ci + timedelta(minutes=(c.get("cotizacion") or {}).get("duracion_agenda_min", 60))
                 if inicio < cf and ci < fin:
                     return True
         return False

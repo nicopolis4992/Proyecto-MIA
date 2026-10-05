@@ -10,32 +10,50 @@ Redaccion de los mensajes del flujo de agenda.
 Los mensajes se arman con plantillas, no con el LLM: contienen montos y
 horarios que no pueden variar. El tono replica el estilo de la propietaria
 ("Listo entonces manana a la 1 pm le agendo...").
+
+La cotizacion guardada en la cita es la salida de Cotizador.cotizar
+(tarifario v2): rangos [min, max] por mascota, traslado y total.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
 
+from app.cotizacion.cotizador import texto_rango
+
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
-ETIQUETA_TAMANO = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}
-ETIQUETA_PELAJE = {"corto": "corto", "largo": "largo", "rizado": "rizado", "doble_capa": "doble capa"}
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
+ETIQUETA_TAMANO = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}
+ETIQUETA_GRUPO = {"A_maquina": "pelo de máquina", "B_deslanado": "doble capa",
+                  "C_cepillado": "pelo de cepillado", "D_corto": "pelo corto"}
+ETIQUETA_PREGUNTA = {"tamano": "tamaño", "raza_o_grupo_manto": "tipo de pelo",
+                     "estado_manto": "nudos", "comportamiento": "comportamiento"}
 
 
 def fecha_legible(valor: str | datetime | None) -> str:
     if not valor:
         return "fecha por definir"
     f = datetime.fromisoformat(valor) if isinstance(valor, str) else valor
-    hora = f.strftime("%H:%M")
-    return f"{DIAS[f.weekday()]} {f.day} de {MESES[f.month - 1]} a las {hora}"
+    return f"{DIAS[f.weekday()]} {f.day} de {MESES[f.month - 1]} a las {f.strftime('%H:%M')}"
 
 
 def total_de(cita: dict) -> float | None:
+    """Monto unico de la cita, si existe (acordado o precio comprometido)."""
     if cita.get("total_acordado") is not None:
         return float(cita["total_acordado"])
-    c = cita.get("cotizacion") or {}
-    return c.get("total_estimado")
+    total = (cita.get("cotizacion") or {}).get("total")
+    if total and total[0] == total[1]:
+        return float(total[0])
+    return None
+
+
+def texto_total(cita: dict) -> str:
+    unico = total_de(cita)
+    if unico is not None:
+        return f"{unico:.2f}$"
+    total = (cita.get("cotizacion") or {}).get("total")
+    return f"entre {total[0]:.2f}$ y {total[1]:.2f}$" if total else "por confirmar"
 
 
 def _nombres(cita: dict) -> str:
@@ -43,33 +61,35 @@ def _nombres(cita: dict) -> str:
     return nombres[0] if len(nombres) == 1 else ", ".join(nombres[:-1]) + " y " + nombres[-1]
 
 
+def _descripcion_mascota(m: dict) -> str:
+    rasgos = [m.get("raza"), ETIQUETA_TAMANO.get(m.get("tamano")), ETIQUETA_GRUPO.get(m.get("grupo"))]
+    return ", ".join(r for r in rasgos if r) or "sin datos"
+
+
 def resumen_para_propietaria(cita: dict) -> str:
     c = cita.get("cotizacion") or {}
-    lineas = [f"🐾 Nueva cita #{cita['id']} por aprobar"
-              + (f" (revisión {cita['ciclo_aprobacion']})" if cita.get("ciclo_aprobacion", 1) > 1 else "")]
+    ciclo = cita.get("ciclo_aprobacion", 1)
+    lineas = [f"🐾 Nueva cita #{cita['id']} por aprobar" + (f" (revisión {ciclo})" if ciclo > 1 else "")]
     lineas.append(f"Cliente: {cita.get('cliente_nombre') or 'sin nombre'} ({cita['cliente_telefono']})")
-    for m, d in zip(cita["mascotas"], c.get("detalle_por_mascota", [{}] * len(cita["mascotas"]))):
-        tam = ETIQUETA_TAMANO.get(m.get("tamano"), "tamaño ?")
-        pel = "pelaje " + ETIQUETA_PELAJE.get(m.get("pelaje"), "?")
-        precio = f" — {d['subtotal']:.2f}$" if d.get("subtotal") is not None else ""
-        lineas.append(f"• {m.get('nombre') or 'Mascota'}: {d.get('servicio', m.get('servicio'))} "
-                      f"({tam}, {pel}){precio}")
+    detalle = c.get("mascotas") or [{}] * len(cita["mascotas"])
+    for m, d in zip(cita["mascotas"], detalle):
+        precio = f" — {texto_rango(d['rango'])}" if d.get("rango") else ""
+        lineas.append(f"• {m.get('nombre') or 'Mascota'}: {d.get('servicio_nombre', m.get('servicio'))} "
+                      f"({_descripcion_mascota(m)}){precio}")
     lineas.append(f"Horario: {fecha_legible(cita.get('fecha_hora'))}")
     if cita["modalidad"] == "puerta_a_puerta":
-        transporte = sum(x["valor"] for x in c.get("cargos_por_visita", []))
-        lineas.append(f"Puerta a puerta: sí ({transporte:.2f}$)"
-                      + (f" — sector: {cita['sector']}" if cita.get("sector") else ""))
+        tr = c.get("traslado") or {}
+        costo = texto_rango(tr.get("rango")) if tr.get("resuelto") else "POR DEFINIR (sector fuera de zonas)"
+        lineas.append(f"Puerta a puerta: sí — {costo}" + (f" — sector: {cita['sector']}" if cita.get("sector") else ""))
     else:
         lineas.append("Modalidad: en el salón")
-    total = total_de(cita)
-    if total is not None:
-        r = c.get("rango_estimado") or {}
-        if cita.get("total_acordado") is None and c.get("tipo_cotizacion") == "rango_estimado":
-            lineas.append(f"Total estimado: {total:.2f}$ (rango {r['minimo']:.2f}–{r['maximo']:.2f}$)")
-        else:
-            lineas.append(f"Total: {total:.2f}$")
-    if c.get("datos_faltantes"):
-        lineas.append(f"Falta confirmar: {', '.join(c['datos_faltantes'])}")
+    lineas.append(f"Total: {texto_total(cita)}")
+    if c.get("preguntas_pendientes"):
+        lineas.append("Falta confirmar: " + ", ".join(ETIQUETA_PREGUNTA.get(p, p) for p in c["preguntas_pendientes"]))
+    avisos = [a for m in c.get("mascotas", []) for a in m.get("avisos", [])] + \
+             [a for a in c.get("avisos", []) if not a.startswith("iva_pendiente")]
+    for a in avisos:
+        lineas.append(f"ℹ️ {a}")
     if cita.get("requiere_revision_manual"):
         lineas.append("⚠️ La foto no permitió estimar bien: revisa el precio.")
     lineas.append("\nResponde a ESTE mensaje: \"listo\" para aprobar, \"no\" para rechazar, "
@@ -80,19 +100,19 @@ def resumen_para_propietaria(cita: dict) -> str:
 def confirmacion_cliente(cita: dict) -> str:
     """SCRUM-78: datos definitivos de la cita, con tono cercano."""
     partes = [f"¡Listo! 🐶 Queda agendado {_nombres(cita)} para el {fecha_legible(cita['fecha_hora'])}."]
-    c = cita.get("cotizacion") or {}
-    servicios = [d["servicio"] for d in c.get("detalle_por_mascota", [])]
+    detalle = (cita.get("cotizacion") or {}).get("mascotas", [])
+    servicios = [d.get("servicio_nombre") for d in detalle if d.get("servicio_nombre")]
     if len(servicios) == 1:
-        partes.append(f"Servicio: {servicios[0].lower()}.")
+        partes.append(f"Servicio: {servicios[0]}.")
     elif servicios:
         partes.append("Servicios: " + "; ".join(
-            f"{m.get('nombre') or 'mascota'}: {s.lower()}" for m, s in zip(cita["mascotas"], servicios)) + ".")
-    total = total_de(cita)
-    if total is not None:
-        if cita["modalidad"] == "puerta_a_puerta":
-            partes.append(f"Total: {total:.2f}$ con el servicio puerta a puerta incluido.")
-        else:
-            partes.append(f"Total: {total:.2f}$.")
+            f"{m.get('nombre') or 'mascota'}: {s}" for m, s in zip(cita["mascotas"], servicios)) + ".")
+    total = texto_total(cita)
+    if total != "por confirmar":
+        incluye = " con el servicio puerta a puerta incluido" if cita["modalidad"] == "puerta_a_puerta" else ""
+        partes.append(f"Total: {total}{incluye}.")
+        if total_de(cita) is None:
+            partes.append("El valor exacto se confirma al recibirlo, según el estado del pelo.")
     if cita["modalidad"] == "puerta_a_puerta":
         partes.append("Por favor, que alguien esté pendiente en casa a esa hora para entregar a su perrito.")
     partes.append("¡Gracias por confiar en nosotros!")

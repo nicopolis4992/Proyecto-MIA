@@ -116,3 +116,18 @@ def test_modo_pruebas_solo_atiende_numeros_autorizados(mock_procesar, mock_send,
     client.post("/webhook", json=_texto("593911111111", "hola", "wamid.p2"))  # integrante
     client.post("/webhook", json=_texto("593922222222", "listo", "wamid.p3"))  # "propietaria" de prueba
     assert mock_procesar.call_count == 2
+
+
+def test_en_reserva_las_descripciones_van_a_agenda_y_las_preguntas_al_rag():
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import enrutar_por_intencion
+
+    def ruta(msg, en_flujo=True):
+        return enrutar_por_intencion({"mensaje": msg, "en_flujo_agenda": en_flujo,
+                                      "nlu": SimpleNamespace(intencion="consultar")})
+
+    assert ruta("Su pelo le crece y hay que cortárselo") == "agente_agenda"
+    assert ruta("¿Cuánto cuesta el deslanado?") == "agente_rag"
+    assert ruta("cuanto cobran por el traslado") == "agente_rag"
+    assert ruta("Su pelo le crece", en_flujo=False) == "agente_rag"

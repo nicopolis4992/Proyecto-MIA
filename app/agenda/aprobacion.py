@@ -93,7 +93,7 @@ def interpretar_respuesta(texto: str, cita: dict, client) -> Decision:
         return Decision("rechazar")
 
     contexto = (f"Cita propuesta: {mensajes.fecha_legible(cita.get('fecha_hora'))} "
-                f"(ISO {cita.get('fecha_hora')}), total {mensajes.total_de(cita)}$, "
+                f"(ISO {cita.get('fecha_hora')}), total {mensajes.texto_total(cita)}, "
                 f"modalidad {cita['modalidad']}.\nRespuesta de la propietaria: {texto}")
     resp = client.models.generate_content(
         model=MODELO_LLM, contents=contexto,
@@ -119,9 +119,9 @@ def interpretar_respuesta(texto: str, cita: dict, client) -> Decision:
 
 
 class ProcesadorAprobacion:
-    def __init__(self, client, repo, mensajero, motor, cfg_agenda: dict, propietaria: str):
+    def __init__(self, client, repo, mensajero, cotizador, cfg_agenda: dict, propietaria: str):
         self.client, self.repo, self.mensajero = client, repo, mensajero
-        self.motor, self.cfg, self.propietaria = motor, cfg_agenda, propietaria
+        self.cotizador, self.cfg, self.propietaria = cotizador, cfg_agenda, propietaria
 
     # -- seleccion de la cita a la que responde -----------------------------
 
@@ -188,10 +188,10 @@ class ProcesadorAprobacion:
         self.repo.actualizar_cita(cita["id"], estado="rechazada")
         self.repo.registrar_evento(cita["id"], "rechazada", {"motivo": decision.motivo})
         desde = datetime.fromisoformat(cita["fecha_hora"]) if cita.get("fecha_hora") else ahora
-        duracion = (cita.get("cotizacion") or {}).get("duracion_total_estimada_min", 60)
+        duracion = (cita.get("cotizacion") or {}).get("duracion_agenda_min", 60)
         from app.agenda.disponibilidad import ocupado_segun_repositorio
 
-        alternativas = proponer_alternativas(desde, duracion, cita["modalidad"], self.motor, self.cfg,
+        alternativas = proponer_alternativas(desde, duracion, cita["modalidad"], self.cotizador, self.cfg,
                                              ocupado_segun_repositorio(self.repo), ahora)
         self.mensajero.enviar(cita["cliente_telefono"],
                               mensajes.reprogramacion_cliente(cita, alternativas))
@@ -213,12 +213,13 @@ class ProcesadorAprobacion:
         cambios: dict = {}
         if d.nueva_fecha_hora:
             cambios["fecha_hora"] = d.nueva_fecha_hora
-        total_actual = mensajes.total_de(cita)
         if d.nuevo_total is not None:
             cambios["total_acordado"] = float(d.nuevo_total)
-        elif d.nuevo_costo_transporte is not None and total_actual is not None:
-            transporte = sum(x["valor"] for x in (cita.get("cotizacion") or {}).get("cargos_por_visita", []))
-            cambios["total_acordado"] = round(total_actual - transporte + float(d.nuevo_costo_transporte), 2)
+        elif d.nuevo_costo_transporte is not None and cita.get("cotizacion"):
+            # La propietaria fija el traslado: se recalcula el total con el
+            # motor en vez de restar a mano (el total puede ser un rango).
+            cambios["cotizacion"] = self.cotizador.recalcular_total(
+                dict(cita["cotizacion"]), float(d.nuevo_costo_transporte))
         ciclo = cita.get("ciclo_aprobacion", 1) + 1
         self.repo.actualizar_cita(cita["id"], ciclo_aprobacion=ciclo, **cambios)
         self.repo.registrar_evento(cita["id"], "modificada", {k: str(v) for k, v in cambios.items()})
@@ -226,8 +227,8 @@ class ProcesadorAprobacion:
         actualizada = self.repo.obtener_cita(cita["id"])
         texto = mensajes.resumen_para_propietaria(actualizada)
         if "fecha_hora" in cambios:
-            duracion = (cita.get("cotizacion") or {}).get("duracion_total_estimada_min", 60)
-            ok, motivo = validar_horario(d.nueva_fecha_hora, duracion, cita["modalidad"], self.motor, self.cfg)
+            duracion = (cita.get("cotizacion") or {}).get("duracion_agenda_min", 60)
+            ok, motivo = validar_horario(d.nueva_fecha_hora, duracion, cita["modalidad"], self.cotizador, self.cfg)
             if not ok:
                 texto = f"⚠️ Ojo: el nuevo horario {motivo}.\n" + texto
         msg_id = self.mensajero.enviar(self.propietaria, texto)

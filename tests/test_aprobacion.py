@@ -9,14 +9,15 @@ from datetime import datetime
 import pytest
 from conftest import ClienteFalso
 
+from app.agenda import mensajes
 from app.agenda.aprobacion import ProcesadorAprobacion, interpretar_respuesta
 from app.agenda.disponibilidad import cargar_config, proponer_alternativas, validar_horario
 from app.config import RUTA_TARIFARIO, ZONA_HORARIA
-from app.cotizacion.motor_cotizacion import Mascota, Motor, Solicitud
+from app.cotizacion.cotizador import Cotizador
 from app.mensajeria import MensajeroMemoria
 from app.persistencia.repositorio import Repositorio
 
-MOTOR = Motor(RUTA_TARIFARIO)
+MOTOR = Cotizador(RUTA_TARIFARIO)
 CFG = cargar_config()
 PROP, CLI = "593900000001", "593900000099"
 # Jueves 1-oct-2026 (dia con restriccion vehicular declarada en el tarifario)
@@ -24,10 +25,10 @@ JUEVES_10 = datetime(2026, 10, 1, 10, 0, tzinfo=ZONA_HORARIA)
 
 
 def _cita(repo, modalidad="puerta_a_puerta", fecha=JUEVES_10):
-    cot = MOTOR.cotizar(Solicitud(
-        mascotas=[Mascota(servicio="bano", nombre="Luna", tamano="mediano", pelaje="corto")],
-        modalidad=modalidad, zona="zona_1", fecha_hora=fecha.replace(tzinfo=None)))
-    cid = repo.crear_cita(cliente_telefono=CLI, mascotas=[{"nombre": "Luna", "servicio": "bano"}],
+    luna = {"nombre": "Luna", "servicio": "completo", "raza": "golden", "estado": "sin_motas",
+            "comportamiento": "tranquilo"}
+    cot = MOTOR.cotizar([luna], modalidad, sector="El Condado")  # 25 + traslado 5
+    cid = repo.crear_cita(cliente_telefono=CLI, mascotas=[luna],
                           fecha_hora=fecha, modalidad=modalidad, cotizacion=cot)
     repo.actualizar_cita(cid, msg_aprobacion_id=f"wamid.cita{cid}")
     repo.guardar_sesion(CLI, {"cita_en_aprobacion": cid})
@@ -93,9 +94,11 @@ def test_modificar_transporte_recalcula_total():
                       "nuevo_costo_transporte": 2, "motivo": None})
     p, repo, _ = _procesador(ClienteFalso(llm))
     cid = _cita(repo)
-    total = repo.obtener_cita(cid)["cotizacion"]["total_estimado"]
+    assert repo.obtener_cita(cid)["cotizacion"]["total"] == [30, 30]
     p.procesar("en 2$ le dejo el transporte")
-    assert repo.obtener_cita(cid)["total_acordado"] == total - 5 + 2
+    cita = repo.obtener_cita(cid)
+    assert cita["cotizacion"]["total"] == [27, 27]
+    assert "27.00$" in mensajes.resumen_para_propietaria(cita)
 
 
 def test_varias_pendientes_sin_cita_referenciada_pide_aclarar():
@@ -113,3 +116,12 @@ def test_pico_y_placa_bloquea_puerta_a_puerta_pero_no_salon():
     assert validar_horario(jueves_17, 60, "salon", MOTOR, CFG)[0]
     alternativas = proponer_alternativas(jueves_17, 60, "puerta_a_puerta", MOTOR, CFG)
     assert alternativas and all(a.hour < 16 or a.date() != jueves_17.date() for a in alternativas)
+
+
+def test_confirmacion_incluye_total_y_traslado():
+    p, repo, msj = _procesador()
+    cid = _cita(repo)
+    p.procesar("listo", id_citado=f"wamid.cita{cid}")
+    [confirmacion] = msj.a(CLI)
+    assert "Baño Completo" in confirmacion
+    assert "30.00$ con el servicio puerta a puerta incluido" in confirmacion
