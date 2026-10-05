@@ -33,7 +33,7 @@ from langgraph.graph import END, START, StateGraph
 
 # El try/except permite que este archivo funcione de dos formas:
 # - Como script suelto (python orchestrator_graph.py desde dentro de agents/)
-# - Como parte del paquete app.agents cuando main.py lo importa via app.agent
+# - Como parte del paquete app.agents cuando main.py lo importa
 try:
     from .nlu_extractor import ResultadoNLU, clasificar_mensaje
 except ImportError:

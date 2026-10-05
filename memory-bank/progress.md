@@ -26,7 +26,7 @@
 - SCRUM-87: reintentos con backoff + cola de salida persistente + dedupe de
   webhooks + procesamiento en segundo plano.
 - Persistencia provisional SQLite (app/persistencia/) hasta SCRUM-74.
-- `python simulador.py --guion` corre la demo completa sin Meta.
+- `python -m scripts.simulador --guion` (o el panel /panel) corre la demo completa sin Meta.
 
 ## Tarifario v2 integrado (4 oct)
 - app/cotizacion/tarifario_v2.json + motor_cotizacion_v2.py (Daniel Loza) con
@@ -38,6 +38,12 @@
   propietaria.
 - Dataset de Facebook (SCRUM-101, 312 imagenes) revisado: sin etiquetas
   todavia; marco/logo de plantilla es atajo potencial para la CNN.
+
+## Reorganizacion del repo (5 oct)
+- Eliminados: app/agent.py (reexport), probar_webhook.py (lo cubren panel,
+  simulador y tests), .pyc versionados.
+- tarifario/motor v1 -> archivo/tarifario_v1/ (evidencia; no se usa).
+- simulador.py -> scripts/simulador.py.
 
 ## Que falta (S4, vence 4 oct)
 - Contenido validado de la base de conocimiento (SCRUM-66/99) y evaluacion

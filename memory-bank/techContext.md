@@ -17,20 +17,7 @@
 - **Web framework**: FastAPI (main.py).
 
 ## Estructura de carpetas (repo)
-```
-Proyecto MIA/
-  venv/
-  app/
-    main.py              # FastAPI: webhook GET/POST, healthcheck
-    agent.py             # Delega en agents/orchestrator_graph.py
-    whatsapp_client.py    # Envio de mensajes salientes (SCRUM-84)
-    agents/
-      __init__.py
-      nlu_extractor.py    # Clasificacion de intencion + extraccion de entidades
-      orchestrator_graph.py  # Grafo LangGraph con enrutamiento condicional
-  requirements.txt
-  .env                    # GEMINI_API_KEY, WHATSAPP_VERIFY_TOKEN, etc.
-```
+Ver la seccion "Estructura" del README.md (actualizada el 05-oct-2026).
 
 ## Variables de entorno requeridas
 - `GEMINI_API_KEY`

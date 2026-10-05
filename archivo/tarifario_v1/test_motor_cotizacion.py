@@ -7,7 +7,7 @@ Cada prueba está nombrada según el criterio de aceptación que verifica, para 
 la evidencia de cumplimiento sea rastreable desde Jira sin leer el código.
 
 Ejecutar:
-    python -m pytest tests/test_motor_cotizacion.py -v
+    python -m pytest archivo/tarifario_v1 -v
 """
 
 from __future__ import annotations
@@ -17,9 +17,12 @@ import unittest
 from datetime import datetime
 from pathlib import Path
 
-from app.cotizacion.motor_cotizacion import ErrorTarifario, Mascota, Motor, Solicitud
+import sys
 
-TARIFARIO = Path(__file__).resolve().parents[1] / "app" / "cotizacion" / "tarifario_v1.json"
+sys.path.insert(0, str(Path(__file__).parent))
+from motor_cotizacion import ErrorTarifario, Mascota, Motor, Solicitud  # noqa: E402
+
+TARIFARIO = Path(__file__).parent / "tarifario_v1.json"
 
 
 class BasePrueba(unittest.TestCase):

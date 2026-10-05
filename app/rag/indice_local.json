@@ -10105,7 +10105,7 @@
   },
   "tarifario#restriccion_vehicular": {
    "id": "tarifario#restriccion_vehicular",
-   "fuente": "tarifario_v1.json",
+   "fuente": "tarifario_v2.json",
    "titulo": "Horarios sin servicio puerta a puerta",
    "texto": "Por la restricción de circulación vehicular, los jueves no se hacen retiros a domicilio entre 06:00 a 09:30 y 16:00 a 20:00. Fuera de esas franjas sí hay servicio puerta a puerta. Esta restricción solo afecta a los retiros a domicilio, no a las mascotas que el cliente lleva personalmente al salón.",
    "hash": "c7ed392e6d4af489",

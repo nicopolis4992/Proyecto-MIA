@@ -45,33 +45,18 @@ Ese paso es el que convierte la seudonimización en anonimización.
 
 ## SCRUM-98 — Tarifario parametrizado
 
+**Versión vigente: v2** (precios de la propietaria, 04/10/2026), en
+`app/cotizacion/tarifario_v2.json` + `motor_cotizacion_v2.py`. Cambios al
+integrarlo y cómo se usa: `app/cotizacion/LEEME_tarifario_v2.md`.
+
 ```bash
-# desde la raíz del proyecto
-python -m app.cotizacion.motor_cotizacion                     # cuatro casos de demostración
-python -m pytest tests/test_motor_cotizacion.py -v     # 29 pruebas
+python -m pytest tests/test_motor_v2.py -v
 ```
 
-| Archivo | Qué es |
-|---|---|
-| `tarifario_v1.json` | Todos los valores del negocio. **Único archivo que se edita para cambiar precios.** |
-| `motor_cotizacion.py` | Motor de cálculo, banda de confianza, validación de pico y placa |
-| `test_motor_cotizacion.py` | 29 pruebas nombradas por criterio de aceptación |
+Los agentes no llaman al motor directamente sino a `app/cotizacion/cotizador.py`.
 
-Uso desde el agente de agenda:
-
-```python
-from app.cotizacion.motor_cotizacion import Motor, Mascota, Solicitud
-
-motor = Motor("app/cotizacion/tarifario_v1.json")
-cotizacion = motor.cotizar(Solicitud(
-    mascotas=[Mascota(servicio="bano_corte", tamano="pequeno", pelaje="largo",
-                      estado_manto="sin_nudos", comportamiento_conocido=True)],
-    modalidad="puerta_a_puerta", zona="zona_1",
-    fecha_hora=datetime(2026, 9, 17, 11, 0),
-    cliente_recurrente=True,
-))
-# -> alimenta el campo cotizacion_estimada de SCRUM-74
-```
+La versión v1 (precios de referencia del mercado) quedó en `archivo/tarifario_v1/`
+como evidencia histórica; ya no la usa el sistema.
 
 ---
 

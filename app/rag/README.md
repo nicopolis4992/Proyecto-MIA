@@ -8,7 +8,7 @@ SCRUM-67 (embeddings e indexación), SCRUM-68 (recuperación), SCRUM-69
 | Fuente | Qué contiene | Quién la edita |
 |---|---|---|
 | `conocimiento/*.md` | Información del negocio, una sección `## ` por tema | Equipo (SCRUM-66/99), validado por la propietaria |
-| `app/cotizacion/tarifario_v1.json` | Precios, recargos, zonas, restricción vehicular | Se edita solo el JSON (SCRUM-98) |
+| `app/cotizacion/tarifario_v2.json` | Precios, recargos, traslado, restricción vehicular | Se edita solo el JSON (SCRUM-98) |
 
 Los precios **no se escriben en los .md**: se generan desde el tarifario en cada
 indexación. Así el RAG y el motor de cotización nunca dan valores distintos.
@@ -16,7 +16,7 @@ indexación. Así el RAG y el motor de cotización nunca dan valores distintos.
 ## Procedimiento para actualizar la base (SCRUM-70)
 
 1. Editar el archivo correspondiente:
-   - cambio de precio, recargo o zona → `app/cotizacion/tarifario_v1.json`
+   - cambio de precio, recargo o zona → `app/cotizacion/tarifario_v2.json`
    - cambio de servicio, política o pregunta frecuente → `app/rag/conocimiento/*.md`
      (cada sección `## Título` debe entenderse sola, sin depender de otra).
 2. Re-indexar y probar con una consulta:

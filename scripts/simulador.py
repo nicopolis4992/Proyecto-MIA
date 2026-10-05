@@ -7,9 +7,11 @@ salientes se imprimen en consola en vez de enviarse por Meta. Sirve para la
 demo del 4-oct mientras la cuenta de Meta no este verificada.
 
 Uso:
-    python simulador.py                 # modo interactivo
-    python simulador.py --guion         # conversacion de demostracion
-    python simulador.py --guion --foto ruta/a/perro.jpg
+    python -m scripts.simulador                 # modo interactivo
+    python -m scripts.simulador --guion         # conversacion de demostracion
+    python -m scripts.simulador --guion --foto ruta/a/perro.jpg
+
+(desde la raiz del proyecto; para una demo visual, usar el panel web /panel)
 
 Comandos en modo interactivo:
     <texto>                 mensaje del cliente actual

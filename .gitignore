@@ -16,3 +16,4 @@ data/
 # Credenciales de Google (cuenta de servicio)
 credenciales/
 *.json.key
+.pytest_cache/

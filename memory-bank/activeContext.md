@@ -17,8 +17,8 @@ integracion del agente NLU con el orquestador multiagente:
   orquestador ahora enruta con `add_conditional_edges` en vez del nodo
   unico anterior. Nodos `agente_rag` y `agente_agenda` son stubs
   temporales (todavia no implementados). `agente_general` es real.
-- `app/agent.py` fue reescrito para delegar en
-  `app/agents/orchestrator_graph.py::get_reply`, sin necesidad de tocar
+- (historico) `app/agent.py` delegaba en
+  `app/agents/orchestrator_graph.py::get_reply` (eliminado el 05-oct), sin necesidad de tocar
   `main.py`.
 
 ## Cambio de sprint reciente

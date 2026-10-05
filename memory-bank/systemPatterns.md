@@ -5,10 +5,10 @@ Orquestador multiagente en LangGraph, cliente-servidor, integrado con
 WhatsApp Business Cloud API (directo, sin BSP intermediario).
 
 ## Flujo de un mensaje entrante
-1. `main.py` (FastAPI): recibe el POST /webhook de Meta, extrae el mensaje
-   de texto, llama a `app/agent.py::get_reply(texto)`.
-2. `app/agent.py`: delega en `app/agents/orchestrator_graph.py::get_reply`.
-   (Antes llamaba directo a Gemini sin enrutamiento - version SCRUM-85.)
+1. `main.py` (FastAPI): recibe el POST /webhook de Meta (texto o imagen),
+   deduplica, y en segundo plano llama a
+   `app/agents/orchestrator_graph.py::procesar_mensaje(remitente, texto, imagen, id_citado)`.
+2. (`app/agent.py` se elimino el 05-oct: era un reexport de una linea.)
 3. `orchestrator_graph.py`: construye/usa un grafo de LangGraph con:
    - Nodo `nlu` (siempre primero): llama a `nlu_extractor.py` para
      clasificar intencion + extraer entidades + confianza, vía salida

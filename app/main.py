@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
 
 from app import config
-from app.agent import procesar_mensaje
+from app.agents.orchestrator_graph import procesar_mensaje
 from app.mensajeria import MensajeroWhatsApp, reintentar_pendientes
 from app.panel.rutas import router as router_panel
 from app.persistencia.repositorio import obtener_repositorio

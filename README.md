@@ -3,14 +3,43 @@
 Backend del sistema multiagente conversacional para automatizar atención,
 cotización y agendamiento de citas de grooming, vía WhatsApp Business Cloud API.
 
-## Estado actual
+## Estado actual (5-oct-2026, rama `prototipo-s4`)
 
-- [x] Estructura base del repo
-- [x] Servidor FastAPI mínimo (`GET /`, `GET /webhook` para verificación de Meta)
-- [x] `POST /webhook` para recibir mensajes reales (SCRUM-83)
-- [x] Envío de mensajes salientes (SCRUM-84)
-- [x] Primer nodo de LangGraph + Gemini (SCRUM-85)
-- [ ] Conectar con la app real de WhatsApp Business en Meta (bloqueado por verificación de cuenta, en progreso)
+- [x] Webhook de WhatsApp: recepción (texto e imágenes), envío, reintentos y cola (SCRUM-83/84/87)
+- [x] Orquestador LangGraph + NLU de intención y entidades (SCRUM-60/61/65)
+- [x] Agente RAG con base vectorial y respuesta fundamentada (SCRUM-67 a 70)
+- [x] Cotización con el tarifario v2 de la propietaria, razas, mestizos y cruces (SCRUM-98)
+- [x] Cotización por foto con fallback (SCRUM-103/104); CNN lista para entrenar en Colab (SCRUM-102)
+- [x] Agenda conversacional, aprobación de la propietaria y confirmación (SCRUM-77/78)
+- [x] Panel web: demo en vivo, agenda semanal y dashboard de la propietaria
+- [x] Modo pruebas (solo números del equipo) para el piloto interno
+- [ ] Google Calendar con credenciales reales · Supabase (SCRUM-74) · cuenta de Meta verificada
+
+## Estructura
+
+```
+app/                      # todo lo que corre en el servidor (Railway)
+  main.py                 # FastAPI: webhook, panel, cola de salida
+  config.py               # variables de entorno y modos
+  whatsapp_client.py      # API de WhatsApp (envío, descarga de fotos, reintentos)
+  mensajeria.py           # envío para los agentes + cola de reintentos
+  agents/                 # orquestador LangGraph y NLU
+  rag/                    # agente RAG: conocimiento/, índice, embeddings
+  cotizacion/             # tarifario v2, motor, fachada Cotizador, cotización por foto
+  vision/                 # calidad de foto y clasificador (Gemini o CNN ONNX)
+  agenda/                 # agente de agenda, aprobación, disponibilidad, calendario
+  persistencia/           # repositorio SQLite (provisional hasta Supabase)
+  panel/                  # panel web (/panel): demo, agenda y dashboard
+datasets/                 # preparación de datos (SCRUM-63 NLU, SCRUM-101 imágenes)
+entrenamiento/            # CNN: pre-etiquetado, revisión, script y notebook de Colab
+scripts/                  # herramientas de consola (simulador)
+tests/                    # pruebas (python -m pytest)
+archivo/                  # versiones reemplazadas, como evidencia (tarifario v1)
+memory-bank/              # contexto del proyecto para el equipo y los agentes de código
+```
+
+No se versionan: `.env`, `data/` (bases SQLite) ni `READ/` (entregas de
+compañeros con datos o fotos).
 
 ## Cómo correrlo localmente
 
@@ -76,10 +105,10 @@ Por defecto el bot corre en `MIA_MODO=pruebas`: solo responde a los números de
 de un integrante del equipo haciendo de propietaria. Cualquier otro número se
 ignora, así que ningún cliente real recibe mensajes.
 
-Sin WhatsApp, `python simulador.py --guion` corre el mismo flujo en consola.
+Sin WhatsApp, el panel web (`/panel`, pestaña *Demo en vivo*) o `python -m scripts.simulador --guion` corren el mismo flujo.
 
 Checklist para pasar a clientes reales:
-1. La propietaria valida precios (`tarifario_v1.json`), contenido del RAG
+1. La propietaria valida precios (`app/cotizacion/tarifario_v2.json`), contenido del RAG
    (`app/rag/conocimiento/`) y horario (`app/agenda/config_agenda.json`).
 2. Re-indexar: `python -m app.rag.indexador`.
 3. En Railway: `PROPIETARIA_WHATSAPP` = número real de la propietaria y
