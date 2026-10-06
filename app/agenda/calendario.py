@@ -75,6 +75,38 @@ class CalendarioGoogle:
         r.raise_for_status()
         return bool(r.json()["calendars"][self.calendar_id]["busy"])
 
+    def eliminar_evento(self, evento_id: str) -> None:
+        r = self.sesion.delete(f"{API}/calendars/{self.calendar_id}/events/{evento_id}", timeout=15)
+        if r.status_code not in (200, 204, 404, 410):  # ya borrado = ok
+            r.raise_for_status()
+
+
+def registrar_en_calendario(repo, calendario, cita: dict) -> str:
+    """Crea el evento de una cita confirmada. Devuelve un texto para la propietaria."""
+    if calendario is None:
+        return ""
+    try:
+        evento_id = calendario.registrar_cita(cita)
+        repo.registrar_evento(cita["id"], "registrada_en_calendario", {"evento_id": evento_id})
+        return " Quedó en el calendario 📅"
+    except Exception as exc:  # noqa: BLE001 - la cita ya esta confirmada
+        logger.exception("No se pudo registrar la cita #%s en Google Calendar", cita["id"])
+        repo.registrar_evento(cita["id"], "error_calendario", {"error": str(exc)})
+        return " ⚠️ No pude agregarla al calendario: agrégala a mano."
+
+
+def quitar_del_calendario(repo, calendario, cita_id: int) -> None:
+    """Borra el evento de una cita cancelada o en reprogramacion (si lo tenia)."""
+    if calendario is None:
+        return
+    for e in repo.eventos_de_cita(cita_id):
+        if e["tipo"] == "registrada_en_calendario":
+            try:
+                calendario.eliminar_evento(e["detalle"]["evento_id"])
+                repo.registrar_evento(cita_id, "quitada_del_calendario", e["detalle"])
+            except Exception:  # noqa: BLE001
+                logger.exception("No se pudo quitar la cita #%s del calendario", cita_id)
+
 
 def crear_calendario() -> CalendarioGoogle | None:
     calendar_id = os.getenv("GOOGLE_CALENDAR_ID", "")

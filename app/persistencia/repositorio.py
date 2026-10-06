@@ -26,10 +26,12 @@ from typing import Any
 from app.config import RUTA_DB, ahora
 
 ESTADOS_CITA = (
-    "pendiente_aprobacion",
+    "pendiente_aprobacion",   # esperando a la propietaria
+    "propuesta_cliente",      # la propietaria cambio hora/precio: espera que el cliente acepte
     "aprobada",
     "rechazada",
     "confirmada",
+    "en_reprogramacion",      # el cliente pidio cambiar el horario y esta eligiendo otro
     "cancelada",
 )
 

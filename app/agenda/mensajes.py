@@ -82,10 +82,10 @@ def _descripcion_mascota(m: dict) -> str:
     return ", ".join(r for r in rasgos if r) or "sin datos"
 
 
-def resumen_para_propietaria(cita: dict) -> str:
+def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     c = cita.get("cotizacion") or {}
     ciclo = cita.get("ciclo_aprobacion", 1)
-    lineas = [f"🐾 Nueva cita #{cita['id']} por aprobar" + (f" (revisión {ciclo})" if ciclo > 1 else "")]
+    lineas = [encabezado or (f"🐾 Nueva cita #{cita['id']} por aprobar" + (f" (revisión {ciclo})" if ciclo > 1 else ""))]
     lineas.append(f"Cliente: {cita.get('cliente_nombre') or 'sin nombre'} ({cita['cliente_telefono']})")
     detalle = c.get("mascotas") or [{}] * len(cita["mascotas"])
     for m, d in zip(cita["mascotas"], detalle):
@@ -133,6 +133,13 @@ def confirmacion_cliente(cita: dict) -> str:
         partes.append("Por favor, que alguien esté pendiente en casa a esa hora para entregar a su perrito.")
     partes.append("¡Gracias por confiar en nosotros!")
     return " ".join(partes)
+
+
+def propuesta_cliente(cita: dict) -> str:
+    """La propietaria ajusto hora o precio: se le pregunta al cliente antes de confirmar."""
+    return (f"La propietaria revisó su cita y le propone este ajuste para {_nombres(cita)}:\n"
+            f"📅 {fecha_legible(cita['fecha_hora'])}\n💵 Total: {texto_total(cita)}\n"
+            "¿Le parece bien? Respóndame \"sí\" para confirmar, o dígame qué horario le queda mejor.")
 
 
 def reprogramacion_cliente(cita: dict, alternativas: list[datetime], motivo: str | None = None) -> str:

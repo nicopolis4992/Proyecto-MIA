@@ -57,7 +57,7 @@ def resumen(repo, desde: datetime | None = None) -> dict:
     citas = repo.todas_las_citas()
     hoy = ahora()
     confirmadas = [c for c in citas if c["estado"] == "confirmada"]
-    pendientes = [c for c in citas if c["estado"] == "pendiente_aprobacion"]
+    pendientes = [c for c in citas if c["estado"] in ("pendiente_aprobacion", "propuesta_cliente", "en_reprogramacion")]
 
     # Tiempo de agendamiento: creacion de la cita -> confirmacion al cliente.
     tiempos = []
@@ -102,7 +102,7 @@ def resumen(repo, desde: datetime | None = None) -> dict:
             "pct_puerta_a_puerta": round(100 * sum(1 for c in confirmadas if c["modalidad"] == "puerta_a_puerta")
                                          / len(confirmadas)) if confirmadas else None,
             "clientes_recurrentes": sum(1 for n in clientes.values() if n > 1),
-            "rechazadas": sum(1 for c in citas if c["estado"] == "rechazada"),
+            "rechazadas": sum(1 for c in citas if c["estado"] in ("rechazada", "cancelada")),
         },
         "citas_por_dia": dias,
         "servicios": [{"servicio": s, "citas": n} for s, n in servicios.most_common()],

@@ -90,7 +90,8 @@ td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .evento b { display: block; font-size: 12px; }
 .evento.confirmada { border-color: var(--good); }
 .evento.aprobada { border-color: var(--good); }
-.evento.pendiente_aprobacion { border-color: var(--warning); }
+.evento.pendiente_aprobacion, .evento.propuesta_cliente, .evento.en_reprogramacion { border-color: var(--warning); }
+.evento.cancelada { border-color: var(--critical); opacity: .55; text-decoration: line-through; }
 .evento.rechazada { border-color: var(--critical); opacity: .55; text-decoration: line-through; }
 .leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
 /* Demo */
@@ -178,8 +179,8 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
     </div>
     <div class="grid2b">
       <div class="tarjeta">
-        <h2>Pendientes de aprobación</h2>
-        <p class="desc">Citas que esperan tu respuesta por WhatsApp.</p>
+        <h2>Citas en proceso</h2>
+        <p class="desc">Esperan tu aprobación, la respuesta del cliente a un cambio, o un nuevo horario.</p>
         <div id="tabla-pendientes"></div>
       </div>
       <div class="tarjeta">
@@ -213,7 +214,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
       <div class="leyenda">
         <span class="estado"><i style="background:var(--good)"></i>✓ Confirmada</span>
         <span class="estado"><i style="background:var(--warning)"></i>⏳ Por aprobar</span>
-        <span class="estado"><i style="background:var(--critical)"></i>✕ Rechazada</span>
+        <span class="estado"><i style="background:var(--critical)"></i>✕ Rechazada / cancelada</span>
       </div>
     </div>
     <div class="semana" id="semana"></div>
@@ -260,6 +261,7 @@ const $ = (s, r = document) => r.querySelector(s);
 const ESTADOS = {
   confirmada: ["✓", "Confirmada", "var(--good)"], aprobada: ["✓", "Aprobada", "var(--good)"],
   pendiente_aprobacion: ["⏳", "Por aprobar", "var(--warning)"], rechazada: ["✕", "Rechazada", "var(--critical)"],
+  propuesta_cliente: ["💬", "Esperando al cliente", "var(--warning)"], en_reprogramacion: ["🔁", "Reprogramando", "var(--warning)"],
   cancelada: ["✕", "Cancelada", "var(--critical)"],
 };
 const PREGUNTAS = { tamano: "tamaño", raza_o_grupo_manto: "tipo de pelo", estado_manto: "nudos", comportamiento: "comportamiento" };
@@ -357,8 +359,8 @@ function pintarPanel() {
   $("#generado").textContent = `Actualizado ${datos.generado.replace("T", " ").slice(0, 16)}`;
   $("#kpis").innerHTML =
     kpi("Ingresos estimados (citas confirmadas)", usd(k.ingresos_estimados), "Suma del precio acordado o punto medio del rango", true) +
-    kpi("Citas confirmadas", k.citas_confirmadas, `${k.rechazadas} rechazada(s)`) +
-    kpi("Por aprobar", `${k.pendientes_aprobacion ? "⏳ " : ""}${k.pendientes_aprobacion}`, "Esperan tu respuesta") +
+    kpi("Citas confirmadas", k.citas_confirmadas, `${k.rechazadas} rechazada(s) o cancelada(s)`) +
+    kpi("En proceso", `${k.pendientes_aprobacion ? "⏳ " : ""}${k.pendientes_aprobacion}`, "Por aprobar, esperando al cliente o reprogramando") +
     kpi("Tiempo hasta confirmar", k.tiempo_confirmacion_min == null ? "—" : `${Math.round(k.tiempo_confirmacion_min)} min`, "Promedio: solicitud → confirmación al cliente") +
     kpi("Cotizaciones con precio exacto", k.pct_precio_exacto == null ? "—" : `${k.pct_precio_exacto}%`, k.amplitud_media_usd == null ? "" : `Amplitud media del rango: ${usd(k.amplitud_media_usd)}`) +
     kpi("Servicio puerta a puerta", k.pct_puerta_a_puerta == null ? "—" : `${k.pct_puerta_a_puerta}%`, `${k.clientes_recurrentes} cliente(s) recurrente(s)`);

@@ -23,7 +23,7 @@ AHORA = datetime(2026, 10, 5, 9, 0, tzinfo=ZONA_HORARIA)  # lunes
 
 def _extraccion(mascotas, **reserva):
     base = {"fecha_hora": None, "modalidad": None, "sector": None, "cliente_nombre": None,
-            "eligio_alternativa": None, "cancelar": False}
+            "eligio_alternativa": None, "cancelar": False, "dia_consultado": None, "accion_cita": "ninguna"}
     campos = ("nombre", "servicio", "raza", "tamano", "peso_kg", "grupo", "estado", "comportamiento")
     return json.dumps({**base, **reserva,
                        "mascotas": [{c: m.get(c) for c in campos} for m in mascotas]})
@@ -88,3 +88,71 @@ def test_reserva_completa_crea_cita_y_avisa_a_la_propietaria():
     assert cita["cotizacion"]["total"] == [30, 30]  # 25 + traslado zona 5
     assert "USD 30.00" in r
     assert "30.00$" in msj.a(PROP)[0]
+
+
+# --- Despues de crear la cita (casos de la prueba manual del 06-oct) -------
+
+def _cita_confirmada(repo, estado="confirmada"):
+    m = {"nombre": "Fara", "servicio": "premium", "tamano": "mediano", "grupo": "B_deslanado",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    cot = COT.cotizar([m])
+    cid = repo.crear_cita(cliente_telefono=TEL, mascotas=[m], fecha_hora=datetime(2026, 10, 12, 10, 0, tzinfo=ZONA_HORARIA),
+                          modalidad="salon", cotizacion=cot, estado=estado, total_acordado=22)
+    clave = {"confirmada": "cita_activa", "propuesta_cliente": "propuesta_cita"}[estado]
+    repo.guardar_sesion(TEL, {clave: cid})
+    return cid
+
+
+def _extraccion_accion(accion, **extra):
+    return json.dumps({"mascotas": [], "fecha_hora": None, "modalidad": None, "sector": None,
+                       "cliente_nombre": None, "eligio_alternativa": None, "cancelar": False,
+                       "dia_consultado": None, "accion_cita": accion, **extra})
+
+
+def test_cliente_acepta_la_propuesta_de_la_propietaria():
+    ag, repo, msj = _agente()  # "si" se resuelve sin LLM
+    cid = _cita_confirmada(repo, "propuesta_cliente")
+    r = ag.atender(TEL, "sí", AHORA)
+    assert "Queda agendado" in r
+    assert repo.obtener_cita(cid)["estado"] == "confirmada"
+    assert "aceptó el cambio" in msj.a(PROP)[0]
+
+
+def test_a_esa_hora_no_puedo_reprograma_la_cita_existente():
+    ag, repo, msj = _agente(_extraccion_accion("reprogramar"), _extraccion_accion("ninguna", eligio_alternativa=1))
+    cid = _cita_confirmada(repo)
+    r1 = ag.atender(TEL, "disculpa a esa hora no puedo", AHORA)
+    assert "busquemos otro horario. Le puedo ofrecer" in r1 and "1." in r1                      # ofrece horarios, no "¿qué servicio?"
+    assert repo.obtener_cita(cid)["estado"] == "en_reprogramacion"
+    assert "pidió cambiar el horario" in msj.a(PROP)[0]
+    r2 = ag.atender(TEL, "1", AHORA)
+    cita = repo.obtener_cita(cid)
+    assert cita["estado"] == "pendiente_aprobacion" and cita["ciclo_aprobacion"] == 2
+    assert "reprogramada por el cliente" in msj.a(PROP)[-1]
+    assert len(repo.todas_las_citas()) == 1                          # misma cita, no una nueva
+    assert cita["total_acordado"] == 22                               # el precio acordado se mantiene
+    assert "Le confirmo" in r2
+
+
+def test_cliente_cancela_su_cita():
+    ag, repo, msj = _agente(_extraccion_accion("cancelar_cita"))
+    cid = _cita_confirmada(repo)
+    assert "cancelé su cita" in ag.atender(TEL, "ya no voy a poder ir, cancélela", AHORA)
+    assert repo.obtener_cita(cid)["estado"] == "cancelada"
+    assert "canceló la cita" in msj.a(PROP)[0]
+
+
+def test_gracias_tras_confirmar_no_abre_otra_reserva():
+    ag, _, _ = _agente(_extraccion_accion("ninguna"))
+    _cita_confirmada(ag.repo)
+    r = ag.atender(TEL, "gracias!", AHORA)
+    assert "sigue para el lunes 12 de octubre" in r and "servicio" not in r
+
+
+def test_que_horarios_tiene_el_martes_ofrece_horarios_reales_sin_inventar_hora():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-06"))
+    r = ag.atender(TEL, "¿qué horarios tiene el martes 6?", AHORA)
+    assert "Para ese día tengo libre" in r and "martes 6 de octubre a las 09:00" in r
+    assert repo.obtener_sesion(TEL)["reserva"]["fecha_hora"] is None

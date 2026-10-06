@@ -2,16 +2,23 @@
 SCRUM-77: procesar la aprobacion, rechazo o modificacion de la propietaria.
 
 Flujo de estados (campo `estado` de SCRUM-74):
-    pendiente_aprobacion -> aprobada -> confirmada        (aprobar)
-    pendiente_aprobacion -> rechazada                     (rechazar; se ofrece reprogramar)
-    pendiente_aprobacion -> pendiente_aprobacion (ciclo+1) (modificar y reproponer)
+    pendiente_aprobacion -> aprobada -> confirmada         (aprobar)
+    pendiente_aprobacion -> rechazada                      (rechazar; se ofrecen otros horarios)
+    pendiente_aprobacion -> propuesta_cliente (ciclo+1)    (modificar hora/precio)
+    propuesta_cliente    -> confirmada | en_reprogramacion (lo decide el CLIENTE, agente_agenda)
 
 La propietaria rara vez responde "si"/"no" literal ("listo", "dale nomas",
 "a las 12 estaria bien", "en 2$ le dejo el transporte"). Respuestas cortas
 y obvias se resuelven con una lista cerrada; el resto lo interpreta Gemini
-con salida estructurada. Una modificacion NO se da por aprobada: vuelve a la
-propietaria como resumen actualizado (nuevo ciclo) para que confirme que el
-sistema entendio bien el cambio antes de escribirle al cliente.
+con salida estructurada.
+
+Una modificacion NO confirma la cita: el cambio se le PROPONE al cliente,
+porque el horario o el precio nuevos pueden no servirle. A la propietaria se
+le muestra lo que el sistema entendio, para que corrija si hace falta.
+
+Ademas, cuando el agente RAG no sabe responder algo, la pregunta del cliente
+se reenvia a la propietaria; si ella responde citando ese aviso, su
+respuesta se le reenvia al cliente (relevo de consultas).
 """
 
 from __future__ import annotations
@@ -26,6 +33,7 @@ from datetime import datetime
 from google.genai import types
 
 from app.agenda import mensajes
+from app.agenda.calendario import registrar_en_calendario
 from app.agenda.disponibilidad import proponer_alternativas, validar_horario
 from app.config import MODELO_LLM, ZONA_HORARIA
 
@@ -35,6 +43,8 @@ _APROBAR = {"listo", "si", "ok", "okey", "dale", "dale nomas", "aprobado", "apro
             "de una", "confirmado", "confirma", "confirmalo", "perfecto", "esta bien", "si dale",
             "listo dale", "👍", "si listo"}
 _RECHAZAR = {"no", "rechazado", "rechazada", "no puedo", "no se puede", "rechaza", "no dale"}
+# Al reabrir una reserva ya cotizada no se vuelve a preguntar por la mascota.
+_TODO_PREGUNTADO = ["tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento"]
 
 
 def _normalizar(texto: str) -> str:
@@ -130,7 +140,7 @@ class ProcesadorAprobacion:
     def _cita_objetivo(self, id_citado: str | None) -> tuple[dict | None, str | None]:
         if id_citado:
             cita = self.repo.cita_por_mensaje_aprobacion(id_citado)
-            if cita and cita["estado"] == "pendiente_aprobacion":
+            if cita and cita["estado"] in ("pendiente_aprobacion", "propuesta_cliente"):
                 return cita, None
         pendientes = self.repo.citas_por_estado("pendiente_aprobacion")
         if not pendientes:
@@ -146,6 +156,10 @@ class ProcesadorAprobacion:
     def procesar(self, texto: str, id_citado: str | None = None, ahora: datetime | None = None) -> str | None:
         if _normalizar(texto) in {"pendientes", "citas", "citas pendientes"}:
             return self._listar_pendientes()
+
+        relevo = self._relevar_consulta(texto, id_citado)
+        if relevo:
+            return relevo
 
         cita, aviso = self._cita_objetivo(id_citado)
         if cita is None:
@@ -165,6 +179,38 @@ class ProcesadorAprobacion:
         return ("No te entendí 😅. Responde \"listo\" para aprobar, \"no\" para rechazar, "
                 "o indícame el cambio (hora o precio).")
 
+    # -- relevo de consultas sin respuesta -----------------------------------
+
+    def registrar_consulta(self, msg_id: str | None, cliente: str, pregunta: str) -> None:
+        """Guarda a que cliente corresponde un aviso de "pregunta sin respuesta"."""
+        if not msg_id:
+            return
+        sesion = self.repo.obtener_sesion(self.propietaria)
+        consultas = sesion.setdefault("consultas", {})
+        consultas[msg_id] = {"cliente": cliente, "pregunta": pregunta}
+        sesion["consultas"] = dict(list(consultas.items())[-20:])  # solo las recientes
+        sesion["ultima_consulta"] = msg_id
+        self.repo.guardar_sesion(self.propietaria, sesion)
+
+    def _relevar_consulta(self, texto: str, id_citado: str | None) -> str | None:
+        sesion = self.repo.obtener_sesion(self.propietaria)
+        consultas = sesion.get("consultas", {})
+        msg_id = id_citado if id_citado in consultas else None
+        # Sin cita citada: si no hay citas por aprobar, la respuesta es para la
+        # ultima consulta (salvo que sea una palabra de aprobacion/rechazo).
+        if (msg_id is None and sesion.get("ultima_consulta") in consultas
+                and not self.repo.citas_por_estado("pendiente_aprobacion")
+                and _normalizar(texto) not in _APROBAR | _RECHAZAR):
+            msg_id = sesion["ultima_consulta"]
+        if msg_id is None:
+            return None
+        consulta = consultas.pop(msg_id)
+        if sesion.get("ultima_consulta") == msg_id:
+            sesion["ultima_consulta"] = None
+        self.repo.guardar_sesion(self.propietaria, sesion)
+        self.mensajero.enviar(consulta["cliente"], f"💬 Respuesta de la propietaria: {texto}")
+        return f"📨 Se lo envié al cliente {consulta['cliente']} (preguntó: \"{consulta['pregunta']}\")."
+
     def _listar_pendientes(self) -> str:
         pendientes = self.repo.citas_por_estado("pendiente_aprobacion")
         if not pendientes:
@@ -183,17 +229,8 @@ class ProcesadorAprobacion:
         self.repo.actualizar_cita(cita["id"], estado="confirmada")
         self.repo.registrar_evento(cita["id"], "confirmada",
                                    {"mensaje_cliente": texto, "wa_id": msg_id, "encolado": msg_id is None})
-        self._limpiar_sesion_cliente(cita)
-        extra = ""
-        if self.calendario is not None:
-            try:
-                evento_id = self.calendario.registrar_cita(cita)
-                self.repo.registrar_evento(cita["id"], "registrada_en_calendario", {"evento_id": evento_id})
-                extra = " Quedó en el calendario 📅"
-            except Exception as exc:  # noqa: BLE001 - la cita ya esta confirmada
-                logger.exception("No se pudo registrar la cita #%s en Google Calendar", cita["id"])
-                self.repo.registrar_evento(cita["id"], "error_calendario", {"error": str(exc)})
-                extra = " ⚠️ No pude agregarla al calendario: agrégala a mano."
+        self._marcar_cita_activa(cita)
+        extra = registrar_en_calendario(self.repo, self.calendario, cita)
         return f"✅ Cita #{cita['id']} confirmada. Ya le avisé al cliente.{extra}"
 
     def _rechazar(self, cita: dict, decision: Decision, ahora: datetime | None) -> str:
@@ -211,7 +248,7 @@ class ProcesadorAprobacion:
         # dio menos el horario, para que solo tenga que elegir otro.
         sesion = self.repo.obtener_sesion(cita["cliente_telefono"])
         sesion.update(
-            flujo="agendando", cita_en_aprobacion=None,
+            flujo="agendando", cita_en_aprobacion=None, preguntado=_TODO_PREGUNTADO,
             alternativas=[a.isoformat() for a in alternativas],
             reserva={"mascotas": cita["mascotas"], "fecha_hora": None, "modalidad": cita["modalidad"],
                      "sector": cita.get("sector"), "cliente_nombre": cita.get("cliente_nombre")},
@@ -233,22 +270,30 @@ class ProcesadorAprobacion:
             cambios["cotizacion"] = self.cotizador.recalcular_total(
                 dict(cita["cotizacion"]), float(d.nuevo_costo_transporte))
         ciclo = cita.get("ciclo_aprobacion", 1) + 1
-        self.repo.actualizar_cita(cita["id"], ciclo_aprobacion=ciclo, **cambios)
+        self.repo.actualizar_cita(cita["id"], ciclo_aprobacion=ciclo, estado="propuesta_cliente", **cambios)
         self.repo.registrar_evento(cita["id"], "modificada", {k: str(v) for k, v in cambios.items()})
-
         actualizada = self.repo.obtener_cita(cita["id"])
-        texto = mensajes.resumen_para_propietaria(actualizada)
+
+        # El cambio se le propone al cliente: el nuevo horario o precio puede
+        # no servirle, asi que la cita NO se confirma hasta que acepte.
+        self.mensajero.enviar(cita["cliente_telefono"], mensajes.propuesta_cliente(actualizada))
+        self.repo.registrar_evento(cita["id"], "propuesta_enviada_al_cliente")
+        sesion = self.repo.obtener_sesion(cita["cliente_telefono"])
+        sesion.update(propuesta_cita=cita["id"], cita_en_aprobacion=None)
+        self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
+
+        respuesta = (f"📨 Le propuse el cambio al cliente: {mensajes.fecha_legible(actualizada['fecha_hora'])} · "
+                     f"Total {mensajes.texto_total(actualizada)}. Te aviso cuando responda. "
+                     "(Si entendí mal, escríbeme el cambio correcto.)")
         if "fecha_hora" in cambios:
             duracion = (cita.get("cotizacion") or {}).get("duracion_agenda_min", 60)
             ok, motivo = validar_horario(d.nueva_fecha_hora, duracion, cita["modalidad"], self.cotizador, self.cfg)
             if not ok:
-                texto = f"⚠️ Ojo: el nuevo horario {motivo}.\n" + texto
-        msg_id = self.mensajero.enviar(self.propietaria, texto)
-        self.repo.actualizar_cita(cita["id"], msg_aprobacion_id=msg_id)
-        return None  # el resumen actualizado ya es la respuesta
+                respuesta = f"⚠️ Ojo: el nuevo horario {motivo}.\n" + respuesta
+        return respuesta
 
-    def _limpiar_sesion_cliente(self, cita: dict) -> None:
+    def _marcar_cita_activa(self, cita: dict) -> None:
+        """Tras confirmar, la sesion recuerda la cita para poder cambiarla o cancelarla."""
         sesion = self.repo.obtener_sesion(cita["cliente_telefono"])
-        if sesion.get("cita_en_aprobacion") == cita["id"]:
-            sesion["cita_en_aprobacion"] = None
-            self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
+        sesion.update(cita_en_aprobacion=None, propuesta_cita=None, cita_activa=cita["id"])
+        self.repo.guardar_sesion(cita["cliente_telefono"], sesion)

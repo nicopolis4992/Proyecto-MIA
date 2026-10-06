@@ -75,18 +75,29 @@ def test_rechazar_ofrece_alternativas_validas_y_reabre_la_reserva():
         assert ok
 
 
-def test_modificar_hora_abre_nuevo_ciclo_con_la_propietaria():
+def test_modificar_hora_se_propone_al_cliente_sin_confirmar():
+    """La propietaria cambia la hora: el CLIENTE decide, no se confirma solo."""
     llm = json.dumps({"tipo": "modificar", "nueva_fecha_hora": "2026-10-01T12:00",
-                      "nuevo_total": None, "nuevo_costo_transporte": None, "motivo": None})
+                      "nuevo_total": 22, "nuevo_costo_transporte": None, "motivo": None})
     p, repo, msj = _procesador(ClienteFalso(llm))
     cid = _cita(repo)
-    assert p.procesar("a las 12 estaría bien", id_citado=f"wamid.cita{cid}") is None
+    resp = p.procesar("cámbialo a las 12 y cóbrale 22", id_citado=f"wamid.cita{cid}")
+    assert "Le propuse el cambio" in resp and "22.00$" in resp
     cita = repo.obtener_cita(cid)
-    assert cita["estado"] == "pendiente_aprobacion" and cita["ciclo_aprobacion"] == 2
+    assert cita["estado"] == "propuesta_cliente" and cita["ciclo_aprobacion"] == 2
     assert cita["fecha_hora"].startswith("2026-10-01T12:00")
-    assert msj.a(CLI) == []                       # al cliente aun no se le dice nada
-    assert "revisión 2" in msj.a(PROP)[-1]
-    assert cita["msg_aprobacion_id"] == msj.enviados[-1][2]
+    [propuesta] = msj.a(CLI)
+    assert "¿Le parece bien?" in propuesta and "12:00" in propuesta
+    assert "Queda agendado" not in propuesta
+    assert repo.obtener_sesion(CLI)["propuesta_cita"] == cid
+
+
+def test_respuesta_de_la_propietaria_a_una_consulta_se_reenvia_al_cliente():
+    p, repo, msj = _procesador()
+    p.registrar_consulta("wamid.consulta1", CLI, "¿qué horarios tiene el martes?")
+    resp = p.procesar("desde las 10:30 en adelante", id_citado="wamid.consulta1")
+    assert "Se lo envié" in resp
+    assert msj.a(CLI) == ["💬 Respuesta de la propietaria: desde las 10:30 en adelante"]
 
 
 def test_modificar_transporte_recalcula_total():

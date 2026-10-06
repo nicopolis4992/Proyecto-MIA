@@ -26,6 +26,7 @@ Requiere: pip install langgraph google-genai
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Literal, TypedDict
 
@@ -97,6 +98,16 @@ def parece_pregunta(texto: str) -> bool:
     return "?" in t or "¿" in t or t.startswith(_INTERROGATIVOS)
 
 
+_SOBRE_AGENDA = re.compile(
+    r"horario|disponib|libre|cupo|turno|espacio|agend|reprogram|cambiar|cancel|"
+    r"\b(lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|hoy|mañana|manana)\b")
+
+
+def pregunta_de_agenda(texto: str) -> bool:
+    """Preguntas que responde la agenda (horarios libres), no la base de conocimiento."""
+    return bool(_SOBRE_AGENDA.search(texto.lower()))
+
+
 def enrutar_por_intencion(
     estado: EstadoConversacion,
 ) -> Literal["agente_rag", "agente_agenda", "agente_general"]:
@@ -105,7 +116,8 @@ def enrutar_por_intencion(
     # Con una reserva en curso, describir a la mascota ("su pelo le crece y
     # hay que cortarlo") suena a "consultar" para el NLU, pero es la respuesta
     # a una pregunta del agente de agenda. Solo una pregunta explicita va al RAG.
-    if intencion == "consultar" and estado.get("en_flujo_agenda") and not parece_pregunta(estado["mensaje"]):
+    if intencion == "consultar" and estado.get("en_flujo_agenda") and (
+            not parece_pregunta(estado["mensaje"]) or pregunta_de_agenda(estado["mensaje"])):
         return "agente_agenda"
     if intencion == "consultar":
         return "agente_rag"
@@ -123,7 +135,11 @@ def enrutar_por_intencion(
 
 def nodo_nlu(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["nlu"] = clasificar_mensaje(estado["mensaje"], d.client)
-    estado["en_flujo_agenda"] = d.repo.obtener_sesion(estado["remitente"]).get("flujo") == "agendando"
+    sesion = d.repo.obtener_sesion(estado["remitente"])
+    # La agenda sigue a cargo si hay una reserva en curso o una cita sobre la
+    # que el cliente puede actuar (propuesta, por aprobar o confirmada futura).
+    estado["en_flujo_agenda"] = (sesion.get("flujo") == "agendando"
+                                 or d.agenda.cita_vigente(sesion, ahora()) is not None)
     return estado
 
 
@@ -132,8 +148,10 @@ def nodo_rag(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["respuesta"] = r.texto
     if not r.fundamentada and d.propietaria:
         # El cliente recibio "le comento a la propietaria": hay que hacerlo.
-        d.mensajero.enviar(d.propietaria, f"❓ Pregunta sin respuesta en la base de conocimiento "
-                                          f"de {estado['remitente']}: \"{estado['mensaje']}\"")
+        msg_id = d.mensajero.enviar(
+            d.propietaria, f"❓ Pregunta sin respuesta de {estado['remitente']}: \"{estado['mensaje']}\"\n"
+                           "Respóndeme citando este mensaje y se lo envío al cliente.")
+        d.aprobacion.registrar_consulta(msg_id, estado["remitente"], estado["mensaje"])
     logger.info("Enrutado a agente_rag (fundamentada=%s)", r.fundamentada)
     return estado
 
