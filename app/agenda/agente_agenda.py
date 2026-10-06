@@ -257,13 +257,15 @@ class AgenteAgenda:
             return "Entendido, no agendo nada por ahora. Cuando guste me escribe 🐾"
 
         sesion["flujo"] = "agendando"
+        pedido_previo = sesion["reserva"].get("pedido_especial")
         reserva = self._fusionar(sesion["reserva"], datos)
         n = datos.get("eligio_alternativa")
         if n and 1 <= n <= len(alternativas):
             reserva["fecha_hora"] = alternativas[n - 1]
         sesion["reserva"] = reserva
 
-        if datos.get("pedido_especial"):
+        pedido_nuevo = datos.get("pedido_especial") and datos["pedido_especial"] != pedido_previo
+        if pedido_nuevo:
             # El pedido se anota y la propietaria define el precio al aprobar.
             # El precio solo se menciona si el cliente lo pregunta.
             nota = f"Anoto su pedido: {datos['pedido_especial']}. La propietaria lo revisa con su cita"

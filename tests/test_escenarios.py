@@ -27,7 +27,12 @@ def entorno_limpio():
 def _correr(nombre):
     if not (escenarios.GRABACIONES / nombre).exists():
         pytest.skip(f"Escenario '{nombre}' sin grabar: python -m scripts.escenarios {nombre}")
-    return escenarios.correr(nombre, solo_lectura=True, mostrar=False)
+    demo = escenarios.correr(nombre, solo_lectura=True, mostrar=False)
+    # Un error (p. ej. grabacion faltante) se convierte en MENSAJE_ERROR: no debe aparecer.
+    from app.agents.orchestrator_graph import MENSAJE_ERROR
+    assert not any(m["texto"] == MENSAJE_ERROR for m in demo.chat), (
+        f"El escenario '{nombre}' tuvo errores: regrabar con python -m scripts.escenarios {nombre}")
+    return demo
 
 
 def _textos(demo, canal):
@@ -79,7 +84,8 @@ def test_escenario_preferencia_tarde():
 def test_escenario_pedido_especial_sin_precio():
     demo = _correr("pedido_especial")
     respuestas = _textos(demo, "cliente")
-    assert any("Anoto su pedido" in t for t in respuestas)
+    assert sum("Anoto su pedido" in t for t in respuestas) == 1                    # se anuncia una vez
+    assert any("le confirma el precio con ese cambio" in t or "lo valida la propietaria" in t for t in respuestas)
     assert not any("USD" in t for t in respuestas[1:])                           # sin precio tras el pedido
     [cita] = demo.repo.todas_las_citas()
     assert cita["pedido_especial"]

@@ -67,6 +67,9 @@ class ClienteCacheado:
     """Envuelve un genai.Client exponiendo solo `models`, como lo usan los agentes."""
 
     def __init__(self, cliente, carpeta: str | Path, solo_lectura: bool = False):
+        # Se conserva la referencia al cliente: si se libera, genai cierra su
+        # conexion HTTP y las llamadas fallan ("client has been closed").
+        self._cliente = cliente
         self.models = _ModelosCacheados(cliente.models if cliente else None, Path(carpeta), solo_lectura)
 
 

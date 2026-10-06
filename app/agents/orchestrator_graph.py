@@ -90,10 +90,21 @@ def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
     # Ahorro de llamadas: en medio de una reserva, un mensaje que no es una
     # pregunta general ("se llama Toby", "el viernes", "sin accesorio") va
     # directo a la agenda, sin pasar por el clasificador de intencion.
-    if en_flujo_agenda(estado["remitente"], d) and va_a_la_agenda(estado["mensaje"]):
+    sesion = d.repo.obtener_sesion(estado["remitente"])
+    if en_flujo_agenda(estado["remitente"], d) and (
+            va_a_la_agenda(estado["mensaje"]) or precio_de_pedido_especial(estado["mensaje"], sesion)):
         logger.info("NLU omitido: mensaje dentro de una reserva")
         return "agente_agenda"
     return "nlu"
+
+
+_PREGUNTA_PRECIO = re.compile(r"cu[aá]nto|precio|valor|cuesta|sale|saldr|cobr")
+
+
+def precio_de_pedido_especial(texto: str, sesion: dict) -> bool:
+    """Con un pedido especial anotado, el precio lo valida la propietaria (lo responde
+    la agenda), no la tabla general de precios del RAG."""
+    return bool((sesion.get("reserva") or {}).get("pedido_especial")) and bool(_PREGUNTA_PRECIO.search(texto.lower()))
 
 
 def en_flujo_agenda(remitente: str, d: "Dependencias") -> bool:
