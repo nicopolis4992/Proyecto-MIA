@@ -104,3 +104,16 @@ def test_varios_servicios_cuando_la_clienta_no_eligio():
     r = procesar_foto(_foto(), ClasificadorFalso(), COT, 1, ["basico", "completo"], politica=POLITICA)
     assert set(r.cotizaciones) == {"basico", "completo"}
     assert "Baño Básico" in r.mensaje and "Baño Completo" in r.mensaje
+
+
+def test_sin_servicio_elegido_muestra_todo_el_catalogo():
+    r = procesar_foto(_foto(), ClasificadorFalso(grupo="A_maquina"), COT, 1, None, politica=POLITICA)
+    assert list(r.cotizaciones) == ["express", "basico", "completo", "premium"]
+    for nombre in ("Baño Express", "Baño Básico", "Baño Completo", "Baño Premium"):
+        assert nombre in r.mensaje
+    assert "Deslanado" not in r.mensaje and "¿Cuál le interesa?" in r.mensaje
+
+
+def test_doble_capa_agrega_el_deslanado():
+    r = procesar_foto(_foto(), ClasificadorFalso(grupo="B_deslanado"), COT, 1, None, politica=POLITICA)
+    assert "deslanado" in r.cotizaciones and "Deslanado" in r.mensaje

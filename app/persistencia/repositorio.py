@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS citas (
     total_acordado REAL,
     origen TEXT DEFAULT 'whatsapp',
     descuento_aplicado TEXT,
+    pedido_especial TEXT,
     requiere_revision_manual INTEGER DEFAULT 0,
     estado TEXT NOT NULL,
     ciclo_aprobacion INTEGER DEFAULT 1,
@@ -103,6 +104,11 @@ class Repositorio:
         self._lock = threading.Lock()
         with self._lock:
             self._con.executescript(_ESQUEMA)
+            # Migracion simple: columnas agregadas despues de crear la base.
+            columnas = {f[1] for f in self._con.execute("PRAGMA table_info(citas)")}
+            if "pedido_especial" not in columnas:
+                self._con.execute("ALTER TABLE citas ADD COLUMN pedido_especial TEXT")
+                self._con.commit()
 
     def _ejecutar(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
         with self._lock:

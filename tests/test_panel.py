@@ -35,3 +35,16 @@ def test_resumen_muestra_la_raza_corregida():
     from app.agenda.mensajes import _descripcion_mascota
     assert _descripcion_mascota({"raza": "shitsu", "tamano": "pequeno"}) == "shih tzu, pequeño"
     assert _descripcion_mascota({"raza": "schnauzer con poodle"}) == "schnauzer x poodle"
+
+
+def test_base_antigua_se_migra_con_la_columna_de_pedido_especial(tmp_path):
+    import sqlite3
+
+    ruta = tmp_path / "vieja.sqlite3"
+    con = sqlite3.connect(ruta)
+    con.execute("CREATE TABLE citas (id INTEGER PRIMARY KEY, cliente_telefono TEXT, mascotas TEXT, "
+                "modalidad TEXT, estado TEXT, fecha_registro TEXT, actualizada TEXT)")
+    con.commit(); con.close()
+    repo = Repositorio(ruta)
+    columnas = {f[1] for f in repo._con.execute("PRAGMA table_info(citas)")}
+    assert "pedido_especial" in columnas

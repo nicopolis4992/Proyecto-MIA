@@ -3,15 +3,37 @@
     "estado": "PROVISIONAL - el horario laboral real lo define la propietaria; la disponibilidad real viene de Google Calendar (SCRUM-72)"
   },
   "horario_laboral": {
-    "lunes": ["09:00", "18:00"],
-    "martes": ["09:00", "18:00"],
-    "miercoles": ["09:00", "18:00"],
-    "jueves": ["09:00", "18:00"],
-    "viernes": ["09:00", "18:00"],
-    "sabado": ["09:00", "14:00"],
+    "lunes": [
+      "09:00",
+      "18:00"
+    ],
+    "martes": [
+      "09:00",
+      "18:00"
+    ],
+    "miercoles": [
+      "09:00",
+      "18:00"
+    ],
+    "jueves": [
+      "09:00",
+      "18:00"
+    ],
+    "viernes": [
+      "09:00",
+      "18:00"
+    ],
+    "sabado": [
+      "09:00",
+      "14:00"
+    ],
     "domingo": null
   },
   "paso_alternativas_min": 60,
   "num_alternativas": 3,
-  "antelacion_minima_horas": 2
+  "antelacion_minima_horas": 2,
+  "pedidos_especiales": {
+    "mencionar_precio_al_cliente": false,
+    "comentario": "Pedidos fuera del catalogo (ej. 'sin baño medicado ni accesorio'). Se anotan en la cita y la propietaria define el precio al aprobar. Mientras mencionar_precio_al_cliente sea false, el bot no da precio salvo que el cliente lo pregunte, y en ese caso dice que lo valida la propietaria. Decision provisional hasta validarlo con ella."
+  }
 }

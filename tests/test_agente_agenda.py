@@ -24,7 +24,8 @@ AHORA = datetime(2026, 10, 5, 9, 0, tzinfo=ZONA_HORARIA)  # lunes
 def _extraccion(mascotas, **reserva):
     base = {"fecha_hora": None, "modalidad": None, "sector": None, "cliente_nombre": None,
             "eligio_alternativa": None, "cancelar": False, "dia_consultado": None,
-            "franja_preferida": None, "hora_minima": None, "accion_cita": "ninguna"}
+            "franja_preferida": None, "hora_minima": None, "pedido_especial": None,
+            "pregunta_precio": False, "accion_cita": "ninguna"}
     campos = ("nombre", "servicio", "raza", "tamano", "peso_kg", "grupo", "estado", "comportamiento")
     return json.dumps({**base, **reserva,
                        "mascotas": [{c: m.get(c) for c in campos} for m in mascotas]})
@@ -108,7 +109,7 @@ def _extraccion_accion(accion, **extra):
     return json.dumps({"mascotas": [], "fecha_hora": None, "modalidad": None, "sector": None,
                        "cliente_nombre": None, "eligio_alternativa": None, "cancelar": False,
                        "dia_consultado": None, "franja_preferida": None, "hora_minima": None,
-                       "accion_cita": accion, **extra})
+                       "pedido_especial": None, "pregunta_precio": False, "accion_cita": accion, **extra})
 
 
 def test_cliente_acepta_la_propuesta_de_la_propietaria():
@@ -190,3 +191,43 @@ def test_en_la_tarde_sin_dia_usa_el_dia_que_se_estaba_mirando():
     ag.atender(TEL, "¿qué horarios tiene el miércoles?", AHORA)
     r = ag.atender(TEL, "¿puede en la tarde?", AHORA)
     assert "miércoles 7 de octubre" in r and "lunes" not in r
+
+
+# --- Pedidos especiales (06-oct): se anotan, sin precio salvo que lo pregunte ----
+
+def test_pedido_especial_se_anota_sin_mencionar_precio():
+    m = {"nombre": "Fara", "servicio": "premium", "tamano": "mediano", "grupo": "B_deslanado",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    ag, repo, msj = _agente(
+        _extraccion([m], pedido_especial="sin baño medicado y sin accesorio"),
+        _extraccion([m], modalidad="salon", fecha_hora="2026-10-07T10:00"),
+    )
+    r1 = ag.atender(TEL, "¿puede hacerle el premium pero sin el baño medicado y sin el accesorio?", AHORA)
+    assert "Anoto su pedido: sin baño medicado y sin accesorio" in r1
+    assert "$" not in r1 and "USD" not in r1
+    r2 = ag.atender(TEL, "lo llevo yo, el miércoles a las 10", AHORA)
+    assert "USD" not in r2 and "lo confirma la propietaria" in r2
+    [cita] = repo.citas_por_estado("pendiente_aprobacion")
+    assert cita["pedido_especial"] == "sin baño medicado y sin accesorio"
+    assert "⚠️ Pedido especial del cliente: sin baño medicado y sin accesorio" in msj.a(PROP)[0]
+
+
+def test_si_pregunta_el_precio_del_pedido_se_dice_que_lo_valida_la_propietaria():
+    m = {"nombre": "Fara", "servicio": "premium"}
+    ag, _, _ = _agente(_extraccion([m], pedido_especial="sin accesorio", pregunta_precio=True))
+    r = ag.atender(TEL, "sin accesorio, ¿cuánto me sale así?", AHORA)
+    assert "le confirma el precio con ese cambio" in r and "USD" not in r
+
+
+def test_sin_reserva_en_curso_pasa_por_el_clasificador():
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import enrutar_entrada
+
+    repo = Repositorio(":memory:")
+    d = SimpleNamespace(propietaria=PROP, repo=repo, agenda=SimpleNamespace(cita_vigente=lambda s, a: None))
+    msg = {"remitente": TEL, "mensaje": "se llama Toby", "imagen": None}
+    assert enrutar_entrada(msg, d) == "nlu"
+    repo.guardar_sesion(TEL, {"flujo": "agendando"})
+    assert enrutar_entrada(msg, d) == "agente_agenda"                       # sin llamada al NLU
+    assert enrutar_entrada({**msg, "mensaje": "¿aceptan tarjeta?"}, d) == "nlu"

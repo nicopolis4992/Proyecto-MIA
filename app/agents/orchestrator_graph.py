@@ -81,12 +81,29 @@ class Dependencias:
 
 # --- Enrutamiento ---
 
-def enrutar_entrada(estado: EstadoConversacion, propietaria: str) -> Literal["aprobacion", "cotizacion_imagen", "nlu"]:
-    if propietaria and estado["remitente"] == propietaria:
+def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
+        "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda"]:
+    if d.propietaria and estado["remitente"] == d.propietaria:
         return "aprobacion"
     if estado.get("imagen"):
         return "cotizacion_imagen"
+    # Ahorro de llamadas: en medio de una reserva, un mensaje que no es una
+    # pregunta general ("se llama Toby", "el viernes", "sin accesorio") va
+    # directo a la agenda, sin pasar por el clasificador de intencion.
+    if en_flujo_agenda(estado["remitente"], d) and va_a_la_agenda(estado["mensaje"]):
+        logger.info("NLU omitido: mensaje dentro de una reserva")
+        return "agente_agenda"
     return "nlu"
+
+
+def en_flujo_agenda(remitente: str, d: "Dependencias") -> bool:
+    """Hay una reserva en curso o una cita sobre la que el cliente puede actuar."""
+    sesion = d.repo.obtener_sesion(remitente)
+    return sesion.get("flujo") == "agendando" or d.agenda.cita_vigente(sesion, ahora()) is not None
+
+
+def va_a_la_agenda(texto: str) -> bool:
+    return not parece_pregunta(texto) or pregunta_de_agenda(texto) or pedido_personalizado(texto)
 
 
 _INTERROGATIVOS = ("cuanto", "cuánto", "que ", "qué", "como ", "cómo", "donde", "dónde", "cuando",
@@ -109,6 +126,16 @@ def pregunta_de_agenda(texto: str) -> bool:
     return bool(_SOBRE_AGENDA.search(texto.lower()))
 
 
+_PERSONALIZACION = re.compile(
+    r"\bsin (el |la |los |las |un |una )?\w|\bquit|\bno (quiero|necesito|le (pongan|pongas|hagan|ponga))|"
+    r"\bsolo (el|la|quiero|corte|ba[nñ]o|u[nñ]as)|\bmenos el\b|\bpersonaliz|\ben vez de\b")
+
+
+def pedido_personalizado(texto: str) -> bool:
+    """Cambios a lo que incluye un servicio: los anota la agenda (pedido especial)."""
+    return bool(_PERSONALIZACION.search(texto.lower()))
+
+
 def enrutar_por_intencion(
     estado: EstadoConversacion,
 ) -> Literal["agente_rag", "agente_agenda", "agente_general"]:
@@ -117,8 +144,7 @@ def enrutar_por_intencion(
     # Con una reserva en curso, describir a la mascota ("su pelo le crece y
     # hay que cortarlo") suena a "consultar" para el NLU, pero es la respuesta
     # a una pregunta del agente de agenda. Solo una pregunta explicita va al RAG.
-    if intencion == "consultar" and estado.get("en_flujo_agenda") and (
-            not parece_pregunta(estado["mensaje"]) or pregunta_de_agenda(estado["mensaje"])):
+    if intencion == "consultar" and estado.get("en_flujo_agenda") and va_a_la_agenda(estado["mensaje"]):
         return "agente_agenda"
     if intencion == "consultar":
         return "agente_rag"
@@ -136,11 +162,9 @@ def enrutar_por_intencion(
 
 def nodo_nlu(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["nlu"] = clasificar_mensaje(estado["mensaje"], d.client)
-    sesion = d.repo.obtener_sesion(estado["remitente"])
     # La agenda sigue a cargo si hay una reserva en curso o una cita sobre la
     # que el cliente puede actuar (propuesta, por aprobar o confirmada futura).
-    estado["en_flujo_agenda"] = (sesion.get("flujo") == "agendando"
-                                 or d.agenda.cita_vigente(sesion, ahora()) is not None)
+    estado["en_flujo_agenda"] = en_flujo_agenda(estado["remitente"], d)
     return estado
 
 
@@ -197,8 +221,8 @@ def nodo_cotizacion_imagen(estado: EstadoConversacion, d: Dependencias) -> Estad
     m = mascotas[idx]
 
     intento = sesion.get("fotos_intentos", 0) + 1
-    # Sin servicio elegido se muestran los dos mas pedidos.
-    servicios = [m["servicio"]] if m.get("servicio") else ["basico", "completo"]
+    # Sin servicio elegido se muestra todo el catalogo.
+    servicios = [m["servicio"]] if m.get("servicio") else None
     base = {k: v for k, v in m.items() if k != "servicio" and v is not None}
     r = procesar_foto(estado["imagen"], d.clasificador, d.cotizador, intento, servicios, base)
 
@@ -240,8 +264,9 @@ def construir_grafo(d: Dependencias):
 
     grafo.add_conditional_edges(
         START,
-        lambda e: enrutar_entrada(e, d.propietaria),
-        {"aprobacion": "aprobacion", "cotizacion_imagen": "cotizacion_imagen", "nlu": "nlu"},
+        lambda e: enrutar_entrada(e, d),
+        {"aprobacion": "aprobacion", "cotizacion_imagen": "cotizacion_imagen", "nlu": "nlu",
+         "agente_agenda": "agente_agenda"},
     )
     # Este es el reemplazo real del "un solo nodo" de SCRUM-85: en lugar de
     # un edge fijo, add_conditional_edges decide el siguiente nodo en

@@ -100,6 +100,8 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     else:
         lineas.append("Modalidad: en el salón")
     lineas.append(f"Total: {texto_total(cita)}")
+    if cita.get("pedido_especial"):
+        lineas.append(f"⚠️ Pedido especial del cliente: {cita['pedido_especial']} → define el precio")
     if c.get("preguntas_pendientes"):
         lineas.append("Falta confirmar: " + ", ".join(ETIQUETA_PREGUNTA.get(p, p) for p in c["preguntas_pendientes"]))
     avisos = [a for m in c.get("mascotas", []) for a in m.get("avisos", [])] + \
@@ -123,6 +125,8 @@ def confirmacion_cliente(cita: dict) -> str:
     elif servicios:
         partes.append("Servicios: " + "; ".join(
             f"{m.get('nombre') or 'mascota'}: {s}" for m, s in zip(cita["mascotas"], servicios)) + ".")
+    if cita.get("pedido_especial"):
+        partes.append(f"Con su pedido: {cita['pedido_especial']}.")
     total = texto_total(cita)
     if total != "por confirmar":
         incluye = " con el servicio puerta a puerta incluido" if cita["modalidad"] == "puerta_a_puerta" else ""

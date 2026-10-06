@@ -58,6 +58,12 @@ RUTA_TARIFARIO = RAIZ_APP / "cotizacion" / "tarifario_v2.json"
 
 
 def ahora() -> datetime:
+    # MIA_AHORA fija el reloj (ej. "2026-10-06T09:00") para que los escenarios
+    # grabados sean reproducibles: la fecha actual va dentro de los prompts.
+    fijo = os.getenv("MIA_AHORA")
+    if fijo:
+        f = datetime.fromisoformat(fijo)
+        return f if f.tzinfo else f.replace(tzinfo=ZONA_HORARIA)
     return datetime.now(ZONA_HORARIA)
 
 
@@ -70,11 +76,15 @@ def crear_cliente_gemini():
     from google import genai
     from google.genai import types
 
-    return genai.Client(
+    from app.llm_cache import envolver_si_corresponde
+
+    if os.getenv("GEMINI_CACHE_SOLO_LECTURA") == "1":
+        return envolver_si_corresponde(None)  # pruebas: nunca se llama a Gemini
+    return envolver_si_corresponde(genai.Client(
         http_options=types.HttpOptions(
             retry_options=types.HttpRetryOptions(
                 attempts=5, initial_delay=1.0, max_delay=8.0,
                 http_status_codes=[429, 500, 502, 503, 504],
             )
         )
-    )
+    ))

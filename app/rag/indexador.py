@@ -60,8 +60,7 @@ def reindexar(almacen: Almacen, embedder: Embedder,
 
 
 def main() -> None:
-    from google import genai
-
+    from app.config import crear_cliente_gemini
     from app.rag.almacen import crear_almacen
     from app.rag.embeddings import EmbedderGemini
 
@@ -71,7 +70,7 @@ def main() -> None:
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO)
-    embedder = EmbedderGemini(genai.Client())
+    embedder = EmbedderGemini(crear_cliente_gemini())
     almacen = crear_almacen(embedder.modelo, embedder.dimension)
     resumen = reindexar(almacen, embedder, forzar=args.forzar)
     print(f"Fragmentos: {resumen['total']} | (re)indexados: {len(resumen['indexados'])} "

@@ -63,11 +63,12 @@ class ResultadoFoto:
 
 
 def procesar_foto(datos: bytes, clasificador, cotizador: Cotizador, intento: int,
-                  servicios: list[str], mascota_base: dict | None = None,
+                  servicios: list[str] | None = None, mascota_base: dict | None = None,
                   politica: dict | None = None) -> ResultadoFoto:
     """
     `intento` es el numero de foto de esta mascota (1 = primera).
-    `servicios`: servicios a cotizar (si la clienta aun no eligio, varios).
+    `servicios`: servicios a cotizar. None = todo el catalogo (y el deslanado
+    si el perro es de doble capa), para que la clienta vea todas las opciones.
     `mascota_base`: lo ya declarado en la conversacion (nombre, raza, estado,
     comportamiento...); la foto solo completa lo que falta.
     """
@@ -108,6 +109,10 @@ def procesar_foto(datos: bytes, clasificador, cotizador: Cotizador, intento: int
     # Lo declarado por la clienta tiene prioridad sobre la foto.
     mascota = {**{k: v for k, v in atributos.items() if not base.get(k)}, **base}
 
+    if servicios is None:
+        servicios = list(cotizador.datos["servicios"])
+        if mascota.get("grupo") == "B_deslanado":
+            servicios.append("deslanado")
     cotizaciones = {s: cotizador.cotizar([{**mascota, "servicio": s}]) for s in servicios}
     traza["version_tarifario"] = next(iter(cotizaciones.values()))["version_tarifario"]
     mensaje = _redactar(atributos, cotizaciones, cotizador, revision_manual)
@@ -135,4 +140,5 @@ def _redactar(atributos: dict, cotizaciones: dict, cotizador: Cotizador, revisio
         pendientes = next(iter(cotizaciones.values()))["preguntas_pendientes"]
         if "estado_manto" in pendientes:
             partes.append("El valor exacto depende de si tiene nudos o el pelo enredado.")
+        partes.append("¿Cuál le interesa?")
     return "\n".join(partes)

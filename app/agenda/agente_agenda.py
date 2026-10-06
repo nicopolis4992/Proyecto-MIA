@@ -100,6 +100,11 @@ franja_preferida: "manana" o "tarde" si pide una parte del dia ("en la tarde",
 hora_minima: "HH:MM" si pide "despues de las X" o "desde las X" (ej. "despues
 de las 3" = "15:00"). Null si no lo dice.
 
+pedido_especial: si pide un cambio a lo que incluye el servicio ("sin baño
+medicado", "sin accesorio", "solo corte de uñas", "que no le corten el pelo"),
+descríbelo en pocas palabras, junto con lo que ya estaba en la reserva. Null si no.
+pregunta_precio: true si pregunta cuánto cuesta o cuánto le baja con ese cambio.
+
 accion_cita (solo si hay CITA EXISTENTE):
   "aceptar_propuesta": acepta el cambio que propuso la propietaria ("si", "dale", "perfecto").
   "rechazar_propuesta": no le sirve el cambio propuesto.
@@ -143,13 +148,15 @@ def construir_esquema(cotizador: Cotizador) -> types.Schema:
             "cancelar": S(type=T.BOOLEAN),
             "dia_consultado": S(type=T.STRING, nullable=True),
             "franja_preferida": S(type=T.STRING, enum=["manana", "tarde"], nullable=True),
+            "pedido_especial": S(type=T.STRING, nullable=True),
+            "pregunta_precio": S(type=T.BOOLEAN),
             "hora_minima": S(type=T.STRING, nullable=True),
             "accion_cita": S(type=T.STRING, enum=["ninguna", "aceptar_propuesta", "rechazar_propuesta",
                                                   "reprogramar", "cancelar_cita"]),
         },
         required=["mascotas", "fecha_hora", "modalidad", "sector", "cliente_nombre",
                   "eligio_alternativa", "cancelar", "dia_consultado", "franja_preferida",
-                  "hora_minima", "accion_cita"],
+                  "hora_minima", "pedido_especial", "pregunta_precio", "accion_cita"],
     )
 
 
@@ -256,6 +263,16 @@ class AgenteAgenda:
             reserva["fecha_hora"] = alternativas[n - 1]
         sesion["reserva"] = reserva
 
+        if datos.get("pedido_especial"):
+            # El pedido se anota y la propietaria define el precio al aprobar.
+            # El precio solo se menciona si el cliente lo pregunta.
+            nota = f"Anoto su pedido: {datos['pedido_especial']}. La propietaria lo revisa con su cita"
+            nota += " y le confirma el precio con ese cambio." if datos.get("pregunta_precio") else "."
+            return f"{nota}\n\n{self.continuar(telefono, sesion, ahora)}"
+        if datos.get("pregunta_precio") and reserva.get("pedido_especial"):
+            return ("El precio con su pedido especial lo valida la propietaria; se lo confirmo al revisar "
+                    "su cita. " + self.continuar(telefono, sesion, ahora))
+
         # La preferencia ("en la tarde", "despues de las 3") se recuerda para
         # todas las opciones que se ofrezcan en esta conversacion.
         for clave in ("franja_preferida", "hora_minima", "dia_consultado"):
@@ -318,7 +335,8 @@ class AgenteAgenda:
         sesion.update(
             flujo="agendando", reprogramar_cita_id=cita["id"], preguntado=list(_ATRIBUTOS),
             reserva={"mascotas": cita["mascotas"], "fecha_hora": None, "modalidad": cita["modalidad"],
-                     "sector": cita.get("sector"), "cliente_nombre": cita.get("cliente_nombre")},
+                     "sector": cita.get("sector"), "cliente_nombre": cita.get("cliente_nombre"),
+                     "pedido_especial": cita.get("pedido_especial")},
         )
 
     def _ofrecer_horarios_del_dia(self, telefono: str, sesion: dict, dia: str | None, ahora: datetime,
@@ -352,6 +370,9 @@ class AgenteAgenda:
         else:
             inicio = "Ese día no me queda espacio; lo más cercano es:"
         return f"{inicio}\n{opciones}\nRespóndame con el número de la opción o indíqueme otra hora."
+
+    def _mencionar_precio_pedido(self) -> bool:
+        return bool(self.cfg.get("pedidos_especiales", {}).get("mencionar_precio_al_cliente"))
 
     @staticmethod
     def _preferencia(sesion: dict) -> dict:
@@ -388,7 +409,7 @@ class AgenteAgenda:
 
     def _fusionar(self, anterior: dict, nuevo: dict) -> dict:
         r = dict(anterior)
-        for campo in ("fecha_hora", "modalidad", "sector", "cliente_nombre"):
+        for campo in ("fecha_hora", "modalidad", "sector", "cliente_nombre", "pedido_especial"):
             if nuevo.get(campo):
                 r[campo] = nuevo[campo]
         previas = anterior.get("mascotas") or []
@@ -484,6 +505,7 @@ class AgenteAgenda:
         else:
             cita_id = self.repo.crear_cita(
                 cliente_telefono=telefono, cliente_nombre=r.get("cliente_nombre"),
+                pedido_especial=r.get("pedido_especial"),
                 mascotas=r["mascotas"], fecha_hora=inicio, modalidad=r["modalidad"],
                 zona=(cotizacion.get("traslado") or {}).get("zona"), sector=r.get("sector"),
                 cotizacion=cotizacion, requiere_revision_manual=bool(sesion.get("revision_manual")),
@@ -500,5 +522,8 @@ class AgenteAgenda:
             logger.error("PROPIETARIA_WHATSAPP no configurado: la cita #%s no se envio a aprobar", cita_id)
 
         self.repo.guardar_sesion(telefono, {"cita_en_aprobacion": cita_id})
+        valor = cotizacion["mensaje_cliente"]
+        if r.get("pedido_especial") and not self._mencionar_precio_pedido():
+            valor = "El precio con su pedido especial se lo confirma la propietaria."
         return (f"¡Perfecto! Tengo todo para el {mensajes.fecha_legible(inicio)}. "
-                f"{cotizacion['mensaje_cliente']} Le confirmo en un momento, apenas se revise la agenda 🙌")
+                f"{valor} Le confirmo en un momento, apenas se revise la agenda 🙌")
