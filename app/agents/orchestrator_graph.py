@@ -100,6 +100,7 @@ def parece_pregunta(texto: str) -> bool:
 
 _SOBRE_AGENDA = re.compile(
     r"horario|disponib|libre|cupo|turno|espacio|agend|reprogram|cambiar|cancel|"
+    r"\btarde\b|temprano|\ba las \d|despu[eé]s de las|antes de las|desde las|"
     r"\b(lunes|martes|miercoles|miércoles|jueves|viernes|sabado|sábado|domingo|hoy|mañana|manana)\b")
 
 

@@ -39,7 +39,7 @@ import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time
 
 from google.genai import types
 
@@ -95,6 +95,10 @@ hora, NO inventes una hora: deja fecha_hora en null y pon el dia en
 dia_consultado.
 dia_consultado: "YYYY-MM-DD" si pregunta que horarios hay un dia ("¿el lunes
 a que hora tiene?", "¿que horarios tiene el martes 6?") o da un dia sin hora.
+franja_preferida: "manana" o "tarde" si pide una parte del dia ("en la tarde",
+"por la manana", "despues del almuerzo" = tarde). Null si no lo dice.
+hora_minima: "HH:MM" si pide "despues de las X" o "desde las X" (ej. "despues
+de las 3" = "15:00"). Null si no lo dice.
 
 accion_cita (solo si hay CITA EXISTENTE):
   "aceptar_propuesta": acepta el cambio que propuso la propietaria ("si", "dale", "perfecto").
@@ -138,11 +142,14 @@ def construir_esquema(cotizador: Cotizador) -> types.Schema:
             "eligio_alternativa": S(type=T.INTEGER, nullable=True),
             "cancelar": S(type=T.BOOLEAN),
             "dia_consultado": S(type=T.STRING, nullable=True),
+            "franja_preferida": S(type=T.STRING, enum=["manana", "tarde"], nullable=True),
+            "hora_minima": S(type=T.STRING, nullable=True),
             "accion_cita": S(type=T.STRING, enum=["ninguna", "aceptar_propuesta", "rechazar_propuesta",
                                                   "reprogramar", "cancelar_cita"]),
         },
         required=["mascotas", "fecha_hora", "modalidad", "sector", "cliente_nombre",
-                  "eligio_alternativa", "cancelar", "dia_consultado", "accion_cita"],
+                  "eligio_alternativa", "cancelar", "dia_consultado", "franja_preferida",
+                  "hora_minima", "accion_cita"],
     )
 
 
@@ -249,8 +256,16 @@ class AgenteAgenda:
             reserva["fecha_hora"] = alternativas[n - 1]
         sesion["reserva"] = reserva
 
-        if datos.get("dia_consultado") and not reserva.get("fecha_hora"):
-            return self._ofrecer_horarios_del_dia(telefono, sesion, datos["dia_consultado"], ahora)
+        # La preferencia ("en la tarde", "despues de las 3") se recuerda para
+        # todas las opciones que se ofrezcan en esta conversacion.
+        for clave in ("franja_preferida", "hora_minima", "dia_consultado"):
+            if datos.get(clave):
+                sesion[clave] = datos[clave]
+        pide_opciones = datos.get("dia_consultado") or datos.get("franja_preferida") or datos.get("hora_minima")
+        if pide_opciones and not reserva.get("fecha_hora"):
+            # "¿y en la tarde?" sin dia se refiere al dia que se estaba mirando.
+            dia = datos.get("dia_consultado") or sesion.get("dia_consultado")
+            return self._ofrecer_horarios_del_dia(telefono, sesion, dia, ahora, cita)
         if accion in ("reprogramar", "rechazar_propuesta") and not reserva.get("fecha_hora"):
             return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora, cita)
         return self.continuar(telefono, sesion, ahora)
@@ -320,19 +335,35 @@ class AgenteAgenda:
             desde = ahora
         ocupado = ocupado_combinado(self.repo, self.calendario)
         alternativas = proponer_alternativas(desde, duracion, r.get("modalidad") or "salon", self.cotizador,
-                                             self.cfg, ocupado, ahora)
+                                             self.cfg, ocupado, ahora, **self._preferencia(sesion))
         sesion["alternativas"] = [a.isoformat() for a in alternativas]
         self.repo.guardar_sesion(telefono, sesion)
         if not alternativas:
             return "No encuentro horarios libres en esos días 😕 ¿Qué otro día le queda bien?"
         opciones = "\n".join(f"{i}. {mensajes.fecha_legible(a)}" for i, a in enumerate(alternativas, 1))
-        if dia is None:
+        if dia is None and cita:
             inicio = "Sin problema, busquemos otro horario. Le puedo ofrecer:"
-        elif alternativas[0].date().isoformat() == dia:
+        elif dia is None:
+            inicio = "Estos son los horarios más cercanos que tengo:"
+        elif all(a.date().isoformat() == dia for a in alternativas):
             inicio = "Para ese día tengo libre:"
+        elif alternativas[0].date().isoformat() == dia:
+            inicio = "Tengo libre:"
         else:
             inicio = "Ese día no me queda espacio; lo más cercano es:"
         return f"{inicio}\n{opciones}\nRespóndame con el número de la opción o indíqueme otra hora."
+
+    @staticmethod
+    def _preferencia(sesion: dict) -> dict:
+        pref: dict = {}
+        if sesion.get("franja_preferida") in ("manana", "tarde"):
+            pref["franja"] = sesion["franja_preferida"]
+        if sesion.get("hora_minima"):
+            try:
+                pref["hora_minima"] = time.fromisoformat(sesion["hora_minima"])
+            except ValueError:
+                pass
+        return pref
 
     def _estado_de_cita(self, cita: dict) -> str:
         if cita["estado"] == "propuesta_cliente":
@@ -435,7 +466,7 @@ class AgenteAgenda:
         ok, motivo = validar_horario(inicio, duracion, r["modalidad"], self.cotizador, self.cfg, ocupado, ahora)
         if not ok:
             alternativas = proponer_alternativas(inicio, duracion, r["modalidad"], self.cotizador, self.cfg,
-                                                 ocupado, ahora)
+                                                 ocupado, ahora, **self._preferencia(sesion))
             sesion["alternativas"] = [a.isoformat() for a in alternativas]
             r["fecha_hora"] = None
             self.repo.guardar_sesion(telefono, sesion)

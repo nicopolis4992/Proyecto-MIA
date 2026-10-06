@@ -52,27 +52,52 @@ def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, cotizad
     return True, None
 
 
+FRANJAS = {"manana": (time(0, 0), time(12, 0)), "tarde": (time(12, 0), time(23, 59))}
+
+
+def _repartir(horarios: list[datetime], n: int) -> list[datetime]:
+    """Elige n horarios repartidos en el dia (no los n primeros seguidos)."""
+    if len(horarios) <= n:
+        return horarios
+    if n == 1:
+        return horarios[:1]
+    paso = (len(horarios) - 1) / (n - 1)
+    return [horarios[round(i * paso)] for i in range(n)]
+
+
 def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, cotizador,
                           cfg: dict, ocupado: Callable[[datetime, int], bool] | None = None,
-                          ahora: datetime | None = None, dias_busqueda: int = 7) -> list[datetime]:
-    """Primeros N horarios validos a partir de `desde`, priorizando el mismo dia."""
+                          ahora: datetime | None = None, dias_busqueda: int = 7,
+                          franja: str | None = None, hora_minima: time | None = None) -> list[datetime]:
+    """
+    N horarios validos a partir del dia de `desde`, priorizando ese mismo dia.
+
+    Dentro de un dia se ofrecen horarios repartidos (manana, mediodia, tarde)
+    para que el cliente vea todo el rango disponible. `franja` ("manana" o
+    "tarde") y `hora_minima` ("despues de las 3") respetan lo que pidio.
+    """
     paso = timedelta(minutes=cfg["paso_alternativas_min"])
     n = cfg["num_alternativas"]
-    candidatos: list[datetime] = []
+    desde_franja, hasta_franja = FRANJAS.get(franja, (time(0, 0), time(23, 59)))
+    elegidos: list[datetime] = []
     dia = desde.replace(hour=0, minute=0, second=0, microsecond=0)
     for _ in range(dias_busqueda):
-        franja = cfg["horario_laboral"].get(DIAS[dia.weekday()])
-        if franja:
-            apertura = time.fromisoformat(franja[0])
+        horario = cfg["horario_laboral"].get(DIAS[dia.weekday()])
+        if horario:
+            apertura = time.fromisoformat(horario[0])
             t = dia.replace(hour=apertura.hour, minute=apertura.minute)
+            del_dia = []
             while t.date() == dia.date():
-                if t != desde and validar_horario(t, duracion_min, modalidad, cotizador, cfg, ocupado, ahora)[0]:
-                    candidatos.append(t)
-                    if len(candidatos) >= n:
-                        return candidatos
+                en_franja = desde_franja <= t.time() < hasta_franja and (hora_minima is None or t.time() >= hora_minima)
+                if t != desde and en_franja and validar_horario(t, duracion_min, modalidad, cotizador, cfg,
+                                                               ocupado, ahora)[0]:
+                    del_dia.append(t)
                 t += paso
+            elegidos += _repartir(del_dia, n - len(elegidos))
+            if len(elegidos) >= n:
+                return elegidos
         dia += timedelta(days=1)
-    return candidatos
+    return elegidos
 
 
 def ocupado_combinado(repo, calendario=None) -> Callable[[datetime, int], bool]:

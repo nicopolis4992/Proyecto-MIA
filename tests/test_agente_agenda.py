@@ -23,7 +23,8 @@ AHORA = datetime(2026, 10, 5, 9, 0, tzinfo=ZONA_HORARIA)  # lunes
 
 def _extraccion(mascotas, **reserva):
     base = {"fecha_hora": None, "modalidad": None, "sector": None, "cliente_nombre": None,
-            "eligio_alternativa": None, "cancelar": False, "dia_consultado": None, "accion_cita": "ninguna"}
+            "eligio_alternativa": None, "cancelar": False, "dia_consultado": None,
+            "franja_preferida": None, "hora_minima": None, "accion_cita": "ninguna"}
     campos = ("nombre", "servicio", "raza", "tamano", "peso_kg", "grupo", "estado", "comportamiento")
     return json.dumps({**base, **reserva,
                        "mascotas": [{c: m.get(c) for c in campos} for m in mascotas]})
@@ -106,7 +107,8 @@ def _cita_confirmada(repo, estado="confirmada"):
 def _extraccion_accion(accion, **extra):
     return json.dumps({"mascotas": [], "fecha_hora": None, "modalidad": None, "sector": None,
                        "cliente_nombre": None, "eligio_alternativa": None, "cancelar": False,
-                       "dia_consultado": None, "accion_cita": accion, **extra})
+                       "dia_consultado": None, "franja_preferida": None, "hora_minima": None,
+                       "accion_cita": accion, **extra})
 
 
 def test_cliente_acepta_la_propuesta_de_la_propietaria():
@@ -156,3 +158,35 @@ def test_que_horarios_tiene_el_martes_ofrece_horarios_reales_sin_inventar_hora()
     r = ag.atender(TEL, "¿qué horarios tiene el martes 6?", AHORA)
     assert "Para ese día tengo libre" in r and "martes 6 de octubre a las 09:00" in r
     assert repo.obtener_sesion(TEL)["reserva"]["fecha_hora"] is None
+
+
+def test_opciones_repartidas_en_el_dia_y_respetan_la_tarde():
+    """Antes ofrecia siempre 9, 10 y 11 (los tres primeros); y "en la tarde" se ignoraba."""
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"))
+    r = ag.atender(TEL, "¿qué horarios tiene el miércoles 7?", AHORA)
+    assert "09:00" in r and "11:00" not in r.split("3.")[0] and "16:00" in r   # mañana ... tarde
+
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"))
+    r = ag.atender(TEL, "¿puede el miércoles en la tarde?", AHORA)
+    horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
+    assert horas and all(h >= "12:00" for h in horas), r
+
+
+def test_reprogramar_pidiendo_la_tarde():
+    ag, repo, _ = _agente(_extraccion_accion("reprogramar", franja_preferida="tarde"))
+    _cita_confirmada(repo)
+    r = ag.atender(TEL, "no a esa hora no puedo, ¿puede en la tarde?", AHORA)
+    horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
+    assert len(horas) == 3 and all(h >= "12:00" for h in horas), r
+
+
+def test_en_la_tarde_sin_dia_usa_el_dia_que_se_estaba_mirando():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"),
+                       _extraccion([m], modalidad="salon", franja_preferida="tarde"))
+    ag.atender(TEL, "¿qué horarios tiene el miércoles?", AHORA)
+    r = ag.atender(TEL, "¿puede en la tarde?", AHORA)
+    assert "miércoles 7 de octubre" in r and "lunes" not in r

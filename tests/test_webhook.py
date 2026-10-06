@@ -131,3 +131,5 @@ def test_en_reserva_las_descripciones_van_a_agenda_y_las_preguntas_al_rag():
     assert ruta("¿Cuánto cuesta el deslanado?") == "agente_rag"
     assert ruta("cuanto cobran por el traslado") == "agente_rag"
     assert ruta("Su pelo le crece", en_flujo=False) == "agente_rag"
+    assert ruta("y despues de las 3?") == "agente_agenda"
+    assert ruta("¿puede en la tarde?") == "agente_agenda"
