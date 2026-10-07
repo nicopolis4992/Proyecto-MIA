@@ -33,12 +33,13 @@ from anonimizacion import (  # noqa: E402
     seudonimo,
 )
 from clases import (  # noqa: E402
-    CLASES_PELAJE,
-    CLASES_TAMANO,
-    CLAVES_PELAJE,
+    CLAVES_ESTADO,
+    CLAVES_GRUPO,
     CLAVES_TAMANO,
+    RUTA_TARIFARIO_V2,
     clasificar_peso,
     clasificar_rango_peso,
+    normalizar_estado,
     verificar_contra_tarifario,
 )
 from dataset import (  # noqa: E402
@@ -46,6 +47,7 @@ from dataset import (  # noqa: E402
     FUENTE_INSTAGRAM,
     FUENTE_STANFORD,
     Registro,
+    leer_manifiesto,
     particionar,
     verificar_particion,
 )
@@ -56,6 +58,7 @@ from mapeo_razas import (  # noqa: E402
     construir_mapeo,
     integridad_tabla,
     validar_cobertura,
+    verificar_grupos_contra_tarifario,
 )
 from reporte import brecha, cobertura, n_minimo_por_clase, semiamplitud_para  # noqa: E402
 
@@ -71,7 +74,7 @@ def test_CA1_la_tabla_cubre_las_120_razas_de_stanford_dogs():
 
 def test_CA1_toda_raza_recibe_una_decision_de_uso_explicita():
     usos = {f["uso"] for f in construir_mapeo()}
-    assert usos <= {"completa", "solo_pelaje", "excluida"}
+    assert usos <= {"completa", "solo_grupo", "excluida"}
     assert all(f["uso"] for f in construir_mapeo())
 
 
@@ -164,20 +167,22 @@ def test_CA2_los_casi_duplicados_se_agrupan():
 
 
 # ===========================================================================
-# CA3 — Las etiquetas corresponden a las clases del tarifario de SCRUM-98
+# CA3 — Las etiquetas corresponden a las clases del tarifario de SCRUM-98 (v2)
 # ===========================================================================
 
-def test_CA3_los_cortes_de_peso_replican_el_tarifario():
+def test_CA3_los_cortes_de_peso_replican_el_tarifario_v2_sin_huecos():
     assert clasificar_peso(9.0) == "pequeno"
+    assert clasificar_peso(9.05) == "mediano"   # en v1 caía en el hueco 9,0–9,1
     assert clasificar_peso(9.1) == "mediano"
     assert clasificar_peso(18.0) == "mediano"
-    assert clasificar_peso(18.1) == "grande"
+    assert clasificar_peso(18.005) == "grande"
     assert clasificar_peso(45.0) == "grande"
     assert clasificar_peso(45.1) == "fuera_de_rango"
+    assert clasificar_peso(0) == "fuera_de_rango"
 
 
 def test_CA3_una_raza_que_cruza_un_corte_se_marca_ambigua():
-    # Beagle: 9,0–11,3 kg, atraviesa el corte de 9,0/9,1
+    # Beagle: 9,0–11,3 kg, atraviesa el corte de 9,0 kg
     _, ambigua = clasificar_rango_peso(9.0, 11.3)
     assert ambigua is True
     # Pug: 6,3–8,1 kg, íntegramente pequeño
@@ -187,46 +192,100 @@ def test_CA3_una_raza_que_cruza_un_corte_se_marca_ambigua():
 
 def test_CA3_las_razas_ambiguas_no_aportan_etiqueta_de_tamano():
     mapa = {f["slug"]: f for f in construir_mapeo()}
-    assert mapa["beagle"]["uso"] == "solo_pelaje"
+    assert mapa["beagle"]["uso"] == "solo_grupo"
     assert mapa["pug"]["uso"] == "completa"
 
 
-def test_CA3_todo_pelaje_pertenece_a_la_taxonomia_del_tarifario():
-    assert all(f["pelaje"] in CLAVES_PELAJE for f in construir_mapeo())
+def test_CA3_las_clases_coinciden_con_el_tarifario_v2_del_repositorio():
+    assert RUTA_TARIFARIO_V2.exists()
+    assert verificar_contra_tarifario(RUTA_TARIFARIO_V2) == []
+    assert CLAVES_GRUPO == ("A_maquina", "B_deslanado", "C_cepillado", "D_corto")
+    assert CLAVES_ESTADO == ("sin_motas", "moderado", "severo")
 
 
-def _tarifario_temporal(tmp: str, pelajes: list[dict]) -> Path:
-    # Misma estructura que tarifario_v1.json de SCRUM-98.
+def test_CA3_todo_grupo_del_mapeo_pertenece_a_la_taxonomia_v2():
+    assert all(f["grupo"] in CLAVES_GRUPO for f in construir_mapeo())
+    assert not any("pelaje" in k for k in construir_mapeo()[0])
+
+
+def test_CA3_las_razas_del_tarifario_conservan_su_grupo_en_el_mapeo():
+    assert verificar_grupos_contra_tarifario() == []
+    mapa = {f["slug"]: f for f in construir_mapeo()}
+    assert mapa["shih-tzu"]["grupo"] == "A_maquina"
+    assert mapa["pug"]["grupo"] == "B_deslanado"          # la propietaria: deslanado
+    assert mapa["golden_retriever"]["grupo"] == "C_cepillado"
+    assert mapa["rottweiler"]["grupo"] == "D_corto"
+    assert mapa["pug"]["grupo_origen"] == "tarifario_v2"
+
+
+def _tarifario_v2_temporal(tmp: str, **cambios) -> Path:
+    datos = json.loads(RUTA_TARIFARIO_V2.read_text(encoding="utf-8"))
+    for seccion, valor in cambios.items():
+        datos[seccion] = valor
     ruta = Path(tmp) / "tarifario.json"
-    ruta.write_text(json.dumps({
-        "clasificacion_tamano": [
-            {"codigo": c.clave, "peso_kg_min": c.peso_min_kg, "peso_kg_max": c.peso_max_kg}
-            for c in CLASES_TAMANO
-        ],
-        "clasificacion_pelaje": pelajes,
-    }), encoding="utf-8")
+    ruta.write_text(json.dumps(datos), encoding="utf-8")
     return ruta
 
 
-def test_CA3_el_verificador_lee_la_estructura_real_del_tarifario():
-    pelajes = [{"codigo": c.clave, "factor": c.factor} for c in CLASES_PELAJE]
+def test_CA3_el_verificador_detecta_grupos_estados_y_cortes_divergentes():
+    datos = json.loads(RUTA_TARIFARIO_V2.read_text(encoding="utf-8"))
+    grupos = dict(datos["grupos_manto"]); grupos["E_stripping"] = {"descripcion": "nuevo"}
+    estados = dict(datos["recargo_estado_manto"]); estados.pop("moderado")
+    tamanos = json.loads(json.dumps(datos["tamanos"])); tamanos["pequeno"]["peso_kg"] = [0, 10.0]
     with tempfile.TemporaryDirectory() as tmp:
-        assert verificar_contra_tarifario(_tarifario_temporal(tmp, pelajes)) == []
+        problemas = verificar_contra_tarifario(
+            _tarifario_v2_temporal(tmp, grupos_manto=grupos, recargo_estado_manto=estados, tamanos=tamanos))
+    assert any("Grupos de manto divergentes" in p for p in problemas)
+    assert any("Estados del pelo divergentes" in p for p in problemas)
+    assert any("Cortes de peso divergentes" in p for p in problemas)
 
 
-def test_CA3_el_verificador_detecta_clases_y_factores_divergentes():
-    pelajes = [{"codigo": c.clave, "factor": c.factor} for c in CLASES_PELAJE]
-    pelajes[1] = {"codigo": "doble_capa", "factor": 1.25}
-    pelajes[2] = {"codigo": pelajes[2]["codigo"], "factor": 9.99}
+def test_CA3_un_tarifario_v1_se_rechaza_con_un_mensaje_claro():
     with tempfile.TemporaryDirectory() as tmp:
-        problemas = verificar_contra_tarifario(_tarifario_temporal(tmp, pelajes))
-    assert any("Clases de pelaje divergentes" in p for p in problemas)
-    assert any("Factor de pelaje divergente" in p for p in problemas)
+        ruta = Path(tmp) / "v1.json"
+        ruta.write_text(json.dumps({"clasificacion_pelaje": [{"codigo": "corto"}]}), encoding="utf-8")
+        problemas = verificar_contra_tarifario(ruta)
+    assert any("tarifario v1" in p for p in problemas)
 
 
-def test_CA3_el_pelo_duro_queda_marcado_como_no_cubierto():
+def test_CA3_si_cambia_el_grupo_de_una_raza_en_el_tarifario_se_detecta():
+    datos = json.loads(RUTA_TARIFARIO_V2.read_text(encoding="utf-8"))
+    razas = json.loads(json.dumps(datos["razas"])); razas["pug"]["grupo"] = "D_corto"
+    with tempfile.TemporaryDirectory() as tmp:
+        problemas = verificar_grupos_contra_tarifario(_tarifario_v2_temporal(tmp, razas=razas))
+    assert any(p.startswith("pug:") for p in problemas)
+
+
+def test_CA3_el_pelo_duro_ya_no_queda_sin_categoria():
     mapa = {f["slug"]: f for f in construir_mapeo()}
-    assert mapa["miniature_schnauzer"]["pelaje_observacion"] == "duro"
+    assert mapa["miniature_schnauzer"]["grupo"] == "A_maquina"
+    assert mapa["cairn"]["grupo"] == "A_maquina"
+    assert mapa["cairn"]["grupo_origen"] == "equipo"   # supuesto por analogía
+
+
+def test_CA3_el_estado_se_normaliza_y_no_recuperable_se_trata_como_severo():
+    assert normalizar_estado("sin_motas") == ("sin_motas", "")
+    assert normalizar_estado("Muchos nudos")[0] == "severo"
+    clave, nota = normalizar_estado("no_recuperable")
+    assert clave == "severo" and "no_recuperable" in nota
+    assert normalizar_estado("") == ("", "")
+    try:
+        normalizar_estado("rizado")
+        assert False, "debía rechazar un estado desconocido"
+    except ValueError:
+        pass
+
+
+def test_CA3_un_manifiesto_v1_se_rechaza_al_leerlo():
+    with tempfile.TemporaryDirectory() as tmp:
+        ruta = Path(tmp) / "manifiesto.csv"
+        ruta.write_text("id_imagen,fuente,ruta,mascota_id,pelaje\nx,stanford_dogs,a.jpg,x,corto\n",
+                        encoding="utf-8")
+        try:
+            leer_manifiesto(ruta)
+            assert False, "debía rechazar el manifiesto v1"
+        except ValueError as e:
+            assert "v1" in str(e)
 
 
 # ===========================================================================
@@ -235,7 +294,7 @@ def test_CA3_el_pelo_duro_queda_marcado_como_no_cubierto():
 
 def _registros_de_prueba(n_mascotas: int = 12, fotos: int = 3) -> list[Registro]:
     regs: list[Registro] = []
-    pelajes = list(CLAVES_PELAJE)
+    grupos = list(CLAVES_GRUPO)
     tamanos = list(CLAVES_TAMANO)
     for m in range(n_mascotas):
         for k in range(fotos):
@@ -246,7 +305,8 @@ def _registros_de_prueba(n_mascotas: int = 12, fotos: int = 3) -> list[Registro]
                     ruta=f"x/{m}_{k}.jpg",
                     mascota_id=f"mascota_{m}",
                     tamano=tamanos[m % len(tamanos)],
-                    pelaje=pelajes[m % len(pelajes)],
+                    grupo=grupos[m % len(grupos)],
+                    estado=CLAVES_ESTADO[m % len(CLAVES_ESTADO)] if k == 0 else "",
                     revision_manual=1,
                 )
             )
@@ -258,7 +318,7 @@ def _registros_de_prueba(n_mascotas: int = 12, fotos: int = 3) -> list[Registro]
                 ruta=f"sd/{i}.jpg",
                 mascota_id=f"sd_{i}",
                 tamano=tamanos[i % len(tamanos)],
-                pelaje=pelajes[i % len(pelajes)],
+                grupo=grupos[i % len(grupos)],
             )
         )
     return regs

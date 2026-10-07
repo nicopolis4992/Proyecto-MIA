@@ -21,10 +21,13 @@ from __future__ import annotations
 import math
 from collections import Counter, defaultdict
 
-from clases import CLASES_PELAJE, CLASES_TAMANO
+from clases import CLASES_ESTADO, CLASES_GRUPO, CLASES_TAMANO
 from dataset import FUENTES_DOMINIO_REAL, PROPORCIONES_REAL, Registro
 
 Z_95 = 1.959963984540054
+
+# La variable con más clases (grupo de manto, 4) es la que fija el tamaño del test.
+MAX_CLASES = max(len(CLASES_TAMANO), len(CLASES_GRUPO), len(CLASES_ESTADO))
 
 
 def n_minimo_por_clase(p_esperada: float = 0.85, semiamplitud: float = 0.10) -> int:
@@ -58,7 +61,8 @@ def cobertura(registros: list[Registro]) -> dict:
 
     for nombre, clases, atributo in (
         ("tamano", CLASES_TAMANO, "tamano"),
-        ("pelaje", CLASES_PELAJE, "pelaje"),
+        ("grupo", CLASES_GRUPO, "grupo"),
+        ("estado", CLASES_ESTADO, "estado"),
     ):
         detalle: dict[str, dict] = {}
         for c in clases:
@@ -115,8 +119,8 @@ def brecha(registros: list[Registro], semiamplitud: float = 0.10) -> dict:
             faltante_captura_max += falta_captura
         resultado["detalle"][dimension] = filas
 
-    # Una misma fotografía aporta simultáneamente a una clase de tamaño y a una
-    # de pelaje. El total necesario lo marca la dimensión más exigente, no la
+    # Una misma fotografía aporta simultáneamente a una clase de tamaño, a una
+    # de grupo y (si es una foto "antes") a una de estado. El total necesario lo marca la dimensión más exigente, no la
     # suma de ambas.
     totales_por_dimension = {
         d: sum(f["fotos_reales_a_capturar"] for f in filas.values())
@@ -141,12 +145,10 @@ def cobertura_del_mapeo(filas_mapeo: list[dict]) -> dict:
         "razas_totales": len(filas_mapeo),
         "razas_excluidas": len(filas_mapeo) - len(utilizables),
         "razas_con_tamano_utilizable": len(con_tamano),
-        "razas_solo_pelaje": len(utilizables) - len(con_tamano),
+        "razas_solo_grupo": len(utilizables) - len(con_tamano),
         "tamano_por_raza": dict(Counter(f["tamano"] for f in con_tamano)),
-        "pelaje_por_raza": dict(Counter(f["pelaje"] for f in utilizables)),
-        "razas_pelo_duro_sin_categoria": sum(
-            1 for f in utilizables if f["pelaje_observacion"] == "duro"
-        ),
+        "grupo_por_raza": dict(Counter(f["grupo"] for f in utilizables)),
+        "razas_grupo_supuesto_equipo": sum(1 for f in utilizables if f["grupo_origen"] == "equipo"),
     }
 
 
@@ -173,10 +175,11 @@ def imprimir_reporte(cob: dict, brec: dict, cob_mapeo: dict | None = None) -> st
         a(f"Razas del dataset ................ {cob_mapeo['razas_totales']}")
         a(f"Excluidas ........................ {cob_mapeo['razas_excluidas']}")
         a(f"Con etiqueta de tamaño utilizable  {cob_mapeo['razas_con_tamano_utilizable']}")
-        a(f"Solo utilizables para pelaje ..... {cob_mapeo['razas_solo_pelaje']}")
+        a(f"Solo utilizables para grupo ...... {cob_mapeo['razas_solo_grupo']}")
         a(f"Tamaño por raza .................. {cob_mapeo['tamano_por_raza']}")
-        a(f"Pelaje por raza .................. {cob_mapeo['pelaje_por_raza']}")
-        a(f"Razas de pelo duro sin categoría . {cob_mapeo['razas_pelo_duro_sin_categoria']}")
+        a(f"Grupo de manto por raza .......... {cob_mapeo['grupo_por_raza']}")
+        a(f"Grupo asignado por el equipo ..... {cob_mapeo['razas_grupo_supuesto_equipo']} (supuesto, validar)")
+        a("Estado del pelo .................. no se deriva de la raza (solo fotos propias)")
         a("")
 
     a("-" * 72)
@@ -195,15 +198,16 @@ def imprimir_reporte(cob: dict, brec: dict, cob_mapeo: dict | None = None) -> st
     a("-" * 72)
     a("SENSIBILIDAD: qué exige cada nivel de precisión de la métrica")
     a("-" * 72)
-    a(f"  {'IC 95%':>8}{'n por clase':>14}{'test (4 clases)':>18}{'fotos reales':>15}")
+    k = MAX_CLASES
+    a(f"  {'IC 95%':>8}{'n por clase':>14}{f'test ({k} clases)':>18}{'fotos reales':>15}")
     for s in (0.05, 0.10, 0.15, 0.20):
         n = n_minimo_por_clase(semiamplitud=s)
-        a(f"  {s:>7.0%}{n:>14}{n * 4:>18}{math.ceil(n * 4 / PROPORCIONES_REAL['test']):>15}")
+        a(f"  {s:>7.0%}{n:>14}{n * k:>18}{math.ceil(n * k / PROPORCIONES_REAL['test']):>15}")
     a("")
     n_10 = n_minimo_por_clase(semiamplitud=0.10)
-    fotos_10 = math.ceil(n_10 * 4 / PROPORCIONES_REAL["test"])
+    fotos_10 = math.ceil(n_10 * k / PROPORCIONES_REAL["test"])
     a(f"  Leer así: comprometer F1 >= 0,85 con un margen de ±10 puntos exige un")
-    a(f"  conjunto de prueba de {n_10 * 4} imágenes reales y, por tanto, unas {fotos_10}")
+    a(f"  conjunto de prueba de {n_10 * k} imágenes reales y, por tanto, unas {fotos_10}")
     a("  fotografías propias en total. Con ~12 clientes fijos al mes, esa cifra")
     a("  es la que debe negociarse con la propietaria o, en su defecto,")
     a("  relajarse de forma explícita y documentada en SCRUM-105.")

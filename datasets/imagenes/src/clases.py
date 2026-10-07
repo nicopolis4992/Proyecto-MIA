@@ -2,16 +2,35 @@
 SCRUM-101 — Definición de las clases objetivo del dataset de imágenes.
 
 Las clases NO se inventan aquí: son exactamente los parámetros que consume el
-tarifario parametrizado de SCRUM-98 (`tarifario_v1.json`). Cualquier divergencia
-entre este módulo y el tarifario rompe la cadena SCRUM-101 -> SCRUM-102 ->
-SCRUM-103, por lo que `verificar_contra_tarifario()` debe ejecutarse en cuanto
-el archivo del tarifario esté disponible.
+tarifario de SCRUM-98, versión 2 (`app/cotizacion/tarifario_v2.json`). Cualquier
+divergencia entre este módulo y el tarifario rompe la cadena SCRUM-101 ->
+SCRUM-102 -> SCRUM-103, por lo que `verificar_contra_tarifario()` se ejecuta en
+las pruebas contra el tarifario real del repositorio.
 
-Decisión de diseño D1: se predicen DOS variables independientes (tamaño y
-pelaje), no una sola clase combinada de 12 categorías. Razón: el tarifario las
-usa como factores multiplicativos separados, y una clase combinada exigiría
-cobertura simultánea de las 12 celdas, inalcanzable con el volumen de
-fotografías reales que produce un negocio de ~12 clientes fijos al mes.
+CAMBIO v1 -> v2 (06/10/2026)
+----------------------------
+El tarifario v1 cobraba por TIPO DE PELAJE (corto, doble, largo, rizado) con un
+factor multiplicativo. Las respuestas de la propietaria mostraron que el precio
+no depende del tipo de pelo como tal, sino de la TÉCNICA de manejo del manto que
+define la raza (máquina, deslanado, cepillado o solo baño) y del ESTADO del pelo
+(con o sin motas). El tarifario v2 reemplazó el eje de pelaje por esas dos
+variables y este módulo las replica:
+
+  - tamaño (3):          pequeno / mediano / grande
+  - grupo de manto (4):  A_maquina / B_deslanado / C_cepillado / D_corto
+  - estado del pelo (3): sin_motas / moderado / severo
+
+La antigua categoría pendiente de "pelo duro" (terriers, schnauzer) desaparece:
+la propietaria ubica al schnauzer en el grupo A (se pasa máquina), y por
+analogía los terriers de pelo duro van al mismo grupo.
+
+Decisión de diseño D1 (se mantiene): se predicen variables INDEPENDIENTES, una
+cabeza por variable, no una clase combinada (3 x 4 x 3 = 36 celdas), que sería
+inalcanzable con el volumen de fotografías de un negocio de ~12 clientes fijos
+al mes.
+
+El estado del pelo NO se puede derivar de la raza: solo lo aportan fotografías
+propias etiquetadas una por una. Stanford Dogs no tiene etiqueta de estado.
 """
 
 from __future__ import annotations
@@ -20,9 +39,12 @@ import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
+# Tarifario vigente del repositorio (fuente de verdad de las clases).
+RUTA_TARIFARIO_V2 = Path(__file__).resolve().parents[3] / "app" / "cotizacion" / "tarifario_v2.json"
+
 
 # --------------------------------------------------------------------------
-# Tamaño: cortes por peso vivo, tomados de SCRUM-98
+# Tamaño: cortes por peso vivo, tomados del tarifario v2
 # --------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -33,43 +55,63 @@ class ClaseTamano:
     peso_max_kg: float
 
 
+# Igual que el tarifario v2: se clasifica por LÍMITE SUPERIOR (peso <= máximo),
+# así no quedan huecos entre rangos. En v1 los cortes eran 9,0 / 9,1 y un perro
+# de 9,05 kg quedaba "fuera de rango"; ese hueco ya no existe.
 CLASES_TAMANO: tuple[ClaseTamano, ...] = (
     ClaseTamano("pequeno", "Pequeño", 0.0, 9.0),
-    ClaseTamano("mediano", "Mediano", 9.1, 18.0),
-    ClaseTamano("grande", "Grande", 18.1, 45.0),
+    ClaseTamano("mediano", "Mediano", 9.01, 18.0),
+    ClaseTamano("grande", "Grande", 18.01, 45.0),
 )
 
-# Fuera de rango: el tarifario v1 no cotiza por encima de 45 kg. No es un error
+# Fuera de rango: el tarifario no cotiza por encima de 45 kg. No es un error
 # del dataset sino un límite declarado del servicio; estas razas se etiquetan
 # como `fuera_de_rango` y se excluyen del entrenamiento supervisado de tamaño.
 CLAVE_FUERA_DE_RANGO = "fuera_de_rango"
 
 
 # --------------------------------------------------------------------------
-# Pelaje: cuatro tipos con factor multiplicativo, tomados de SCRUM-98
+# Grupo de manto: técnica de grooming que define la raza (tarifario v2)
 # --------------------------------------------------------------------------
 
 @dataclass(frozen=True)
-class ClasePelaje:
+class ClaseGrupo:
     clave: str
     etiqueta: str
-    factor: float
+    descripcion: str
 
 
-CLASES_PELAJE: tuple[ClasePelaje, ...] = (
-    ClasePelaje("corto", "Corto", 1.00),
-    ClasePelaje("doble", "Doble / denso", 1.15),
-    ClasePelaje("largo", "Largo", 1.20),
-    ClasePelaje("rizado", "Rizado / lanudo", 1.25),
+CLASES_GRUPO: tuple[ClaseGrupo, ...] = (
+    ClaseGrupo("A_maquina", "A · Máquina", "Pelo de crecimiento continuo; se pasa máquina"),
+    ClaseGrupo("B_deslanado", "B · Deslanado", "Doble capa; no se pasa máquina; se hace deslanado"),
+    ClaseGrupo("C_cepillado", "C · Cepillado", "Pelo largo sin máquina; mucho cepillado; corte a tijera"),
+    ClaseGrupo("D_corto", "D · Corto", "Pelo corto; sin máquina; esencialmente baño"),
 )
 
-# HALLAZGO ABIERTO (ver anexo metodológico, sección 4.3):
-# la taxonomía de cuatro pelajes del tarifario v1 no contempla el pelo DURO
-# (wiry / de arranque), propio de terriers y schnauzers, que es de los más
-# costosos en tiempo de grooming. Mientras SCRUM-98 no incorpore una quinta
-# categoría, estas razas se asignan provisionalmente a `doble` y quedan
-# marcadas en la columna `pelaje_observacion` del mapeo.
-PELAJE_NO_CUBIERTO = "duro"
+
+# --------------------------------------------------------------------------
+# Estado del pelo: recargo propio en el tarifario v2
+# --------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ClaseEstado:
+    clave: str
+    etiqueta: str
+    descripcion: str
+
+
+CLASES_ESTADO: tuple[ClaseEstado, ...] = (
+    ClaseEstado("sin_motas", "Sin motas", "Pelo sin nudos; no lleva recargo"),
+    ClaseEstado("moderado", "Moderado", "Algunos nudos o motas; recargo intermedio"),
+    ClaseEstado("severo", "Severo", "Pelo muy enredado pero recuperable; desenredo largo"),
+)
+
+# El tarifario v2 contempla un cuarto caso, `no_recuperable` (se rapa en vez de
+# desenredar y el precio lo pone la propietaria). No es una clase del
+# clasificador: es una decisión de la propietaria al ver al perro, y en las
+# fotos es indistinguible de un `severo` extremo. Si aparece en una etiqueta se
+# trata como `severo` y se anota en observaciones.
+ESTADO_FUERA_DEL_CLASIFICADOR = "no_recuperable"
 
 
 # --------------------------------------------------------------------------
@@ -77,13 +119,16 @@ PELAJE_NO_CUBIERTO = "duro"
 # --------------------------------------------------------------------------
 
 CLAVES_TAMANO = tuple(c.clave for c in CLASES_TAMANO)
-CLAVES_PELAJE = tuple(c.clave for c in CLASES_PELAJE)
+CLAVES_GRUPO = tuple(c.clave for c in CLASES_GRUPO)
+CLAVES_ESTADO = tuple(c.clave for c in CLASES_ESTADO)
 
 
 def clasificar_peso(peso_kg: float) -> str:
     """Devuelve la clave de tamaño para un peso puntual en kilogramos."""
+    if peso_kg <= 0:
+        return CLAVE_FUERA_DE_RANGO
     for c in CLASES_TAMANO:
-        if c.peso_min_kg <= peso_kg <= c.peso_max_kg:
+        if peso_kg <= c.peso_max_kg:
             return c.clave
     return CLAVE_FUERA_DE_RANGO
 
@@ -103,117 +148,102 @@ def clasificar_rango_peso(peso_min_kg: float, peso_max_kg: float) -> tuple[str, 
     return clave_min, False
 
 
-def verificar_contra_tarifario(ruta_tarifario: str | Path) -> list[str]:
+def _claves_sin_metadatos(d: dict) -> set[str]:
+    """Claves de una sección del tarifario, sin las notas (`_nota`, `_uso`...)."""
+    return {k for k in d if not k.startswith("_")}
+
+
+def verificar_contra_tarifario(ruta_tarifario: str | Path = RUTA_TARIFARIO_V2) -> list[str]:
     """
-    Contrasta las clases de este módulo con `tarifario_v1.json` de SCRUM-98.
+    Contrasta las clases de este módulo con el tarifario v2 de SCRUM-98.
 
     Devuelve la lista de discrepancias encontradas. Lista vacía = consistente.
-    Esta función es el control que impide que el dataset se construya sobre
-    clases que el motor de cotización no sabe consumir.
+    Es el control que impide que el dataset se construya sobre clases que el
+    motor de cotización no sabe consumir.
     """
     ruta = Path(ruta_tarifario)
     if not ruta.exists():
         return [f"No se encontró el tarifario en {ruta}. Verificación no ejecutada."]
 
-    tarifario = json.loads(ruta.read_text(encoding="utf-8"))
+    t = json.loads(ruta.read_text(encoding="utf-8"))
     problemas: list[str] = []
+    for seccion in ("tamanos", "grupos_manto", "recargo_estado_manto"):
+        if not isinstance(t.get(seccion), dict):
+            problemas.append(f"El tarifario no tiene la sección '{seccion}' (¿es un tarifario v1?).")
+    if problemas:
+        return problemas
 
-    tamanos_tarifario = set(_buscar_claves(tarifario, NOMBRES_TAMANO))
-    pelajes_tarifario = set(_buscar_claves(tarifario, NOMBRES_PELAJE))
-
-    if tamanos_tarifario and tamanos_tarifario != set(CLAVES_TAMANO):
-        problemas.append(
-            f"Clases de tamaño divergentes. Dataset: {sorted(CLAVES_TAMANO)} | "
-            f"Tarifario: {sorted(tamanos_tarifario)}"
-        )
-    if pelajes_tarifario and pelajes_tarifario != set(CLAVES_PELAJE):
-        problemas.append(
-            f"Clases de pelaje divergentes. Dataset: {sorted(CLAVES_PELAJE)} | "
-            f"Tarifario: {sorted(pelajes_tarifario)}"
-        )
-
-    # Mismo nombre no basta: el factor y los cortes de peso también deben
-    # coincidir, o el clasificador y el motor cotizan con reglas distintas.
+    # 1. Tamaño: mismas claves y mismos cortes de peso
+    tamanos = _claves_sin_metadatos(t["tamanos"])
+    if tamanos != set(CLAVES_TAMANO):
+        problemas.append(f"Clases de tamaño divergentes. Dataset: {sorted(CLAVES_TAMANO)} | "
+                         f"Tarifario: {sorted(tamanos)}")
     for c in CLASES_TAMANO:
-        item = _buscar_items(tarifario, NOMBRES_TAMANO).get(c.clave)
-        if item and "peso_kg_min" in item and "peso_kg_max" in item:
-            if (float(item["peso_kg_min"]), float(item["peso_kg_max"])) != (c.peso_min_kg, c.peso_max_kg):
-                problemas.append(
-                    f"Cortes de peso divergentes para '{c.clave}'. Dataset: "
-                    f"{c.peso_min_kg}–{c.peso_max_kg} kg | Tarifario: "
-                    f"{item['peso_kg_min']}–{item['peso_kg_max']} kg"
-                )
-    for c in CLASES_PELAJE:
-        item = _buscar_items(tarifario, NOMBRES_PELAJE).get(c.clave)
-        if item and "factor" in item and float(item["factor"]) != c.factor:
-            problemas.append(
-                f"Factor de pelaje divergente para '{c.clave}'. Dataset: {c.factor} | "
-                f"Tarifario: {item['factor']}"
-            )
-    if not tamanos_tarifario and not pelajes_tarifario:
-        problemas.append(
-            "No se hallaron claves de tamaño ni de pelaje en el tarifario; "
-            "revisar manualmente la estructura del archivo."
-        )
+        rango = (t["tamanos"].get(c.clave) or {}).get("peso_kg")
+        if rango and (float(rango[0]), float(rango[1])) != (c.peso_min_kg, c.peso_max_kg):
+            problemas.append(f"Cortes de peso divergentes para '{c.clave}'. Dataset: "
+                             f"{c.peso_min_kg}–{c.peso_max_kg} kg | Tarifario: {rango[0]}–{rango[1]} kg")
+    if "peso_max_kg" in t and float(t["peso_max_kg"]) != CLASES_TAMANO[-1].peso_max_kg:
+        problemas.append(f"Peso máximo divergente. Dataset: {CLASES_TAMANO[-1].peso_max_kg} | "
+                         f"Tarifario: {t['peso_max_kg']}")
+
+    # 2. Grupo de manto
+    grupos = _claves_sin_metadatos(t["grupos_manto"])
+    if grupos != set(CLAVES_GRUPO):
+        problemas.append(f"Grupos de manto divergentes. Dataset: {sorted(CLAVES_GRUPO)} | "
+                         f"Tarifario: {sorted(grupos)}")
+
+    # 3. Estado del pelo (sin el caso que decide la propietaria)
+    estados = _claves_sin_metadatos(t["recargo_estado_manto"]) - {ESTADO_FUERA_DEL_CLASIFICADOR}
+    if estados != set(CLAVES_ESTADO):
+        problemas.append(f"Estados del pelo divergentes. Dataset: {sorted(CLAVES_ESTADO)} | "
+                         f"Tarifario: {sorted(estados)}")
+
+    # 4. Las razas del tarifario solo pueden usar grupos y tamaños conocidos
+    for nombre, raza in (t.get("razas") or {}).items():
+        if not isinstance(raza, dict):
+            continue
+        if raza.get("grupo") not in (None, *CLAVES_GRUPO):
+            problemas.append(f"Raza '{nombre}' del tarifario con grupo desconocido: {raza['grupo']}")
+        if raza.get("tamano") not in (None, *CLAVES_TAMANO):
+            problemas.append(f"Raza '{nombre}' del tarifario con tamaño desconocido: {raza['tamano']}")
     return problemas
 
 
-# Nombres bajo los que el tarifario puede declarar cada dimensión.
-# `tarifario_v1.json` usa `clasificacion_tamano` / `clasificacion_pelaje`.
-NOMBRES_TAMANO = ("tamano", "tamaño", "tamanos", "tamaños", "clasificacion_tamano")
-NOMBRES_PELAJE = ("pelaje", "pelajes", "clasificacion_pelaje")
-CAMPOS_CLAVE = ("codigo", "clave", "id", "nombre", "tipo")
+def normalizar_estado(valor: str) -> tuple[str, str]:
+    """
+    Lleva una etiqueta de estado escrita a mano a la clave del clasificador.
 
-
-def _buscar_items(nodo, nombres: tuple[str, ...]) -> dict[str, dict]:
-    """Devuelve {clave: item} de las listas de objetos declaradas bajo `nombres`."""
-    items: dict[str, dict] = {}
-    if isinstance(nodo, dict):
-        for k, v in nodo.items():
-            if k.lower() in nombres and isinstance(v, list):
-                for item in v:
-                    if isinstance(item, dict):
-                        campo = next((c for c in CAMPOS_CLAVE if c in item), None)
-                        if campo:
-                            items[str(item[campo]).lower()] = item
-            else:
-                items.update(_buscar_items(v, nombres))
-    elif isinstance(nodo, list):
-        for item in nodo:
-            items.update(_buscar_items(item, nombres))
-    return items
-
-
-def _buscar_claves(nodo, nombres: tuple[str, ...]) -> list[str]:
-    """Recorre el JSON del tarifario buscando el diccionario de una dimensión."""
-    hallados: list[str] = []
-    if isinstance(nodo, dict):
-        for k, v in nodo.items():
-            if k.lower() in nombres and isinstance(v, dict):
-                hallados.extend(str(x).lower() for x in v.keys())
-            elif k.lower() in nombres and isinstance(v, list):
-                for item in v:
-                    if isinstance(item, dict):
-                        for campo in CAMPOS_CLAVE:
-                            if campo in item:
-                                hallados.append(str(item[campo]).lower())
-                                break
-                    else:
-                        hallados.append(str(item).lower())
-            else:
-                hallados.extend(_buscar_claves(v, nombres))
-    elif isinstance(nodo, list):
-        for item in nodo:
-            hallados.extend(_buscar_claves(item, nombres))
-    return hallados
+    Devuelve (clave, observacion). Acepta los sinónimos que ya usa el tarifario
+    (`equivalencias.estado`) y trata `no_recuperable` como `severo`, dejando
+    constancia en la observación.
+    """
+    v = (valor or "").strip().lower().replace("_", " ")
+    if not v:
+        return "", ""
+    if v.replace(" ", "_") in CLAVES_ESTADO:
+        return v.replace(" ", "_"), ""
+    if v.replace(" ", "_") == ESTADO_FUERA_DEL_CLASIFICADOR:
+        return "severo", "estado no_recuperable (se rapa): etiquetado como severo"
+    sinonimos = {
+        "sin nudos": "sin_motas", "bien": "sin_motas", "normal": "sin_motas",
+        "leve": "moderado", "pocos nudos": "moderado", "nudos": "moderado", "motas": "moderado",
+        "enredado": "severo", "muchos nudos": "severo", "apelmazado": "severo",
+    }
+    if v in sinonimos:
+        return sinonimos[v], ""
+    raise ValueError(f"Estado del pelo desconocido: {valor!r} (use {', '.join(CLAVES_ESTADO)})")
 
 
 def resumen() -> dict:
     return {
         "tamano": [asdict(c) for c in CLASES_TAMANO],
-        "pelaje": [asdict(c) for c in CLASES_PELAJE],
+        "grupo": [asdict(c) for c in CLASES_GRUPO],
+        "estado": [asdict(c) for c in CLASES_ESTADO],
     }
 
 
 if __name__ == "__main__":
     print(json.dumps(resumen(), ensure_ascii=False, indent=2))
+    for p in verificar_contra_tarifario():
+        print("AVISO:", p)

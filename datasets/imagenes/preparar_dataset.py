@@ -18,7 +18,12 @@ Uso
         --salida    datos/procesado
 
 `etiquetas.csv` es el archivo que llena la propietaria. Columnas mínimas:
-    archivo, mascota (nombre o teléfono), peso_kg, pelaje, escala_presente
+    archivo, mascota (nombre o teléfono), peso_kg o tamano, grupo, estado,
+    escala_presente
+La propietaria no pesa a los perros: si `peso_kg` viene vacío se usa la columna
+`tamano` (pequeno / mediano / grande). `grupo` es el grupo de manto del
+tarifario v2 (A_maquina, B_deslanado, C_cepillado, D_corto) y `estado` el
+estado del pelo (sin_motas, moderado, severo).
 
 El pipeline se detiene ante cualquier fallo de integridad. Es deliberado: un
 dataset silenciosamente mal etiquetado produce métricas altas y un sistema que
@@ -36,7 +41,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from clases import clasificar_peso, verificar_contra_tarifario  # noqa: E402
+from clases import (  # noqa: E402
+    CLAVES_TAMANO,
+    RUTA_TARIFARIO_V2,
+    clasificar_peso,
+    normalizar_estado,
+    verificar_contra_tarifario,
+)
 import anonimizacion  # noqa: E402
 from anonimizacion import (  # noqa: E402
     SalNoConfigurada,
@@ -60,6 +71,7 @@ from mapeo_razas import (  # noqa: E402
     escribir_csv,
     integridad_tabla,
     validar_cobertura,
+    verificar_grupos_contra_tarifario,
 )
 from reporte import brecha, cobertura, cobertura_del_mapeo, imprimir_reporte  # noqa: E402
 
@@ -99,14 +111,15 @@ def ingerir_stanford(raiz: Path, mapa: dict[str, dict], salida: Path) -> list[Re
                     ruta=str(destino.relative_to(salida)),
                     mascota_id=f"sd_{slug}_{i:04d}",  # cada imagen es un animal distinto
                     raza_slug=slug,
-                    tamano="" if info["uso"] == "solo_pelaje" else info["tamano"],
-                    pelaje=info["pelaje"],
+                    tamano="" if info["uso"] == "solo_grupo" else info["tamano"],
+                    grupo=info["grupo"],
+                    estado="",  # la raza no dice nada del estado del pelo
                     origen_etiqueta="derivada_de_raza",
                     tamano_ambiguo=int(info["tamano_ambiguo"]),
                     phash="",
                     tenia_gps=int(limpieza.tenia_gps),
                     revision_manual=0,
-                    observaciones=info["pelaje_observacion"],
+                    observaciones=info["grupo_observacion"],
                 )
             )
     return registros
@@ -132,8 +145,11 @@ def ingerir_propias(raiz: Path, fuente: str, etiquetas: dict[str, dict],
         destino = salida / fuente / archivo.name
         limpieza = limpiar_metadatos(archivo, destino)
 
-        peso = fila.get("peso_kg", "").strip()
-        tamano = clasificar_peso(float(peso)) if peso else ""
+        peso = (fila.get("peso_kg") or "").strip()
+        tamano = clasificar_peso(float(peso)) if peso else (fila.get("tamano") or "").strip().lower()
+        if tamano and tamano not in CLAVES_TAMANO:
+            raise SystemExit(f"{archivo.name}: tamaño '{tamano}' fuera de taxonomía.")
+        estado, nota_estado = normalizar_estado(fila.get("estado", ""))
 
         registros.append(
             Registro(
@@ -143,13 +159,15 @@ def ingerir_propias(raiz: Path, fuente: str, etiquetas: dict[str, dict],
                 mascota_id=seudonimo(fila["mascota"], sal),
                 raza_slug=fila.get("raza_slug", "").strip().lower(),
                 tamano=tamano,
-                pelaje=fila.get("pelaje", "").strip().lower(),
+                grupo=(fila.get("grupo") or "").strip(),
+                estado=estado,
                 origen_etiqueta="declarada_por_propietaria",
                 tamano_ambiguo=0,
                 escala_presente=int(fila.get("escala_presente", 0) or 0),
                 phash=hash_perceptual(destino),
                 tenia_gps=int(limpieza.tenia_gps),
                 revision_manual=int(fila.get("revision_manual", 0) or 0),
+                observaciones=nota_estado,
             )
         )
     return registros
@@ -194,17 +212,18 @@ def simular(salida: Path, mapa: dict[str, dict]) -> list[Registro]:
                 mascota_id=f"sd_sim_{i:04d}",
                 raza_slug=info["slug"],
                 tamano=info["tamano"],
-                pelaje=info["pelaje"],
+                grupo=info["grupo"],
                 origen_etiqueta="derivada_de_raza",
             )
         )
 
     # Escenario realista: 14 mascotas del negocio, 3 fotos cada una
     pesos = [2.5, 4.0, 6.0, 7.5, 8.5, 11.0, 13.0, 15.0, 17.0, 20.0, 24.0, 28.0, 31.0, 38.0]
-    pelajes = ["corto", "largo", "rizado", "doble"]
+    grupos = ["D_corto", "A_maquina", "A_maquina", "B_deslanado", "C_cepillado"]
+    estados = ["sin_motas", "moderado", "severo"]
     for m, peso in enumerate(pesos):
         pseudo = f"sim_mascota_{m:02d}"
-        pelaje = pelajes[m % len(pelajes)]
+        grupo = grupos[m % len(grupos)]
         for k in range(3):
             fuente = FUENTE_INSTAGRAM if k == 0 else FUENTE_CAPTURA
             registros.append(
@@ -214,7 +233,8 @@ def simular(salida: Path, mapa: dict[str, dict]) -> list[Registro]:
                     ruta=f"{fuente}/sim_{m:02d}_{k}.jpg",
                     mascota_id=pseudo,
                     tamano=clasificar_peso(peso),
-                    pelaje=pelaje,
+                    grupo=grupo,
+                    estado=estados[(m + k) % len(estados)] if k == 0 else "",
                     origen_etiqueta="declarada_por_propietaria",
                     escala_presente=int(rng.random() < 0.5),
                     revision_manual=1,
@@ -233,7 +253,8 @@ def main() -> int:
     ap.add_argument("--instagram", type=Path, help="fotografías descargadas de Instagram")
     ap.add_argument("--captura", type=Path, help="fotografías de captura estructurada")
     ap.add_argument("--etiquetas", type=Path, help="CSV de etiquetas llenado por la propietaria")
-    ap.add_argument("--tarifario", type=Path, help="tarifario_v1.json de SCRUM-98")
+    ap.add_argument("--tarifario", type=Path, default=RUTA_TARIFARIO_V2,
+                    help="tarifario v2 de SCRUM-98 (por defecto, el de app/cotizacion/)")
     ap.add_argument("--salida", type=Path, default=Path("datos/procesado"))
     ap.add_argument("--simular", action="store_true", help="ejecuta con datos sintéticos")
     ap.add_argument("--semiamplitud", type=float, default=0.10,
@@ -247,12 +268,16 @@ def main() -> int:
     if problemas:
         print("   Se detiene: corrige la tabla antes de generar el dataset.")
         return 1
-    print("   OK: 120 razas, sin duplicados, pelajes dentro de la taxonomía.")
+    print("   OK: 120 razas, sin duplicados, grupos dentro de la taxonomía.")
 
-    if args.tarifario:
-        print(">> Consistencia con el tarifario de SCRUM-98")
-        for p in verificar_contra_tarifario(args.tarifario):
-            print("   AVISO:", p)
+    print(">> Consistencia con el tarifario v2 de SCRUM-98")
+    divergencias = verificar_contra_tarifario(args.tarifario) + verificar_grupos_contra_tarifario(args.tarifario)
+    for p in divergencias:
+        print("   AVISO:", p)
+    if divergencias:
+        print("   Se detiene: el dataset y el tarifario deben usar las mismas clases.")
+        return 1
+    print("   OK: tamaño, grupo de manto y estado coinciden con el tarifario.")
 
     filas_mapeo = construir_mapeo()
     mapa = {f["slug"]: f for f in filas_mapeo}

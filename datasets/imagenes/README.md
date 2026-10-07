@@ -12,7 +12,7 @@ preparar_dataset.py          orquestador del pipeline (CLI)
 generar_anexo.js             genera el anexo metodológico en Word
 src/
   clases.py                  clases objetivo, tomadas del tarifario de SCRUM-98
-  mapeo_razas.py             tabla de las 120 razas → tamaño y pelaje
+  mapeo_razas.py             tabla de las 120 razas → tamaño y grupo de manto (tarifario v2)
   anonimizacion.py           limpieza de metadatos, seudonimización, pHash
   dataset.py                 manifiesto, partición y controles de fuga
   degradacion.py             aumentación que simula el canal de WhatsApp
@@ -81,18 +81,21 @@ reconoce al individuo y la métrica se infla. Semilla 42, la misma de SCRUM-63.
 | Hallazgo | Cifra | A quién afecta |
 |---|---|---|
 | Razas con etiqueta de tamaño utilizable | 70 de 120 (58,3 %) | SCRUM-102 |
-| Razas en la franja mediana (9,1–18 kg) | **6** | SCRUM-102, SCRUM-105 |
-| Razas de pelaje rizado (factor 1,25) | **8** | SCRUM-102, SCRUM-105 |
-| Razas de pelo duro sin categoría en el tarifario | 18 | **SCRUM-98** |
+| Razas en la franja mediana (9,01–18 kg) | **6** | SCRUM-102, SCRUM-105 |
+| Razas por grupo de manto (A / B / C / D) | 34 / 19 / 19 / 26 | SCRUM-102 |
+| Razas con grupo asignado por el equipo (supuesto) | 74 de 98 utilizables | **SCRUM-98** (validar) |
+| Fotos de Stanford Dogs con etiqueta de estado del pelo | **0** | SCRUM-102, SCRUM-105 |
 | Razas excluidas por superar los 45 kg | 19 | SCRUM-98 |
 | Cánidos no domésticos en el dataset público | 3 | — |
 | Fotografías propias para un IC 95 % de ±10 pts | **~490** | **SCRUM-105** |
 
-Las dos filas en negrita son las que conviene llevar a la reunión: la franja
-mediana y el pelaje rizado son las clases peor cubiertas, y el pelaje rizado es
-además el de recargo más alto. Un fallo sistemático ahí produce cotizaciones por
-debajo del costo, un error que no genera queja del cliente y puede pasar
-inadvertido.
+Actualización 06/10/2026 (tarifario v2): las clases dejaron de ser tipos de
+pelaje (corto, doble, largo, rizado) y pasaron a ser grupo de manto (A–D) y
+estado del pelo (sin_motas, moderado, severo). Las dos coberturas más débiles
+son la franja **mediana** y el **estado del pelo**: la raza no dice nada del
+estado, así que todas sus etiquetas salen de fotos propias. Un fallo
+sistemático con motas produce cotizaciones por debajo del costo, un error que no
+genera queja del cliente y puede pasar inadvertido.
 
 ---
 
@@ -102,12 +105,12 @@ inadvertido.
    dominio real y la métrica de SCRUM-105 no es defendible.
 2. **Consentimiento informado firmado.** Revisar con un profesional del derecho
    antes de usarlo con clientes.
-3. **`tarifario_v1.json`.** Para verificar automáticamente que los nombres de
-   clase coinciden con los que consume el motor de cotización.
+3. ~~`tarifario_v1.json`~~ → resuelto: las pruebas verifican las clases contra
+   `app/cotizacion/tarifario_v2.json` del repositorio.
 4. **Margen de error admisible de la métrica.** Decide cuántas fotografías hay
    que recoger. Debe decidirse antes de entrenar, no después de ver resultados.
-5. **Quinta categoría de pelaje (pelo duro).** Decisión de la propietaria,
-   pertenece a SCRUM-98.
+5. ~~Quinta categoría de pelaje (pelo duro)~~ → reemplazada por el grupo de manto:
+   los terriers de pelo duro van al grupo A, como el schnauzer (supuesto a validar).
 
 ---
 

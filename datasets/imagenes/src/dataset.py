@@ -40,14 +40,15 @@ import random
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 
-from clases import CLAVES_PELAJE, CLAVES_TAMANO
+from clases import CLAVES_ESTADO, CLAVES_GRUPO, CLAVES_TAMANO
 
 SEMILLA = 42  # la misma de SCRUM-63, para que ambos datasets sean comparables
 
 FUENTE_STANFORD = "stanford_dogs"
 FUENTE_INSTAGRAM = "propias_instagram"
 FUENTE_CAPTURA = "propias_captura"
-FUENTES_DOMINIO_REAL = {FUENTE_INSTAGRAM, FUENTE_CAPTURA}
+FUENTE_FACEBOOK = "propias_facebook"   # álbum público del negocio (Dataset_FB_v1)
+FUENTES_DOMINIO_REAL = {FUENTE_INSTAGRAM, FUENTE_CAPTURA, FUENTE_FACEBOOK}
 
 PROPORCIONES_REAL = {"test": 0.40, "val": 0.20, "train": 0.40}
 
@@ -61,7 +62,8 @@ class Registro:
     mascota_id: str            # seudónimo HMAC; para Stanford, id sintético
     raza_slug: str = ""
     tamano: str = ""
-    pelaje: str = ""
+    grupo: str = ""            # grupo de manto del tarifario v2 (A_maquina ... D_corto)
+    estado: str = ""           # estado del pelo; vacío si no se conoce (p. ej. Stanford Dogs)
     origen_etiqueta: str = ""  # 'derivada_de_raza' | 'declarada_por_propietaria'
     tamano_ambiguo: int = 0
     escala_presente: int = 0   # ¿la foto incluye un objeto de referencia de escala?
@@ -86,7 +88,7 @@ def particionar(registros: list[Registro], semilla: int = SEMILLA) -> ResumenPar
     Reglas, en este orden:
       1. Todo lo que venga de Stanford Dogs va a `train`. Nunca a `test`.
       2. Las fotos de dominio real se reparten por MASCOTA, no por imagen.
-      3. El reparto se estratifica por la clase conjunta (tamaño, pelaje) de la
+      3. El reparto se estratifica por la clase conjunta (tamaño, grupo) de la
          mascota, para que ninguna partición quede sin representantes de una
          clase que existe.
     """
@@ -108,7 +110,7 @@ def particionar(registros: list[Registro], semilla: int = SEMILLA) -> ResumenPar
     # registro; el protocolo obliga a que sea la misma en todas sus fotos)
     estratos: dict[tuple[str, str], list[str]] = {}
     for mascota, filas in por_mascota.items():
-        clave = (filas[0].tamano, filas[0].pelaje)
+        clave = (filas[0].tamano, filas[0].grupo)
         estratos.setdefault(clave, []).append(mascota)
 
     # Estratos demasiado pequeños se agrupan en un estrato residual. Con ~12
@@ -198,8 +200,10 @@ def verificar_particion(registros: list[Registro]) -> list[str]:
     for r in registros:
         if r.tamano and r.tamano not in CLAVES_TAMANO:
             problemas.append(f"{r.id_imagen}: tamaño '{r.tamano}' fuera de taxonomía.")
-        if r.pelaje and r.pelaje not in CLAVES_PELAJE:
-            problemas.append(f"{r.id_imagen}: pelaje '{r.pelaje}' fuera de taxonomía.")
+        if r.grupo and r.grupo not in CLAVES_GRUPO:
+            problemas.append(f"{r.id_imagen}: grupo '{r.grupo}' fuera de taxonomía.")
+        if r.estado and r.estado not in CLAVES_ESTADO:
+            problemas.append(f"{r.id_imagen}: estado '{r.estado}' fuera de taxonomía.")
 
     return problemas
 
@@ -220,6 +224,11 @@ def leer_manifiesto(origen: str | Path) -> list[Registro]:
     with Path(origen).open(encoding="utf-8") as fh:
         filas = list(csv.DictReader(fh))
     enteros = {"tamano_ambiguo", "escala_presente", "tenia_gps", "revision_manual"}
+    if filas and "pelaje" in filas[0] and "grupo" not in filas[0]:
+        raise ValueError(
+            f"{origen} es un manifiesto del vocabulario v1 (columna 'pelaje'). "
+            "Regenérelo con el pipeline actual: el tarifario v2 usa 'grupo' y 'estado'."
+        )
     salida = []
     for f in filas:
         for k in enteros:

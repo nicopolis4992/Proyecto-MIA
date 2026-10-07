@@ -98,8 +98,9 @@ que el motor de cotización usa para estrechar la banda de precio (SCRUM-98).
 | `archivo` | nombre exacto del archivo de foto | enlaza la foto con sus datos |
 | `mascota` | nombre de la mascota o teléfono del dueño | agrupa las fotos del mismo animal |
 | `peso_kg` | **peso real, en balanza**, con un decimal | es la etiqueta de tamaño; estimarlo a ojo arruina el dataset |
-| `pelaje` | `corto`, `doble`, `largo` o `rizado` | es la etiqueta de pelaje |
-| `estado_manto` | `normal`, `enredado` o `muy_enredado` | quita 7 puntos de incertidumbre al precio |
+| `tamano` | `pequeno`, `mediano` o `grande` (solo si no hay peso) | la propietaria decide el tamaño por raza y apariencia |
+| `grupo` | `A_maquina`, `B_deslanado`, `C_cepillado` o `D_corto` | es la técnica de grooming del tarifario v2 |
+| `estado` | `sin_motas`, `moderado` o `severo` (en la foto de ANTES) | es el recargo por motas del tarifario v2 |
 | `comportamiento` | `tranquilo`, `inquieto` o `dificil` | quita 3 puntos de incertidumbre al precio |
 | `escala_presente` | `1` si la foto tiene la hoja A4, `0` si no | permite saber qué fotos sirven para estimar talla absoluta |
 | `revision_manual` | `1` cuando alguien ya revisó que no hay personas ni datos visibles | obligatorio antes de usar la foto |
@@ -120,13 +121,14 @@ graves, y las fotos que los llenen son las más valiosas:
    diferencia: de las 120 razas del dataset público, solo 6 caen íntegramente en
    este rango. Es además la franja de precio intermedia, la que más se equivoca
    si el modelo falla.
-2. **Perros de pelaje rizado o lanudo** (caniches, bichones, mestizos de pelo
-   lanudo). Solo 8 razas del dataset público tienen este pelaje, y es el que
-   lleva el recargo más alto del tarifario (1,25).
+2. **Perros que llegan con motas** (estado `moderado` o `severo`), sobre todo
+   del grupo A (shih tzu, caniches, schnauzer). El dataset público no trae
+   ninguna etiqueta de estado y en las fotos de Facebook casi no hay casos
+   severos, pero es el recargo más alto del tarifario v2 (hasta +56 %).
 
 En cambio, fotos de perros pequeños de pelo corto ya hay de sobra en la base
 pública. **Si hay que elegir a qué cliente pedirle fotos, empezar por los perros
-medianos y por los de pelo rizado.**
+medianos y por los que llegan con motas.**
 
 ---
 
