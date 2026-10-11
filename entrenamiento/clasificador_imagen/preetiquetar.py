@@ -11,12 +11,15 @@ Dos pasos:
 
 1) Proponer etiquetas (llama a Gemini, ~1 s por imagen):
     python -m entrenamiento.clasificador_imagen.preetiquetar proponer \
-        --dataset READ/Dataset_FB_v1_SCRUM101_parte1/dataset_fb_v1 \
-        --imagenes READ/Dataset_FB_v1_SCRUM101_parte2/dataset_fb_v1/imagenes \
+        --dataset "READ/nueva entrega/Dataset_FB_v1_1_SCRUM101_parte1/dataset_fb_v1_1" \
+        --imagenes "READ/nueva entrega/Dataset_FB_v1_1_SCRUM101_parte2/dataset_fb_v1_1/imagenes" \
         --salida READ/etiquetas_propuestas.csv
-   Abrir el CSV en Excel y revisar cada fila: corregir tamano / grupo /
-   estado si hace falta y poner `revisado` = si. Las filas dudosas
-   (confianza baja) vienen primero.
+   Se puede volver a correr con una version nueva del dataset: conserva las
+   filas ya revisadas, etiqueta solo las fotos nuevas y descarta las que ya
+   no estan en el manifiesto.
+   Revisar con la herramienta visual (python -m entrenamiento.clasificador_imagen.revisar):
+   corregir tamano / grupo / estado si hace falta y marcar como revisada.
+   Las filas dudosas (confianza baja) vienen primero.
 
 2) Construir el manifiesto de entrenamiento (sin llamadas a Gemini):
     python -m entrenamiento.clasificador_imagen.preetiquetar manifiesto \
@@ -45,7 +48,7 @@ sys.path.insert(0, str(RAIZ))
 
 COLUMNAS = ["id_imagen", "ruta", "id_mascota_prov", "momento", "nombre_leido", "varios_animales",
             "tamano", "conf_tamano", "grupo", "conf_grupo", "estado", "conf_estado",
-            "es_perro", "observacion", "revisado"]
+            "es_perro", "observacion", "revisado", "nota_revision"]
 UMBRAL_REVISAR = 0.75
 
 
@@ -71,7 +74,10 @@ def proponer(dataset: Path, imagenes_extra: list[Path], salida: Path, limite: in
     resultado = []
     for i, f in enumerate(filas[:limite] if limite else filas, 1):
         if f["id_imagen"] in hechas:
-            resultado.append(hechas[f["id_imagen"]])
+            fila = hechas[f["id_imagen"]]
+            for campo in ("id_mascota_prov", "momento", "nombre_leido", "varios_animales"):
+                fila[campo] = f.get(campo, fila.get(campo, ""))
+            resultado.append(fila)
             continue
         ruta = _buscar_imagen(f["id_imagen"], carpetas)
         if ruta is None:
@@ -107,7 +113,7 @@ def proponer(dataset: Path, imagenes_extra: list[Path], salida: Path, limite: in
         return min(confs) if confs else 0
     resultado.sort(key=prioridad)
     with open(salida, "w", newline="", encoding="utf-8-sig") as fh:  # utf-8-sig: Excel lo abre bien
-        w = csv.DictWriter(fh, fieldnames=COLUMNAS)
+        w = csv.DictWriter(fh, fieldnames=COLUMNAS, extrasaction="ignore")
         w.writeheader()
         w.writerows(resultado)
     dudosas = sum(1 for r in resultado if prioridad(r) < UMBRAL_REVISAR)

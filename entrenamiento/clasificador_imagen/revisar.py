@@ -166,7 +166,10 @@ def main():
                     help="carpetas con las fotos (por defecto, las dos partes del dataset en READ/)")
     ap.add_argument("--puerto", type=int, default=8790)
     args = ap.parse_args()
+    # Por defecto, la version mas reciente del dataset (v1.1) y, si no esta, la v1.
     raices = args.imagenes or [
+        p for p in sorted((RAIZ / "READ").glob("**/dataset_fb_v1_1/imagenes"))
+    ] + [
         RAIZ / "READ" / "Dataset_FB_v1_SCRUM101_parte1" / "dataset_fb_v1" / "imagenes",
         RAIZ / "READ" / "Dataset_FB_v1_SCRUM101_parte2" / "dataset_fb_v1" / "imagenes",
     ]
