@@ -111,6 +111,11 @@ def resumen(repo, desde: datetime | None = None) -> dict:
         "proximas": [_cita_publica(c) for c in proximas[:10]],
         "pendientes": [_cita_publica(c) for c in pendientes],
         "citas": [_cita_publica(c) for c in citas],
+        "no_entregados": [
+            {"destino": m["destino"], "motivo": m["ultimo_error"], "fecha": m["actualizado"],
+             "texto": m["cuerpo"][:160]}
+            for m in repo.mensajes_no_entregados()
+        ],
     }
 
 

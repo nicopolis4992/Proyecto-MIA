@@ -48,3 +48,12 @@ def test_base_antigua_se_migra_con_la_columna_de_pedido_especial(tmp_path):
     repo = Repositorio(ruta)
     columnas = {f[1] for f in repo._con.execute("PRAGMA table_info(citas)")}
     assert "pedido_especial" in columnas
+
+
+def test_diagnostico_no_expone_claves(monkeypatch):
+    from app.panel.salud import diagnostico
+
+    monkeypatch.setenv("GEMINI_API_KEY", "clave-super-secreta")
+    revisiones = diagnostico(Repositorio(":memory:"))
+    assert all("clave-super-secreta" not in r["detalle"] for r in revisiones)
+    assert {r["nombre"] for r in revisiones} >= {"Gemini (GEMINI_API_KEY)", "Número de la propietaria"}

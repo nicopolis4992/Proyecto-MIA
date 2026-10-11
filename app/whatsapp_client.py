@@ -22,10 +22,34 @@ ESPERA_BASE_S = float(os.getenv("WHATSAPP_ESPERA_BASE_S", "1.0"))
 logger = logging.getLogger("whatsapp")
 
 
+# Errores de Meta que conviene reconocer por su codigo (error.code del JSON).
+FUERA_DE_VENTANA = 131047     # pasaron mas de 24 h desde el ultimo mensaje del usuario
+NO_PERMITIDO_EN_PRUEBAS = 131030  # el numero no esta en la lista del numero de prueba
+TOKEN_INVALIDO = 190          # token vencido o revocado
+
+EXPLICACION = {
+    FUERA_DE_VENTANA: "WhatsApp no deja escribirle: pasaron más de 24 h desde su último mensaje",
+    NO_PERMITIDO_EN_PRUEBAS: "ese número no está registrado en la lista del número de prueba de Meta",
+    TOKEN_INVALIDO: "el token de WhatsApp venció o fue revocado (WHATSAPP_ACCESS_TOKEN)",
+}
+
+
 class ErrorWhatsApp(RuntimeError):
-    def __init__(self, mensaje: str, transitorio: bool):
+    def __init__(self, mensaje: str, transitorio: bool, codigo: int | None = None):
         super().__init__(mensaje)
         self.transitorio = transitorio
+        self.codigo = codigo
+
+    @property
+    def explicacion(self) -> str | None:
+        return EXPLICACION.get(self.codigo)
+
+
+def _codigo_meta(response: httpx.Response) -> int | None:
+    try:
+        return int(response.json()["error"]["code"])
+    except (ValueError, KeyError, TypeError):
+        return None
 
 
 def _credenciales() -> tuple[str, str]:
@@ -52,9 +76,10 @@ def _con_reintentos(operacion, descripcion: str):
             return operacion()
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
+            codigo = _codigo_meta(exc.response)
             ultimo_error = ErrorWhatsApp(
                 f"{descripcion}: HTTP {status} {exc.response.text[:300]}",
-                transitorio=_es_transitorio(status),
+                transitorio=_es_transitorio(status), codigo=codigo,
             )
         except httpx.TransportError as exc:  # timeout, DNS, conexion rechazada
             ultimo_error = ErrorWhatsApp(f"{descripcion}: {exc!r}", transitorio=True)

@@ -154,6 +154,15 @@ def cita(request: Request, cita_id: int, fuente: str = "demo"):
     return d
 
 
+@router.get("/api/salud")
+def salud(request: Request):
+    """Diagnostico de configuracion (sin valores secretos), sobre la base real."""
+    _autorizar(request)
+    from app.panel.salud import diagnostico
+
+    return diagnostico(obtener_repositorio())
+
+
 @router.get("/api/chat")
 def chat(request: Request):
     _autorizar(request)

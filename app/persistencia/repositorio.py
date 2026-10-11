@@ -247,6 +247,12 @@ class Repositorio:
         ).fetchall()
         return [dict(f) for f in filas]
 
+    def mensajes_no_entregados(self, limite: int = 20) -> list[dict]:
+        filas = self._ejecutar(
+            "SELECT * FROM mensajes_salientes WHERE estado IN ('no_entregado', 'fallido') "
+            "ORDER BY id DESC LIMIT ?", (limite,)).fetchall()
+        return [dict(f) for f in filas]
+
     def marcar_mensaje(self, msg_id: int, estado: str, error: str | None = None) -> None:
         self._ejecutar(
             "UPDATE mensajes_salientes SET estado = ?, intentos = intentos + 1, "

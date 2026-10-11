@@ -17,8 +17,9 @@ import itertools
 import logging
 from typing import Protocol
 
+from app.config import PROPIETARIA_WHATSAPP
 from app.persistencia.repositorio import Repositorio
-from app.whatsapp_client import ErrorWhatsApp, send_text_message
+from app.whatsapp_client import FUERA_DE_VENTANA, ErrorWhatsApp, send_text_message
 
 logger = logging.getLogger("mensajeria")
 
@@ -38,11 +39,22 @@ class MensajeroWhatsApp:
         try:
             return send_text_message(to=destino, body=texto)
         except ErrorWhatsApp as exc:
-            cola_id = self.repo.encolar_mensaje(destino, texto, str(exc))
-            logger.error(
-                "Mensaje a %s no enviado; encolado con id %d. Motivo: %s",
-                destino, cola_id, exc,
-            )
+            motivo = exc.explicacion or str(exc)
+            if exc.transitorio:
+                cola_id = self.repo.encolar_mensaje(destino, texto, motivo)
+                logger.error("Mensaje a %s no enviado; encolado con id %d. Motivo: %s", destino, cola_id, motivo)
+                return None
+            # Error permanente (ventana de 24 h, numero no permitido, token):
+            # reintentar no sirve. Queda registrado como no entregado (panel) y,
+            # si el destinatario era un cliente, se avisa a la propietaria para
+            # que le escriba ella.
+            cola_id = self.repo.encolar_mensaje(destino, texto, motivo)
+            self.repo.marcar_mensaje(cola_id, "no_entregado", motivo)
+            logger.error("Mensaje a %s NO entregado (%s)", destino, motivo)
+            propietaria = PROPIETARIA_WHATSAPP
+            if exc.codigo == FUERA_DE_VENTANA and propietaria and destino != propietaria:
+                self.enviar(propietaria, f"⚠️ No pude enviarle este mensaje al cliente {destino} porque "
+                                         f"{motivo}. Escríbele tú directamente:\n\n{texto}")
             return None
 
 
