@@ -47,6 +47,10 @@ def diagnostico(repo) -> list[dict]:
                 f"{len(config.NUMEROS_PERMITIDOS)} número(s)" + (f"; formato inválido: {malos}" if malos else "")
                 if config.NUMEROS_PERMITIDOS else "ninguno: en modo pruebas el bot no responderá a nadie")
 
+    pausado = repo.bot_pausado()
+    agregar("Bot", not pausado, "PAUSADO por la propietaria: los mensajes se le reenvían a ella "
+            "(\"activar bot\" para reanudar)" if pausado else "atendiendo", critico=False)
+
     from app.notificaciones import correo
     agregar("Correo de respaldo para la propietaria", correo.configurado(),
             "configurado" if correo.configurado() else

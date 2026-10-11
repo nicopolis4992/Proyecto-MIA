@@ -142,6 +142,7 @@ Para abrirlo en Railway define `DEMO_CLAVE` y entra con `https://<app>/panel?cla
 | `pendientes` | Citas por aprobar |
 | `cobré 22 a la cita #5` | Registra lo cobrado (desviación cotizado vs cobrado en el panel) |
 | `por cobrar` | Citas atendidas sin el cobro registrado |
+| `pausar bot` / `activar bot` | Plan de contingencia: con el bot en pausa, cada mensaje de un cliente le llega a ella y su respuesta (citando) vuelve al cliente |
 
 Si no responde, el sistema le recuerda la solicitud (cada 45 min, máximo 2, entre
 07:00 y 21:00), luego le avisa al cliente que sigue en revisión, y si la cita

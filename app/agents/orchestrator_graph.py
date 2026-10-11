@@ -10,6 +10,7 @@ Cubre:
 
 Flujo:
     START --(propietaria)--> aprobacion --> END
+          --(bot en pausa)-> pausado (reenvio a la propietaria) --> END
           --(imagen)-------> cotizacion_imagen --> END
           --(texto)--------> nlu --consultar--> agente_rag --> END
                                  --agendar----> agente_agenda --> END
@@ -83,9 +84,11 @@ class Dependencias:
 # --- Enrutamiento ---
 
 def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
-        "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda"]:
+        "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda", "pausado"]:
     if d.propietaria and estado["remitente"] == d.propietaria:
         return "aprobacion"
+    if d.repo.bot_pausado():
+        return "pausado"
     # SCRUM-75: origen y referido se anotan al pasar, sin importar a que nodo vaya.
     origen.anotar(d.repo, estado["remitente"], estado.get("mensaje") or "")
     if estado.get("imagen"):
@@ -206,6 +209,22 @@ def _reenviar_a_propietaria(estado: EstadoConversacion, d: Dependencias) -> None
     d.aprobacion.registrar_consulta(msg_id, estado["remitente"], estado["mensaje"])
 
 
+def nodo_pausado(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
+    """Bot en pausa (plan de contingencia): el mensaje va tal cual a la propietaria,
+    sin LLM, y su respuesta citada vuelve al cliente por el relevo de consultas."""
+    texto = estado.get("mensaje") or ""
+    if estado.get("imagen"):
+        texto = (texto + " [envió una foto: pídele que te la mande a tu número]").strip()
+    if d.propietaria:
+        msg_id = d.mensajero.enviar(
+            d.propietaria, f"💬 (bot en pausa) {estado['remitente']}: \"{texto}\"\n"
+                           "Respóndeme citando este mensaje y se lo envío.")
+        d.aprobacion.registrar_consulta(msg_id, estado["remitente"], texto)
+    estado["respuesta"] = None
+    logger.info("Bot en pausa: mensaje de %s reenviado a la propietaria", estado["remitente"])
+    return estado
+
+
 def nodo_agenda(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["respuesta"] = d.agenda.atender(estado["remitente"], estado["mensaje"], ahora())
     logger.info("Enrutado a agente_agenda")
@@ -301,12 +320,13 @@ def construir_grafo(d: Dependencias):
     grafo.add_node("agente_general", lambda e: nodo_general(e, d))
     grafo.add_node("aprobacion", lambda e: nodo_aprobacion(e, d))
     grafo.add_node("cotizacion_imagen", lambda e: nodo_cotizacion_imagen(e, d))
+    grafo.add_node("pausado", lambda e: nodo_pausado(e, d))
 
     grafo.add_conditional_edges(
         START,
         lambda e: enrutar_entrada(e, d),
         {"aprobacion": "aprobacion", "cotizacion_imagen": "cotizacion_imagen", "nlu": "nlu",
-         "agente_agenda": "agente_agenda"},
+         "agente_agenda": "agente_agenda", "pausado": "pausado"},
     )
     # Este es el reemplazo real del "un solo nodo" de SCRUM-85: en lugar de
     # un edge fijo, add_conditional_edges decide el siguiente nodo en
@@ -320,7 +340,7 @@ def construir_grafo(d: Dependencias):
             "agente_general": "agente_general",
         },
     )
-    for nodo in ("agente_rag", "agente_agenda", "agente_general", "aprobacion", "cotizacion_imagen"):
+    for nodo in ("agente_rag", "agente_agenda", "agente_general", "aprobacion", "cotizacion_imagen", "pausado"):
         grafo.add_edge(nodo, END)
 
     return grafo.compile()

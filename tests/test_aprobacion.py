@@ -202,3 +202,32 @@ def test_aprobar_con_numero_de_cita_sin_citar_el_mensaje():
     assert repo.obtener_cita(a)["estado"] == "pendiente_aprobacion"
     assert cliente.llamadas == []
     assert "no está esperando" in p.procesar(f"listo #{b}")
+
+
+# -- plan de contingencia: pausar el bot (SCRUM-92) ----------------------------
+
+def test_pausar_bot_reenvia_a_la_propietaria_y_su_respuesta_vuelve_al_cliente():
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import enrutar_entrada, nodo_pausado
+
+    cliente = ClienteFalso()
+    p, repo, msj = _procesador(cliente)
+    d = SimpleNamespace(propietaria=PROP, repo=repo, mensajero=msj, aprobacion=p,
+                        agenda=SimpleNamespace(cita_vigente=lambda s, a: None))
+    msg = {"remitente": CLI, "mensaje": "hola, quiero agendar", "imagen": None, "id_citado": None}
+
+    assert "Bot en pausa" in p.procesar("Pausar bot")
+    assert repo.bot_pausado()
+    assert enrutar_entrada(msg, d) == "pausado"
+    assert nodo_pausado(dict(msg), d)["respuesta"] is None         # el bot no le contesta
+    [aviso] = msj.a(PROP)
+    assert "hola, quiero agendar" in aviso and CLI in aviso
+    id_aviso = msj.enviados[-1][2]
+    p.procesar("Hola! Sí claro, ¿para cuándo?", id_citado=id_aviso)  # responde citando
+    assert msj.a(CLI) == ["💬 Respuesta de la propietaria: Hola! Sí claro, ¿para cuándo?"]
+    assert cliente.llamadas == []                                    # sin Gemini
+
+    assert "activo" in p.procesar("activar bot")
+    assert not repo.bot_pausado()
+    assert enrutar_entrada(msg, d) != "pausado"

@@ -56,6 +56,9 @@ _TODO_PREGUNTADO = ["tamano", "raza_o_grupo_manto", "estado_manto", "comportamie
 _COBRO = re.compile(r"\bcobr(?:e|ado|amos)\b\D{0,15}?(\d+(?:[.,]\d{1,2})?)")
 _NUM_CITA = re.compile(r"#\s*(\d+)|\bcita\s+(?:n[°o.]?\s*)?(\d+)\b")
 _POR_COBRAR = {"por cobrar", "cobros pendientes", "pendientes de cobro"}
+# Plan de contingencia: la propietaria apaga el bot y atiende ella.
+_PAUSAR = {"pausar bot", "pausa bot", "pausar el bot", "apagar bot", "apagar el bot", "detener bot"}
+_ACTIVAR = {"activar bot", "activar el bot", "reanudar bot", "encender bot", "prender bot", "prender el bot"}
 
 
 def _sin_tildes(texto: str) -> str:
@@ -188,6 +191,15 @@ class ProcesadorAprobacion:
     # -- entrada principal --------------------------------------------------
 
     def procesar(self, texto: str, id_citado: str | None = None, ahora: datetime | None = None) -> str | None:
+        if _normalizar(texto) in _PAUSAR:
+            self.repo.pausar_bot(True)
+            logger.warning("Bot PAUSADO por la propietaria")
+            return ("⏸️ Bot en pausa. Te reenvío cada mensaje de los clientes: respóndeme citándolo "
+                    "y se lo paso. Escribe \"activar bot\" para que vuelva a atender.")
+        if _normalizar(texto) in _ACTIVAR:
+            self.repo.pausar_bot(False)
+            logger.warning("Bot REACTIVADO por la propietaria")
+            return "▶️ Bot activo otra vez: vuelvo a atender a los clientes."
         if _normalizar(texto) in {"pendientes", "citas", "citas pendientes"}:
             return self._listar_pendientes()
         if _normalizar(texto) in _POR_COBRAR:

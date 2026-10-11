@@ -139,6 +139,17 @@ class Repositorio:
             (telefono, json.dumps(datos, ensure_ascii=False, default=str), _ts()),
         )
 
+    # -- interruptor del bot (plan de contingencia, SCRUM-92) ------------------
+    # Se guarda como una sesion especial para no agregar otra tabla.
+
+    def bot_pausado(self) -> bool:
+        return bool(self.obtener_sesion("_sistema").get("pausado"))
+
+    def pausar_bot(self, pausado: bool) -> None:
+        sistema = self.obtener_sesion("_sistema")
+        sistema.update(pausado=pausado, cambio=_ts())
+        self.guardar_sesion("_sistema", sistema)
+
     def borrar_sesion(self, telefono: str) -> None:
         self._ejecutar("DELETE FROM sesiones WHERE telefono = ?", (telefono,))
 
