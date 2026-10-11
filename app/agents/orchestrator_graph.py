@@ -117,8 +117,10 @@ def va_a_la_agenda(texto: str) -> bool:
     return not parece_pregunta(texto) or pregunta_de_agenda(texto) or pedido_personalizado(texto)
 
 
-_INTERROGATIVOS = ("cuanto", "cuánto", "que ", "qué", "como ", "cómo", "donde", "dónde", "cuando",
-                   "cuándo", "cual", "cuál", "tienen", "hacen", "puedo", "pueden", "aceptan", "hay ")
+# Sin "?" solo cuentan los inicios inequivocos. "que"/"como" sin tilde no:
+# "que la recojan en mi casa" o "como le dije" son pedidos, no preguntas.
+_INTERROGATIVOS = ("cuanto", "cuánto", "qué ", "cómo ", "donde", "dónde", "cuándo", "cuál",
+                   "tienen", "hacen", "aceptan", "hay ")
 
 
 def parece_pregunta(texto: str) -> bool:
@@ -162,8 +164,10 @@ def enrutar_por_intencion(
     if intencion == "agendar":
         return "agente_agenda"
     # Un "general" en medio de una reserva suele ser la respuesta a una
-    # pregunta del agente de agenda ("se llama Toby", "el viernes").
-    if estado.get("en_flujo_agenda"):
+    # pregunta del agente de agenda ("se llama Toby", "el viernes"). Pero una
+    # PREGUNTA general ("¿aceptan tarjeta?") va al agente general, que la
+    # releva a la propietaria; si fuera a la agenda, se perderia.
+    if estado.get("en_flujo_agenda") and va_a_la_agenda(estado["mensaje"]):
         return "agente_agenda"
     # "general" y cualquier caso no reconocido caen aqui como fallback seguro
     return "agente_general"
@@ -182,14 +186,21 @@ def nodo_nlu(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
 def nodo_rag(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     r = d.agente_rag(estado["mensaje"])
     estado["respuesta"] = r.texto
-    if not r.fundamentada and d.propietaria:
+    if not r.fundamentada:
         # El cliente recibio "le comento a la propietaria": hay que hacerlo.
-        msg_id = d.mensajero.enviar(
-            d.propietaria, f"❓ Pregunta sin respuesta de {estado['remitente']}: \"{estado['mensaje']}\"\n"
-                           "Respóndeme citando este mensaje y se lo envío al cliente.")
-        d.aprobacion.registrar_consulta(msg_id, estado["remitente"], estado["mensaje"])
+        _reenviar_a_propietaria(estado, d)
     logger.info("Enrutado a agente_rag (fundamentada=%s)", r.fundamentada)
     return estado
+
+
+def _reenviar_a_propietaria(estado: EstadoConversacion, d: Dependencias) -> None:
+    """Pregunta que el bot no puede responder: se la pasa a la propietaria (relevo)."""
+    if not d.propietaria:
+        return
+    msg_id = d.mensajero.enviar(
+        d.propietaria, f"❓ Pregunta sin respuesta de {estado['remitente']}: \"{estado['mensaje']}\"\n"
+                       "Respóndeme citando este mensaje y se lo envío al cliente.")
+    d.aprobacion.registrar_consulta(msg_id, estado["remitente"], estado["mensaje"])
 
 
 def nodo_agenda(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
@@ -203,7 +214,13 @@ canina en Quito. Respondes saludos, agradecimientos y mensajes generales con
 calidez y brevedad (1-2 líneas, en español de Ecuador, tratando de "usted").
 No des precios, horarios ni datos del negocio: si preguntan algo así, invita a
 consultarlo o a enviar una foto de su perrito para cotizar. Si el mensaje no
-tiene relación con el negocio, redirige amablemente."""
+tiene relación con el negocio, redirige amablemente.
+
+Si el cliente hace una pregunta CONCRETA sobre el negocio que tú no puedes
+saber (medios de pago, factura, a qué hora recoger, qué llevar, dónde queda,
+hasta dónde llega el servicio), NO la respondas ni inventes: responde
+exactamente CONSULTAR_PROPIETARIA y nada más."""
+MARCA_CONSULTA = "CONSULTAR_PROPIETARIA"
 
 
 def nodo_general(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
@@ -211,7 +228,15 @@ def nodo_general(estado: EstadoConversacion, d: Dependencias) -> EstadoConversac
         model=MODELO_LLM, contents=estado["mensaje"],
         config=types.GenerateContentConfig(system_instruction=PROMPT_GENERAL, temperature=0.6),
     )
-    estado["respuesta"] = response.text.strip()
+    texto = response.text.strip()
+    if MARCA_CONSULTA in texto:
+        # Pregunta del negocio sin respuesta segura (con el NLU v2, pagos y
+        # logistica llegan aqui): se releva a la propietaria, como en el RAG.
+        from app.rag.agente_rag import RESPUESTA_SIN_CONTEXTO
+
+        texto = RESPUESTA_SIN_CONTEXTO
+        _reenviar_a_propietaria(estado, d)
+    estado["respuesta"] = texto
     logger.info("Enrutado a agente_general")
     return estado
 

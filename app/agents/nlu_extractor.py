@@ -25,7 +25,7 @@ logger = logging.getLogger("nlu")
 
 MODEL = "gemini-3.5-flash-lite"
 # Version del prompt de SYSTEM_PROMPT, para trazar las evaluaciones (SCRUM-64).
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 # Las 3 intenciones definidas en el alcance del proyecto (ver Alternativa 1
 # de la propuesta): agendar cita, consultar servicio/producto, consulta general.
@@ -72,6 +72,9 @@ NLU_SCHEMA = types.Schema(
     required=["intencion", "confianza", "entidades"],
 )
 
+# v2 (10-oct-2026): definiciones alineadas con la guia de anotacion de
+# SCRUM-63 (datasets/nlu/guia_anotacion.md, reglas R1-R6). En v1,
+# "disponibilidad" y "pagos" caian en "consultar", contra la guia.
 SYSTEM_PROMPT = """Eres el modulo de comprension de lenguaje natural (NLU) del
 sistema de atencion de Lina's Pet Salon, un negocio de grooming canino en Quito.
 
@@ -79,11 +82,24 @@ Tu unica tarea es analizar el mensaje del cliente y devolver un objeto JSON
 con:
 1. La intencion del mensaje, que debe ser exactamente una de: "agendar",
    "consultar" o "general".
-   - "agendar": el cliente quiere agendar, reagendar o cancelar una cita.
-   - "consultar": el cliente pregunta por servicios, precios o disponibilidad
-     sin pedir agendar todavia.
-   - "general": saludo, agradecimiento, o cualquier otra cosa que no encaje
-     en las dos anteriores.
+   - "agendar": quiere agendar, reagendar o cancelar una cita, o pregunta por
+     DISPONIBILIDAD (dias u horas libres, "¿tiene espacio manana?"): la
+     disponibilidad ocupa la agenda.
+   - "consultar": pregunta por los servicios o productos del negocio: que
+     incluyen, precios y tarifas (incluido el costo del servicio puerta a
+     puerta), o envia una foto de la mascota para cotizar. Tambien hospedaje
+     o snacks, aunque esten fuera de alcance.
+   - "general": todo lo demas: saludos, agradecimientos, despedidas, pagos y
+     facturacion (medios de pago, factura, comprobante), logistica de la
+     visita (a que hora recoger, que llevar, donde queda el local, hasta
+     donde llega el servicio), quejas y mensajes ajenos al negocio.
+   Reglas:
+   - Si hay varias intenciones, gana la que exige accion de la propietaria:
+     agendar > consultar > general ("¿cuanto cuesta y tiene espacio
+     manana?" es agendar).
+   - Una foto sola es consultar; solo es agendar si ademas pide un horario.
+   - Pregunta de control para consultar: ¿la respuesta correcta es un monto
+     o lo que incluye un servicio? Si es un pago o una logistica, es general.
 2. Un nivel de confianza entre 0 y 1.
 3. Las entidades relevantes que puedas identificar explicitamente en el
    mensaje (servicio mencionado, fecha/hora sugerida, tipo de mascota). Si

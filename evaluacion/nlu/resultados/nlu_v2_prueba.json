@@ -1,0 +1,69 @@
+{
+  "conjunto": "prueba",
+  "n": 56,
+  "modelo": "gemini-3.5-flash-lite",
+  "version_prompt": "v2",
+  "intencion": {
+    "exactitud": 1.0,
+    "f1_macro": 1.0,
+    "f1_ponderado": 1.0,
+    "por_clase": {
+      "agendar_cita": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 22.0
+      },
+      "consultar_servicio_producto": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 17.0
+      },
+      "consulta_general": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 17.0
+      }
+    },
+    "matriz_confusion": {
+      "etiquetas": [
+        "agendar_cita",
+        "consultar_servicio_producto",
+        "consulta_general"
+      ],
+      "matriz": [
+        [
+          22,
+          0,
+          0
+        ],
+        [
+          0,
+          17,
+          0
+        ],
+        [
+          0,
+          0,
+          17
+        ]
+      ]
+    }
+  },
+  "confianza": {
+    "media_aciertos": 0.968,
+    "media_errores": null
+  },
+  "entidades": {
+    "recall_fecha_hora": 1.0,
+    "n_con_temporalidad": 14,
+    "falsas_fechas": 0.024,
+    "recall_tipo_mascota": 1.0,
+    "n_con_raza_o_tamano": 7
+  },
+  "latencia_ms_mediana": 775,
+  "errores": [],
+  "advertencia": "Corpus mayoritariamente sintético (SCRUM-63): mide acuerdo con la guía de anotación, no desempeño en producción. Recalcular con el corpus real anotado."
+}

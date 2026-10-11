@@ -133,3 +133,47 @@ def test_en_reserva_las_descripciones_van_a_agenda_y_las_preguntas_al_rag():
     assert ruta("Su pelo le crece", en_flujo=False) == "agente_rag"
     assert ruta("y despues de las 3?") == "agente_agenda"
     assert ruta("¿puede en la tarde?") == "agente_agenda"
+
+
+def test_agente_general_reenvia_preguntas_del_negocio_a_la_propietaria():
+    """Con el NLU v2, "¿puedo pagar con tarjeta?" es general: no se inventa, se releva."""
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import MARCA_CONSULTA, nodo_general
+    from app.mensajeria import MensajeroMemoria
+    from app.rag.agente_rag import RESPUESTA_SIN_CONTEXTO
+
+    consultas = []
+    msj = MensajeroMemoria()
+    d = SimpleNamespace(
+        client=SimpleNamespace(models=SimpleNamespace(generate_content=lambda **kw: SimpleNamespace(text=MARCA_CONSULTA))),
+        propietaria="593900000001", mensajero=msj,
+        aprobacion=SimpleNamespace(registrar_consulta=lambda *a: consultas.append(a)))
+    estado = nodo_general({"remitente": "593900000099", "mensaje": "¿puedo pagar con tarjeta?"}, d)
+    assert estado["respuesta"] == RESPUESTA_SIN_CONTEXTO
+    assert "puedo pagar con tarjeta" in msj.a("593900000001")[0] and consultas
+
+
+def test_pregunta_general_en_medio_de_una_reserva_no_se_pierde():
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import enrutar_por_intencion
+
+    def ruta(msg):
+        return enrutar_por_intencion({"mensaje": msg, "en_flujo_agenda": True,
+                                      "nlu": SimpleNamespace(intencion="general")})
+
+    assert ruta("¿aceptan tarjeta de credito?") == "agente_general"
+    assert ruta("se llama Toby") == "agente_agenda"
+    assert ruta("gracias") == "agente_agenda"
+
+
+def test_pedidos_que_empiezan_con_que_o_como_no_son_preguntas():
+    from app.agents.orchestrator_graph import parece_pregunta
+
+    assert not parece_pregunta("Que la recojan en mi casa por favor, vivo en el Condado")
+    assert not parece_pregunta("como le dije, es mestiza")
+    assert not parece_pregunta("puedo el jueves a las 10")          # respuesta a "¿qué día?"
+    assert parece_pregunta("que dias tiene libres?")
+    assert parece_pregunta("cuanto cuesta el baño")
+    assert parece_pregunta("qué incluye el premium")
