@@ -19,6 +19,11 @@ le muestra lo que el sistema entendio, para que corrija si hace falta.
 Ademas, cuando el agente RAG no sabe responder algo, la pregunta del cliente
 se reenvia a la propietaria; si ella responde citando ese aviso, su
 respuesta se le reenvia al cliente (relevo de consultas).
+
+Despues del servicio, la propietaria registra lo que cobro ("cobré 22 a la
+cita #5", o "cobré 22" citando el mensaje de la cita). Es el dato real contra
+el que se mide la desviacion de la cotizacion (SCRUM-95). Se reconoce con
+reglas: no gasta llamadas al LLM.
 """
 
 from __future__ import annotations
@@ -36,6 +41,7 @@ from app.agenda import mensajes
 from app.agenda.calendario import registrar_en_calendario
 from app.agenda.disponibilidad import proponer_alternativas, validar_horario
 from app.config import MODELO_LLM, ZONA_HORARIA
+from app.config import ahora as reloj
 
 logger = logging.getLogger("agenda.aprobacion")
 
@@ -45,12 +51,34 @@ _APROBAR = {"listo", "si", "ok", "okey", "dale", "dale nomas", "aprobado", "apro
 _RECHAZAR = {"no", "rechazado", "rechazada", "no puedo", "no se puede", "rechaza", "no dale"}
 # Al reabrir una reserva ya cotizada no se vuelve a preguntar por la mascota.
 _TODO_PREGUNTADO = ["tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento"]
+# "cobré 22", "le cobramos 18.50", "cobrado $30". No "cóbrale 20": eso es una
+# modificacion del precio antes de aprobar.
+_COBRO = re.compile(r"\bcobr(?:e|ado|amos)\b\D{0,15}?(\d+(?:[.,]\d{1,2})?)")
+_NUM_CITA = re.compile(r"#\s*(\d+)|\bcita\s+(?:n[°o.]?\s*)?(\d+)\b")
+_POR_COBRAR = {"por cobrar", "cobros pendientes", "pendientes de cobro"}
+
+
+def _sin_tildes(texto: str) -> str:
+    t = unicodedata.normalize("NFKD", texto.lower())
+    return "".join(ch for ch in t if not unicodedata.combining(ch))
 
 
 def _normalizar(texto: str) -> str:
-    t = unicodedata.normalize("NFKD", texto.lower())
-    t = "".join(ch for ch in t if not unicodedata.combining(ch))
-    return re.sub(r"[^\w\s👍]", "", t).strip()
+    return re.sub(r"[^\w\s👍]", "", _sin_tildes(texto)).strip()
+
+
+def leer_cobro(texto: str) -> tuple[float, int | None] | None:
+    """(monto, numero de cita o None) si el texto registra un cobro."""
+    t = _sin_tildes(texto)
+    numero = None
+    m = _NUM_CITA.search(t)
+    if m:
+        numero = int(m.group(1) or m.group(2))
+        t = t[:m.start()] + " " + t[m.end():]  # que el numero de cita no se lea como monto
+    c = _COBRO.search(t)
+    if not c:
+        return None
+    return float(c.group(1).replace(",", ".")), numero
 
 
 @dataclass
@@ -156,6 +184,11 @@ class ProcesadorAprobacion:
     def procesar(self, texto: str, id_citado: str | None = None, ahora: datetime | None = None) -> str | None:
         if _normalizar(texto) in {"pendientes", "citas", "citas pendientes"}:
             return self._listar_pendientes()
+        if _normalizar(texto) in _POR_COBRAR:
+            return self._listar_por_cobrar(ahora or reloj())
+        cobro = leer_cobro(texto)
+        if cobro:
+            return self._registrar_cobro(*cobro, id_citado, ahora or reloj())
 
         relevo = self._relevar_consulta(texto, id_citado)
         if relevo:
@@ -218,6 +251,51 @@ class ProcesadorAprobacion:
         return "Pendientes:\n" + "\n".join(
             f"#{c['id']} — {mensajes.fecha_legible(c['fecha_hora'])} — "
             f"{', '.join(m.get('nombre') or 'mascota' for m in c['mascotas'])}" for c in pendientes)
+
+    # -- cobro real (SCRUM-95) -------------------------------------------------
+
+    def _sin_cobro(self, hasta: datetime) -> list[dict]:
+        """Citas confirmadas de hoy o antes que aun no tienen el cobro registrado."""
+        fin_del_dia = hasta.replace(hour=23, minute=59)
+        return [c for c in self.repo.citas_por_estado("confirmada")
+                if c.get("total_cobrado") is None and c.get("fecha_hora")
+                and datetime.fromisoformat(c["fecha_hora"]) <= fin_del_dia]
+
+    def _listar_por_cobrar(self, ahora: datetime) -> str:
+        citas = self._sin_cobro(ahora)
+        if not citas:
+            return "No hay citas atendidas sin el cobro registrado 🙌"
+        return ("Sin cobro registrado:\n" + "\n".join(
+            f"#{c['id']} — {mensajes.fecha_legible(c['fecha_hora'])} — "
+            f"{', '.join(m.get('nombre') or 'mascota' for m in c['mascotas'])} (cotizado {mensajes.texto_total(c)})"
+            for c in citas) + "\n\nEscríbeme por ejemplo: \"cobré 22 a la cita #5\".")
+
+    def _registrar_cobro(self, monto: float, numero: int | None, id_citado: str | None,
+                         ahora: datetime) -> str:
+        cita = None
+        if numero is not None:
+            cita = self.repo.obtener_cita(numero)
+            if not cita:
+                return f"No encontré la cita #{numero}."
+        elif id_citado:
+            cita = self.repo.cita_por_mensaje_aprobacion(id_citado)
+        if cita is None:
+            candidatas = self._sin_cobro(ahora)
+            if len(candidatas) != 1:
+                return ("¿A qué cita corresponde? Escríbeme el número, por ejemplo \"cobré "
+                        f"{monto:g} a la cita #5\" (o responde \"por cobrar\" para ver la lista).")
+            cita = candidatas[0]
+        if cita["estado"] != "confirmada":
+            return f"La cita #{cita['id']} no está confirmada ({cita['estado'].replace('_', ' ')}); no registré el cobro."
+
+        anterior = cita.get("total_cobrado")
+        self.repo.actualizar_cita(cita["id"], total_cobrado=monto, fecha_cobro=ahora)
+        self.repo.registrar_evento(cita["id"], "cobrada", {
+            "total_cobrado": monto, "cotizado": mensajes.texto_total(cita), "anterior": anterior})
+        logger.info("Cita #%s: cobro registrado %.2f (cotizado %s)", cita["id"], monto, mensajes.texto_total(cita))
+        correccion = f" (corregido; antes {anterior:.2f}$)" if anterior is not None else ""
+        return (f"💰 Cita #{cita['id']}: registré {monto:.2f}$ cobrado{correccion}. "
+                f"Se había cotizado {mensajes.texto_total(cita)}.")
 
     def _aprobar(self, cita: dict) -> str:
         self.repo.actualizar_cita(cita["id"], estado="aprobada")

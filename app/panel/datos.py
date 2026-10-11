@@ -3,6 +3,7 @@ Datos del panel web: indicadores para la propietaria y datos de ejemplo.
 
 Indicadores elegidos por lo que el proyecto promete medir (SCRUM-95/96):
 - tiempo desde la solicitud hasta la confirmacion de la cita;
+- desviacion entre lo cotizado y lo que la propietaria cobro de verdad;
 - cuantas cotizaciones salen con precio exacto vs rango (variabilidad);
 - ingresos estimados, servicios mas pedidos, modalidad, proximas citas.
 """
@@ -42,10 +43,31 @@ def _cita_publica(c: dict) -> dict:
         "preguntas_pendientes": cot.get("preguntas_pendientes", []),
         "revision_manual": c.get("requiere_revision_manual", False),
         "ciclo_aprobacion": c.get("ciclo_aprobacion", 1),
+        "cobrado": c.get("total_cobrado"),
     }
 
 
+def desviacion_cobro(c: dict) -> float | None:
+    """
+    USD entre lo cotizado y lo cobrado (SCRUM-95). Contra el monto unico si lo
+    hubo (acordado o exacto); contra un rango, 0 si el cobro cayo dentro y si
+    no, la distancia al extremo mas cercano: es lo que el cliente esperaba.
+    """
+    cobrado = c.get("total_cobrado")
+    if cobrado is None:
+        return None
+    unico = mensajes.total_de(c)
+    if unico is not None:
+        return abs(cobrado - unico)
+    total = (c.get("cotizacion") or {}).get("total")
+    if not total:
+        return None
+    return max(total[0] - cobrado, cobrado - total[1], 0.0)
+
+
 def _monto(c: dict) -> float:
+    if c.get("total_cobrado") is not None:
+        return float(c["total_cobrado"])
     unico = mensajes.total_de(c)
     if unico is not None:
         return unico
@@ -71,6 +93,8 @@ def resumen(repo, desde: datetime | None = None) -> dict:
     exactas = [c for c in cotizadas if _cita_publica(c)["comprometido"]]
     amplitudes = [c["cotizacion"]["total"][1] - c["cotizacion"]["total"][0]
                   for c in cotizadas if c["cotizacion"].get("total")]
+
+    desvios = [d for d in (desviacion_cobro(c) for c in confirmadas) if d is not None]
 
     servicios = Counter(s for c in citas if c["estado"] != "rechazada"
                         for s in _cita_publica(c)["servicios"] if s)
@@ -102,6 +126,10 @@ def resumen(repo, desde: datetime | None = None) -> dict:
             "pct_puerta_a_puerta": round(100 * sum(1 for c in confirmadas if c["modalidad"] == "puerta_a_puerta")
                                          / len(confirmadas)) if confirmadas else None,
             "clientes_recurrentes": sum(1 for n in clientes.values() if n > 1),
+            "citas_cobradas": len(desvios),
+            "desviacion_media_usd": round(sum(desvios) / len(desvios), 2) if desvios else None,
+            "pct_cobro_como_cotizado": round(100 * sum(1 for d in desvios if d < 0.01) / len(desvios))
+                                       if desvios else None,
             "rechazadas": sum(1 for c in citas if c["estado"] in ("rechazada", "cancelada")),
         },
         "citas_por_dia": dias,
@@ -145,6 +173,7 @@ _SECTORES = ["El Condado", "Cotocollao", "La Carolina", "Condado Alto"]
 def cargar_ejemplo(repo, cotizador: Cotizador, n: int = 24, semilla: int = 42) -> int:
     """Crea citas SIMULADAS (telefonos 59399990xxxx) en las ultimas y proximas 2 semanas."""
     rng = random.Random(semilla)
+    rng_cobro = random.Random(semilla + 1)
     hoy = ahora().replace(minute=0, second=0, microsecond=0)
     creadas = 0
     for i in range(n):
@@ -179,5 +208,10 @@ def cargar_ejemplo(repo, cotizador: Cotizador, n: int = 24, semilla: int = 42) -
                 "'{\"simulado\": true}', fecha FROM eventos_cita WHERE cita_id = ? AND tipo = 'aprobada'",
                 (cid,),
             )
+            if inicio < hoy and cot.get("total"):
+                bajo, alto = cot["total"]
+                cobrado = round(rng_cobro.uniform(bajo - 2, alto + 3))
+                repo.actualizar_cita(cid, total_cobrado=float(cobrado), fecha_cobro=inicio)
+                repo.registrar_evento(cid, "cobrada", {"total_cobrado": cobrado, "simulado": True})
         creadas += 1
     return creadas

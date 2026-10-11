@@ -5,6 +5,8 @@ Guarda lo minimo que el prototipo necesita para funcionar entre mensajes:
 - sesiones: estado de la conversacion por numero de WhatsApp.
 - citas: la cita propuesta con los campos de SCRUM-74 y su estado
   (pendiente_aprobacion -> aprobada / rechazada -> confirmada).
+- total_cobrado: lo que la propietaria cobro de verdad (SCRUM-95: desviacion
+  entre lo cotizado y lo cobrado).
 - eventos_cita: trazabilidad de cada transicion (quien, cuando, que).
 - mensajes_salientes: cola de mensajes que no se pudieron enviar (SCRUM-87).
 - mensajes_procesados: deduplicacion de webhooks reintentados por Meta.
@@ -52,6 +54,8 @@ CREATE TABLE IF NOT EXISTS citas (
     sector TEXT,
     cotizacion TEXT,
     total_acordado REAL,
+    total_cobrado REAL,
+    fecha_cobro TEXT,
     origen TEXT DEFAULT 'whatsapp',
     descuento_aplicado TEXT,
     pedido_especial TEXT,
@@ -106,9 +110,10 @@ class Repositorio:
             self._con.executescript(_ESQUEMA)
             # Migracion simple: columnas agregadas despues de crear la base.
             columnas = {f[1] for f in self._con.execute("PRAGMA table_info(citas)")}
-            if "pedido_especial" not in columnas:
-                self._con.execute("ALTER TABLE citas ADD COLUMN pedido_especial TEXT")
-                self._con.commit()
+            for col, tipo in (("pedido_especial", "TEXT"), ("total_cobrado", "REAL"), ("fecha_cobro", "TEXT")):
+                if col not in columnas:
+                    self._con.execute(f"ALTER TABLE citas ADD COLUMN {col} {tipo}")
+            self._con.commit()
 
     def _ejecutar(self, sql: str, params: tuple = ()) -> sqlite3.Cursor:
         with self._lock:

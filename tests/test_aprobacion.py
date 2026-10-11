@@ -136,3 +136,57 @@ def test_confirmacion_incluye_total_y_traslado():
     [confirmacion] = msj.a(CLI)
     assert "Baño Completo" in confirmacion
     assert "30.00$ con el servicio puerta a puerta incluido" in confirmacion
+
+
+# -- cobro real (SCRUM-95) ---------------------------------------------------
+
+DESPUES = datetime(2026, 10, 1, 18, 0, tzinfo=ZONA_HORARIA)
+
+
+@pytest.mark.parametrize("texto,esperado", [
+    ("cobré 22 a la cita #5", (22.0, 5)), ("#5 cobré 22", (22.0, 5)),
+    ("le cobramos 18,50", (18.5, None)), ("cobrado $30 cita 7", (30.0, 7)),
+    ("cóbrale 20", None), ("listo", None),
+])
+def test_leer_cobro(texto, esperado):
+    from app.agenda.aprobacion import leer_cobro
+    assert leer_cobro(texto) == esperado
+
+
+def test_cobro_se_registra_sin_llm_y_alimenta_la_desviacion():
+    from app.panel.datos import desviacion_cobro, resumen
+    cliente = ClienteFalso()
+    p, repo, _ = _procesador(cliente)
+    cid = _cita(repo)
+    p.procesar("listo", id_citado=f"wamid.cita{cid}")
+    resp = p.procesar("cobré 33", ahora=DESPUES)  # una sola cita atendida: no hace falta el numero
+    assert "registré 33.00$" in resp
+    cita = repo.obtener_cita(cid)
+    assert cita["total_cobrado"] == 33.0
+    assert repo.eventos_de_cita(cid)[-1]["tipo"] == "cobrada"
+    assert cliente.llamadas == []
+    assert desviacion_cobro(cita) == pytest.approx(3.0)  # cotizado 30 (25 + traslado 5)
+    k = resumen(repo)["kpis"]
+    assert k["citas_cobradas"] == 1 and k["desviacion_media_usd"] == 3.0
+
+
+def test_cobro_dentro_del_rango_no_es_desviacion():
+    from app.panel.datos import desviacion_cobro
+    base = {"cotizacion": {"total": [20, 25]}}
+    assert desviacion_cobro({**base, "total_cobrado": 22}) == 0
+    assert desviacion_cobro({**base, "total_cobrado": 27}) == 2
+    assert desviacion_cobro({**base, "total_cobrado": 22, "total_acordado": 20}) == 2
+
+
+def test_cobro_ambiguo_pide_el_numero_y_no_registra_en_citas_sin_confirmar():
+    p, repo, _ = _procesador()
+    a, b = _cita(repo), _cita(repo)
+    for cid in (a, b):
+        repo.actualizar_cita(cid, estado="confirmada")
+    assert "¿A qué cita" in p.procesar("cobré 25", ahora=DESPUES)
+    assert "Sin cobro registrado" in p.procesar("por cobrar", ahora=DESPUES)
+    assert "registré 25.00$" in p.procesar(f"cobré 25 a la cita #{b}", ahora=DESPUES)
+    assert f"#{a}" in p.procesar("por cobrar", ahora=DESPUES)
+    c = _cita(repo)  # pendiente de aprobacion
+    assert "no está confirmada" in p.procesar(f"cobré 25 cita #{c}", ahora=DESPUES)
+    assert repo.obtener_cita(c)["total_cobrado"] is None

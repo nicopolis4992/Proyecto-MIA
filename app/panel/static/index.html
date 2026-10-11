@@ -370,11 +370,12 @@ function pintarPanel() {
   const k = datos.kpis;
   $("#generado").textContent = `Actualizado ${datos.generado.replace("T", " ").slice(0, 16)}`;
   $("#kpis").innerHTML =
-    kpi("Ingresos estimados (citas confirmadas)", usd(k.ingresos_estimados), "Suma del precio acordado o punto medio del rango", true) +
+    kpi("Ingresos estimados (citas confirmadas)", usd(k.ingresos_estimados), "Lo cobrado; si aún no se registra, el precio acordado o el punto medio del rango", true) +
     kpi("Citas confirmadas", k.citas_confirmadas, `${k.rechazadas} rechazada(s) o cancelada(s)`) +
     kpi("En proceso", `${k.pendientes_aprobacion ? "⏳ " : ""}${k.pendientes_aprobacion}`, "Por aprobar, esperando al cliente o reprogramando") +
     kpi("Tiempo hasta confirmar", k.tiempo_confirmacion_min == null ? "—" : `${Math.round(k.tiempo_confirmacion_min)} min`, "Promedio: solicitud → confirmación al cliente") +
     kpi("Cotizaciones con precio exacto", k.pct_precio_exacto == null ? "—" : `${k.pct_precio_exacto}%`, k.amplitud_media_usd == null ? "" : `Amplitud media del rango: ${usd(k.amplitud_media_usd)}`) +
+    kpi("Desviación cotizado vs cobrado", k.desviacion_media_usd == null ? "—" : usd(k.desviacion_media_usd), k.citas_cobradas ? `Promedio en ${k.citas_cobradas} cita(s) cobrada(s) · ${k.pct_cobro_como_cotizado}% cobradas como se cotizó` : "La propietaria registra el cobro: \"cobré 22 a la cita #5\"") +
     kpi("Servicio puerta a puerta", k.pct_puerta_a_puerta == null ? "—" : `${k.pct_puerta_a_puerta}%`, `${k.clientes_recurrentes} cliente(s) recurrente(s)`);
   const hoy = datos.generado.slice(0, 10);
   columnas($("#g-dias"), datos.citas_por_dia, "fecha", "citas", { hoy });
@@ -429,6 +430,7 @@ async function abrirCita(id) {
     ${c.ciclo_aprobacion > 1 ? ` · <span class="pill">revisión ${c.ciclo_aprobacion}</span>` : ""}</p>
     <h2 style="font-size:13px">Cotización (tarifario v${esc(cot.version_tarifario || "")})</h2>${mascotas}${tr}
     <div class="linea" style="font-weight:600"><span>Total</span><span>${esc(c.total)}</span></div>
+    ${c.cobrado != null ? `<div class="linea"><span>Cobrado</span><span>${usd(c.cobrado)}</span></div>` : ""}
     ${c.preguntas_pendientes.length ? `<p class="aviso">Faltó confirmar: ${c.preguntas_pendientes.map(p => PREGUNTAS[p] || p).join(", ")}</p>` : ""}
     ${c.revision_manual ? `<p class="aviso">⚠️ La foto no permitió estimar bien: la propietaria revisó el precio.</p>` : ""}
     <h2 style="font-size:13px;margin-top:14px">Trazabilidad</h2><ul class="timeline">${ev}</ul>
@@ -441,7 +443,7 @@ const CHIPS = {
   cliente: ["Hola, buenas tardes", "¿Cuánto cuesta el baño completo para un perro grande?", "Quiero agendar un baño completo para mi perrita Luna, es mestiza",
     "Es mediana, pesa como 12 kilos", "Su pelo le crece y hay que cortárselo", "Tiene algunos nudos pero es tranquila",
     "Que la recojan en mi casa, vivo en el Condado", "El jueves a las 5 de la tarde", "1"],
-  propietaria: ["listo", "no", "a las 12 estaría mejor", "en 2$ le dejo el transporte", "pendientes"],
+  propietaria: ["listo", "no", "a las 12 estaría mejor", "en 2$ le dejo el transporte", "pendientes", "cobré 25 a la cita #1", "por cobrar"],
 };
 function pintarChat(chat) {
   for (const canal of ["cliente", "propietaria"]) {
