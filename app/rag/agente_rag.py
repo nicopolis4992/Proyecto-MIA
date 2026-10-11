@@ -30,6 +30,7 @@ K_FRAGMENTOS = int(os.getenv("RAG_K", "4"))
 # Recalibrar con el conjunto de evaluacion de SCRUM-71.
 UMBRAL_SIMILITUD = float(os.getenv("RAG_UMBRAL", "0.66"))
 
+MARCA_SIN_CONTEXTO = "SIN_CONTEXTO"
 RESPUESTA_SIN_CONTEXTO = (
     "No tengo esa información a la mano. Le comento a la propietaria para "
     "que le responda directamente lo antes posible."
@@ -41,8 +42,10 @@ de grooming canino en Quito. Respondes consultas de clientes.
 Reglas obligatorias:
 1. Responde SOLO con la información del CONTEXTO. No uses conocimiento propio
    sobre precios, horarios, direcciones ni políticas.
-2. Si el contexto no contiene la respuesta (total o parcialmente), dilo con
-   naturalidad y ofrece que la propietaria le responda. No inventes.
+2. Si el contexto NO contiene la respuesta a lo que se pregunta (aunque hable
+   de un tema parecido), responde exactamente SIN_CONTEXTO y nada mas. Si la
+   contiene solo en parte, responde esa parte y aclara que lo demas se lo
+   confirma la propietaria. No inventes.
 3. Los precios deben copiarse exactamente del contexto. Si el precio depende
    del tamaño o pelaje y no lo sabes, da los valores por tamaño y sugiere
    enviar una foto de la mascota para una cotización exacta.
@@ -86,7 +89,14 @@ def responder(consulta: str, client: genai.Client, almacen: Almacen, embedder: E
             system_instruction=PROMPT_SISTEMA, temperature=0.2
         ),
     )
-    return RespuestaRAG(response.text.strip(), fundamentada=True, fuentes=fragmentos)
+    texto = response.text.strip()
+    if MARCA_SIN_CONTEXTO in texto:
+        # Hubo fragmentos parecidos pero ninguno responde ("¿atienden gatos?"
+        # recupera "no atendemos perros agresivos"): se trata como "no se",
+        # para que la pregunta llegue a la propietaria.
+        logger.info("RAG | el LLM indico que el contexto no responde: %r", consulta)
+        return RespuestaRAG(RESPUESTA_SIN_CONTEXTO, fundamentada=False, fuentes=fragmentos)
+    return RespuestaRAG(texto, fundamentada=True, fuentes=fragmentos)
 
 
 class AgenteRAG:

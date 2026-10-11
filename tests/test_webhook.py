@@ -143,15 +143,25 @@ def test_agente_general_reenvia_preguntas_del_negocio_a_la_propietaria():
     from app.mensajeria import MensajeroMemoria
     from app.rag.agente_rag import RESPUESTA_SIN_CONTEXTO
 
-    consultas = []
-    msj = MensajeroMemoria()
-    d = SimpleNamespace(
-        client=SimpleNamespace(models=SimpleNamespace(generate_content=lambda **kw: SimpleNamespace(text=MARCA_CONSULTA))),
-        propietaria="593900000001", mensajero=msj,
-        aprobacion=SimpleNamespace(registrar_consulta=lambda *a: consultas.append(a)))
+    from app.rag.agente_rag import RespuestaRAG
+
+    def deps(rag):
+        consultas, msj = [], MensajeroMemoria()
+        d = SimpleNamespace(
+            client=SimpleNamespace(models=SimpleNamespace(generate_content=lambda **kw: SimpleNamespace(text=MARCA_CONSULTA))),
+            propietaria="593900000001", mensajero=msj, agente_rag=lambda m: rag,
+            aprobacion=SimpleNamespace(registrar_consulta=lambda *a: consultas.append(a)))
+        return d, msj, consultas
+
+    # La base de conocimiento no lo sabe -> se releva a la propietaria.
+    d, msj, consultas = deps(RespuestaRAG(RESPUESTA_SIN_CONTEXTO, fundamentada=False))
     estado = nodo_general({"remitente": "593900000099", "mensaje": "¿puedo pagar con tarjeta?"}, d)
     assert estado["respuesta"] == RESPUESTA_SIN_CONTEXTO
     assert "puedo pagar con tarjeta" in msj.a("593900000001")[0] and consultas
+    # La base de conocimiento lo sabe -> responde sin molestar a la propietaria.
+    d, msj, consultas = deps(RespuestaRAG("Se paga por transferencia al finalizar.", fundamentada=True))
+    estado = nodo_general({"remitente": "593900000099", "mensaje": "¿cómo se paga?"}, d)
+    assert "transferencia" in estado["respuesta"] and msj.enviados == [] and not consultas
 
 
 def test_pregunta_general_en_medio_de_una_reserva_no_se_pierde():

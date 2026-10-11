@@ -157,7 +157,7 @@ def test_que_horarios_tiene_el_martes_ofrece_horarios_reales_sin_inventar_hora()
          "comportamiento": "tranquilo"}
     ag, repo, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-06"))
     r = ag.atender(TEL, "¿qué horarios tiene el martes 6?", AHORA)
-    assert "Para ese día tengo libre" in r and "martes 6 de octubre a las 09:00" in r
+    assert "Para ese día tengo libre" in r and "martes 6 de octubre a las 08:00" in r   # abre a las 08:00
     assert repo.obtener_sesion(TEL)["reserva"]["fecha_hora"] is None
 
 
@@ -167,7 +167,7 @@ def test_opciones_repartidas_en_el_dia_y_respetan_la_tarde():
          "comportamiento": "tranquilo"}
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"))
     r = ag.atender(TEL, "¿qué horarios tiene el miércoles 7?", AHORA)
-    assert "09:00" in r and "11:00" not in r.split("3.")[0] and "16:00" in r   # mañana ... tarde
+    assert "11:00" in r and "16:00" in r and "12:00" not in r.split("2.")[0]   # miércoles abre 11:00; repartidas
 
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"))
     r = ag.atender(TEL, "¿puede el miércoles en la tarde?", AHORA)
@@ -200,7 +200,7 @@ def test_pedido_especial_se_anota_sin_mencionar_precio():
          "estado": "sin_motas", "comportamiento": "tranquilo"}
     ag, repo, msj = _agente(
         _extraccion([m], pedido_especial="sin baño medicado y sin accesorio"),
-        _extraccion([m], modalidad="salon", fecha_hora="2026-10-07T10:00"),
+        _extraccion([m], modalidad="salon", fecha_hora="2026-10-07T12:00"),
     )
     r1 = ag.atender(TEL, "¿puede hacerle el premium pero sin el baño medicado y sin el accesorio?", AHORA)
     assert "Anoto su pedido: sin baño medicado y sin accesorio" in r1

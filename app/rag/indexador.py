@@ -40,7 +40,7 @@ def reindexar(almacen: Almacen, embedder: Embedder,
         vectores = embedder.embed_documentos([f.texto for f in a_indexar])
         almacen.upsert([
             {"id": f.id, "fuente": f.fuente, "titulo": f.titulo, "texto": f.texto,
-             "hash": f.hash, "vector": v}
+             "metadatos": f.metadatos, "hash": f.hash, "vector": v}
             for f, v in zip(a_indexar, vectores)
         ])
     if a_eliminar:

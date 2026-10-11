@@ -230,12 +230,13 @@ def nodo_general(estado: EstadoConversacion, d: Dependencias) -> EstadoConversac
     )
     texto = response.text.strip()
     if MARCA_CONSULTA in texto:
-        # Pregunta del negocio sin respuesta segura (con el NLU v2, pagos y
-        # logistica llegan aqui): se releva a la propietaria, como en el RAG.
-        from app.rag.agente_rag import RESPUESTA_SIN_CONTEXTO
-
-        texto = RESPUESTA_SIN_CONTEXTO
-        _reenviar_a_propietaria(estado, d)
+        # Pregunta concreta del negocio (con el NLU v2, pagos y logistica
+        # llegan aqui). Primero la base de conocimiento: si la sabe
+        # (p. ej. "¿como se paga?"), responde; si no, se releva a la propietaria.
+        r = d.agente_rag(estado["mensaje"])
+        texto = r.texto
+        if not r.fundamentada:
+            _reenviar_a_propietaria(estado, d)
     estado["respuesta"] = texto
     logger.info("Enrutado a agente_general")
     return estado

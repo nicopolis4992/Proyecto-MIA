@@ -9,6 +9,7 @@ create table if not exists rag_fragmentos (
     fuente      text not null,             -- archivo de origen
     titulo      text not null,
     texto       text not null,
+    metadatos   jsonb not null default '{}'::jsonb,  -- categoria, fuente, vigente_desde, validado_por_propietaria
     hash        text not null,             -- sha256 del texto, para re-indexado incremental
     embedding   vector(768) not null,
     actualizado timestamptz not null default now()

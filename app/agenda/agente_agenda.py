@@ -171,6 +171,12 @@ def _normalizar(texto: str) -> str:
     return re.sub(r"[^\w\s👍]", "", t).strip()
 
 
+def _mismo_texto(a: str, b: str) -> bool:
+    import difflib
+
+    return difflib.SequenceMatcher(None, _normalizar(a), _normalizar(b)).ratio() >= 0.85
+
+
 def _trae_datos_de_reserva(datos: dict) -> bool:
     """True si el mensaje aporta algo para una reserva (otra mascota, fecha, etc.)."""
     if datos.get("fecha_hora") or datos.get("dia_consultado") or datos.get("eligio_alternativa"):
@@ -258,13 +264,17 @@ class AgenteAgenda:
 
         sesion["flujo"] = "agendando"
         pedido_previo = sesion["reserva"].get("pedido_especial")
+        if pedido_previo and datos.get("pedido_especial") and _mismo_texto(pedido_previo, datos["pedido_especial"]):
+            # El LLM repite el pedido ya anotado (a veces con una letra distinta):
+            # se conserva el original y no se vuelve a anunciar.
+            datos["pedido_especial"] = None
         reserva = self._fusionar(sesion["reserva"], datos)
         n = datos.get("eligio_alternativa")
         if n and 1 <= n <= len(alternativas):
             reserva["fecha_hora"] = alternativas[n - 1]
         sesion["reserva"] = reserva
 
-        pedido_nuevo = datos.get("pedido_especial") and datos["pedido_especial"] != pedido_previo
+        pedido_nuevo = bool(datos.get("pedido_especial"))
         if pedido_nuevo:
             # El pedido se anota y la propietaria define el precio al aprobar.
             # El precio solo se menciona si el cliente lo pregunta.

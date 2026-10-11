@@ -1,33 +1,39 @@
 {
   "metadata": {
-    "estado": "PROVISIONAL - el horario laboral real lo define la propietaria; la disponibilidad real viene de Google Calendar (SCRUM-72)"
+    "estado": "Horario tomado del historial de WhatsApp del negocio (SCRUM-66). Pendiente de validacion por la propietaria. La disponibilidad real (citas ya tomadas) viene de Google Calendar (SCRUM-72).",
+    "fuente_horario": "historial de WhatsApp del negocio (SCRUM-66, analisis del equipo)",
+    "vigente_desde": "2026-10-11",
+    "validado_por_propietaria": "no"
   },
   "horario_laboral": {
     "lunes": [
-      "09:00",
+      "11:00",
       "18:00"
     ],
     "martes": [
-      "09:00",
+      "08:00",
       "18:00"
     ],
     "miercoles": [
-      "09:00",
+      "11:00",
       "18:00"
     ],
     "jueves": [
-      "09:00",
+      "08:00",
       "18:00"
     ],
     "viernes": [
-      "09:00",
+      "11:00",
       "18:00"
     ],
     "sabado": [
-      "09:00",
-      "14:00"
+      "08:00",
+      "18:00"
     ],
-    "domingo": null
+    "domingo": [
+      "08:00",
+      "18:00"
+    ]
   },
   "paso_alternativas_min": 60,
   "num_alternativas": 3,

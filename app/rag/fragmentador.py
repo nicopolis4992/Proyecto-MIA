@@ -1,14 +1,21 @@
 """
 Construccion de fragmentos para la base vectorial (insumo de SCRUM-67).
 
-Dos fuentes:
-1. Documentos markdown en app/rag/conocimiento/: cada seccion "## " es un
-   fragmento autocontenido (el titulo del documento y de la seccion se
-   anteponen al texto para que el embedding tenga contexto).
+Tres fuentes (esquema de contenido en app/rag/ESQUEMA_CONTENIDO.md, SCRUM-99):
+1. Documentos markdown en app/rag/conocimiento/ (SCRUM-66): cada seccion
+   "## " es un fragmento autocontenido (el titulo del documento y de la
+   seccion se anteponen al texto para que el embedding tenga contexto). El
+   encabezado `---` de cada documento declara sus metadatos.
 2. El tarifario parametrizado v2 (SCRUM-98): los precios se generan desde el
-   JSON con el mismo motor que cotiza en cada indexacion. Asi el RAG y el motor de cotizacion nunca
-   pueden dar precios distintos, y un cambio de precio se propaga solo con
-   re-indexar (SCRUM-70).
+   JSON con el mismo motor que cotiza en cada indexacion. Asi el RAG y el
+   motor de cotizacion nunca pueden dar precios distintos, y un cambio de
+   precio se propaga solo con re-indexar (SCRUM-70).
+3. La configuracion de la agenda (horario de atencion): el mismo horario que
+   usa el agente de agenda para ofrecer citas.
+
+Metadatos por fragmento: categoria, fuente, vigente_desde y
+validado_por_propietaria. Se guardan en el indice para trazabilidad y para
+filtrar por categoria si hiciera falta.
 """
 
 from __future__ import annotations
@@ -16,10 +23,14 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 DIR_CONOCIMIENTO = Path(__file__).parent / "conocimiento"
+
+
+CATEGORIAS = ("negocio", "servicios", "tarifario", "cotizacion", "agenda", "horarios",
+              "puerta_a_puerta", "politicas", "faq")
 
 
 @dataclass
@@ -28,10 +39,27 @@ class Fragmento:
     fuente: str
     titulo: str
     texto: str
+    metadatos: dict = field(default_factory=dict)
 
     @property
     def hash(self) -> str:
-        return hashlib.sha256(self.texto.encode("utf-8")).hexdigest()[:16]
+        # Los metadatos entran al hash: si cambia la vigencia o la validacion,
+        # el fragmento se vuelve a registrar en el indice.
+        base = self.texto + json.dumps(self.metadatos, sort_keys=True, ensure_ascii=False)
+        return hashlib.sha256(base.encode("utf-8")).hexdigest()[:16]
+
+
+def _encabezado(contenido: str) -> tuple[dict, str]:
+    """Lee el bloque `---` inicial (clave: valor por linea). Devuelve (metadatos, resto)."""
+    m = re.match(r"\s*---\s*\n(.*?)\n---\s*\n", contenido, flags=re.S)
+    if not m:
+        return {}, contenido
+    meta = {}
+    for linea in m.group(1).splitlines():
+        if ":" in linea:
+            clave, valor = linea.split(":", 1)
+            meta[clave.strip()] = valor.strip()
+    return meta, contenido[m.end():]
 
 
 def _slug(texto: str) -> str:
@@ -42,7 +70,10 @@ def _slug(texto: str) -> str:
 
 
 def fragmentos_desde_markdown(ruta: Path) -> list[Fragmento]:
-    contenido = re.sub(r"<!--.*?-->", "", ruta.read_text(encoding="utf-8"), flags=re.S)
+    meta, contenido = _encabezado(ruta.read_text(encoding="utf-8"))
+    contenido = re.sub(r"<!--.*?-->", "", contenido, flags=re.S)
+    if meta.get("categoria") and meta["categoria"] not in CATEGORIAS:
+        raise ValueError(f"{ruta.name}: categoria '{meta['categoria']}' no esta en {CATEGORIAS}")
     titulo_doc = ""
     fragmentos: list[Fragmento] = []
     seccion, lineas = None, []
@@ -56,6 +87,7 @@ def fragmentos_desde_markdown(ruta: Path) -> list[Fragmento]:
                     fuente=ruta.name,
                     titulo=seccion,
                     texto=f"{titulo_doc} — {seccion}. {cuerpo}",
+                    metadatos=dict(meta),
                 )
             )
 
@@ -161,7 +193,46 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
         "Esta restricción solo afecta a los retiros a domicilio, no a las mascotas que el "
         "cliente lleva personalmente al salón.",
     ))
+    categoria = {"servicio_": "tarifario", "tipos_de_pelo": "tarifario", "recargos": "tarifario",
+                 "exclusiones": "politicas", "puerta_a_puerta": "puerta_a_puerta",
+                 "multimascota": "tarifario", "restriccion_vehicular": "puerta_a_puerta"}
+    for f in frags:
+        sufijo = f.id.split("#", 1)[1]
+        cat = next((v for k, v in categoria.items() if sufijo.startswith(k)), "tarifario")
+        f.metadatos = {"categoria": cat, "fuente": f"{fuente} v{t.get('version', '')}",
+                       "vigente_desde": t.get("fecha", ""), "validado_por_propietaria": "parcial"}
     return frags
+
+
+_NOMBRE_DIA = {"lunes": "lunes", "martes": "martes", "miercoles": "miércoles", "jueves": "jueves",
+               "viernes": "viernes", "sabado": "sábado", "domingo": "domingo"}
+
+
+def fragmentos_desde_agenda(ruta: Path | None = None) -> list[Fragmento]:
+    """Horario de atencion generado desde app/agenda/config_agenda.json.
+
+    Es el mismo horario con el que el agente de agenda ofrece citas: el RAG no
+    puede contestar un horario distinto del que se agenda.
+    """
+    ruta = Path(ruta) if ruta else Path(__file__).resolve().parents[1] / "agenda" / "config_agenda.json"
+    cfg = json.loads(ruta.read_text(encoding="utf-8"))
+    grupos: dict[str, list[str]] = {}
+    for dia, franja in cfg["horario_laboral"].items():
+        clave = f"de {franja[0]} a {franja[1]}" if franja else "cerrado"
+        grupos.setdefault(clave, []).append(_NOMBRE_DIA[dia])
+    partes = []
+    for horario, dias in grupos.items():
+        lista = dias[0] if len(dias) == 1 else ", ".join(dias[:-1]) + " y " + dias[-1]
+        partes.append(f"{lista}: {horario}" if horario != "cerrado" else f"{lista}: no atendemos")
+    meta_cfg = cfg.get("metadata", {})
+    return [Fragmento(
+        "agenda#horario_de_atencion", ruta.name, "Horario de atención",
+        "Horario de atención de Lina's Pet Salón: " + "; ".join(partes) + ". Las citas se agendan "
+        "dentro de este horario y con al menos " + str(cfg["antelacion_minima_horas"]) + " horas de anticipación.",
+        metadatos={"categoria": "horarios", "fuente": meta_cfg.get("fuente_horario", ruta.name),
+                   "vigente_desde": meta_cfg.get("vigente_desde", ""),
+                   "validado_por_propietaria": meta_cfg.get("validado_por_propietaria", "no")},
+    )]
 
 
 def todos_los_fragmentos(dir_conocimiento: Path = DIR_CONOCIMIENTO,
@@ -172,6 +243,7 @@ def todos_los_fragmentos(dir_conocimiento: Path = DIR_CONOCIMIENTO,
     for ruta in sorted(Path(dir_conocimiento).glob("*.md")):
         frags.extend(fragmentos_desde_markdown(ruta))
     frags.extend(fragmentos_desde_tarifario(ruta_tarifario or RUTA_TARIFARIO))
+    frags.extend(fragmentos_desde_agenda())
     ids = [f.id for f in frags]
     duplicados = {i for i in ids if ids.count(i) > 1}
     if duplicados:

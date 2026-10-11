@@ -57,6 +57,15 @@
   dedupe) + mia_rv (SCRUM-73). 65 pruebas en PostgreSQL. Falta el adaptador
   RepositorioSupabase con una conexion por rol.
 
+## Base de conocimiento (11 oct, SCRUM-66/99 adelantadas por Nico)
+- app/rag/conocimiento/01..07_*.md por categoria, con metadatos (categoria,
+  fuente, vigente_desde, validado_por_propietaria) y fuente de cada dato.
+- Esquema de contenido, informacion pendiente y lista de validacion con la
+  propietaria: app/rag/ESQUEMA_CONTENIDO.md.
+- Horario real (historial de WhatsApp) en config_agenda.json; el RAG lo
+  genera desde ahi (una sola fuente, como los precios).
+- Falta: validacion de la propietaria (criterio de aceptacion de SCRUM-66).
+
 ## Que falta (S4, vence 4 oct)
 - Contenido validado de la base de conocimiento (SCRUM-66/99) y evaluacion
   del RAG (SCRUM-71). Hoy hay un borrador provisional en app/rag/conocimiento/.

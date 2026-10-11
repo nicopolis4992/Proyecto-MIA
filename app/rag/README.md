@@ -7,11 +7,15 @@ SCRUM-67 (embeddings e indexación), SCRUM-68 (recuperación), SCRUM-69
 
 | Fuente | Qué contiene | Quién la edita |
 |---|---|---|
-| `conocimiento/*.md` | Información del negocio, una sección `## ` por tema | Equipo (SCRUM-66/99), validado por la propietaria |
+| `conocimiento/0X_*.md` | Negocio, servicios, cotización, agenda, puerta a puerta, políticas y preguntas frecuentes; una sección `## ` por tema, con metadatos en el encabezado | Equipo (SCRUM-66), validado por la propietaria |
 | `app/cotizacion/tarifario_v2.json` | Precios, recargos, traslado, restricción vehicular | Se edita solo el JSON (SCRUM-98) |
+| `app/agenda/config_agenda.json` | Horario de atención (el mismo con el que se agenda) | Se edita solo el JSON |
 
-Los precios **no se escriben en los .md**: se generan desde el tarifario en cada
-indexación. Así el RAG y el motor de cotización nunca dan valores distintos.
+Categorías, metadatos, reglas de redacción, información pendiente y la lista de
+validación con la propietaria: **`ESQUEMA_CONTENIDO.md`** (SCRUM-99).
+
+Los precios y el horario **no se escriben en los .md**: se generan desde el
+tarifario y la configuración de la agenda en cada indexación. Así el RAG y el motor de cotización nunca dan valores distintos.
 
 ## Procedimiento para actualizar la base (SCRUM-70)
 
@@ -43,5 +47,7 @@ verificar la respuesta antes de que la vea un cliente.
 
 - `RAG_K` (4): fragmentos recuperados.
 - `RAG_UMBRAL` (0.66): similitud mínima. Bajo ese valor no se llama al LLM y se
-  responde "no tengo esa información", y se avisa a la propietaria. Calibrado
+  responde "no tengo esa información", y se avisa a la propietaria. Si hay
+  fragmentos parecidos pero ninguno responde (p. ej. "¿atienden gatos?"), el LLM
+  devuelve `SIN_CONTEXTO` y se trata igual. Calibrado
   con 12 consultas el 30-sep; recalibrar con el conjunto de evaluación de SCRUM-71.

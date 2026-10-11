@@ -37,7 +37,8 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
         ("cliente", "1"),
         ("propietaria", "listo"),
     ],
-    # Capturas del 06-oct: horarios por día, relevo de consulta, propuesta de la
+    # Capturas del 06-oct: horarios por día, relevo de consulta (algo que la base
+    # de conocimiento no sabe), propuesta de la
     # propietaria aceptada por el cliente, "gracias", reprogramación.
     "reprogramacion": [
         ("cliente", "Hola, quiero agendar un baño premium para mi perrita Fara, es mediana y de doble capa, "
@@ -45,8 +46,8 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
         ("cliente", "lo llevo yo al salon"),
         ("cliente", "el lunes esta bien? a que hora tiene disponible?"),
         ("cliente", "y el martes 13 de octubre? que horarios tiene?"),
-        ("cliente", "aceptan tarjeta de credito?"),
-        ("propietaria", "si, aceptamos todas las tarjetas"),
+        ("cliente", "tienen parqueadero?"),
+        ("propietaria", "si, hay parqueadero frente al local"),
         ("cliente", "2"),
         ("propietaria", "cambialo a las 11am y confirma el precio a USD 22"),
         ("cliente", "si perfecto"),
@@ -70,7 +71,7 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
                     "no tiene nudos y es tranquila"),
         ("cliente", "puedes hacerle este baño pero sin el baño medicado y sin el accesorio?"),
         ("cliente", "y cuanto me saldria asi?"),
-        ("cliente", "la llevo yo al salon el miercoles a las 10"),
+        ("cliente", "la llevo yo al salon el miercoles a las 12"),
     ],
 }
 

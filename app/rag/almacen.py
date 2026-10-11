@@ -106,13 +106,14 @@ class AlmacenPgvector:
         with self.con.cursor() as cur:
             for r in registros:
                 cur.execute(
-                    "INSERT INTO rag_fragmentos (id, fuente, titulo, texto, hash, embedding) "
-                    "VALUES (%s, %s, %s, %s, %s, %s::vector) "
+                    "INSERT INTO rag_fragmentos (id, fuente, titulo, texto, metadatos, hash, embedding) "
+                    "VALUES (%s, %s, %s, %s, %s::jsonb, %s, %s::vector) "
                     "ON CONFLICT (id) DO UPDATE SET fuente = EXCLUDED.fuente, "
-                    "titulo = EXCLUDED.titulo, texto = EXCLUDED.texto, "
+                    "titulo = EXCLUDED.titulo, texto = EXCLUDED.texto, metadatos = EXCLUDED.metadatos, "
                     "hash = EXCLUDED.hash, embedding = EXCLUDED.embedding, "
                     "actualizado = now()",
-                    (r["id"], r["fuente"], r["titulo"], r["texto"], r["hash"],
+                    (r["id"], r["fuente"], r["titulo"], r["texto"],
+                     json.dumps(r.get("metadatos", {}), ensure_ascii=False), r["hash"],
                      self._literal(r["vector"])),
                 )
 
