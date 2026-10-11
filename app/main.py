@@ -36,6 +36,7 @@ logger = logging.getLogger("main")
 # en Meta for Developers.
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
 INTERVALO_COLA_S = int(os.getenv("COLA_INTERVALO_S", "60"))
+INTERVALO_SEGUIMIENTO_S = int(os.getenv("SEGUIMIENTO_INTERVALO_S", "300"))
 
 
 async def _bucle_cola_salida():
@@ -48,11 +49,32 @@ async def _bucle_cola_salida():
             logger.exception("Fallo reintentando la cola de salida")
 
 
+def _seguimiento_aprobaciones() -> dict | None:
+    """SCRUM-76: recordatorios a la propietaria y solicitudes vencidas."""
+    from app.agenda.seguimiento import revisar
+    from app.agents import orchestrator_graph as og
+
+    if not obtener_repositorio().citas_por_estado("pendiente_aprobacion"):
+        return None  # sin pendientes no hace falta construir el grafo
+    og._grafo()
+    return revisar(og._deps.aprobacion, config.ahora())
+
+
+async def _bucle_seguimiento():
+    while True:
+        await asyncio.sleep(INTERVALO_SEGUIMIENTO_S)
+        try:
+            await asyncio.to_thread(_seguimiento_aprobaciones)
+        except Exception:  # noqa: BLE001
+            logger.exception("Fallo el seguimiento de aprobaciones")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    tarea = asyncio.create_task(_bucle_cola_salida())
+    tareas = [asyncio.create_task(_bucle_cola_salida()), asyncio.create_task(_bucle_seguimiento())]
     yield
-    tarea.cancel()
+    for tarea in tareas:
+        tarea.cancel()
 
 
 app = FastAPI(title="Lina's Pet Salón - Asistente WhatsApp", lifespan=lifespan)

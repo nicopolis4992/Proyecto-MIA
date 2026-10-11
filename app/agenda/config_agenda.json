@@ -41,5 +41,15 @@
   "pedidos_especiales": {
     "mencionar_precio_al_cliente": false,
     "comentario": "Pedidos fuera del catalogo (ej. 'sin baño medicado ni accesorio'). Se anotan en la cita y la propietaria define el precio al aprobar. Mientras mencionar_precio_al_cliente sea false, el bot no da precio salvo que el cliente lo pregunte, y en ese caso dice que lo valida la propietaria. Decision provisional hasta validarlo con ella."
+  },
+  "seguimiento_aprobacion": {
+    "recordatorio_min": 45,
+    "max_recordatorios": 2,
+    "vence_horas_antes": 1,
+    "horas_aviso": [
+      "07:00",
+      "21:00"
+    ],
+    "comentario": "SCRUM-76. Si la propietaria no responde: recordatorio cada 45 min (max. 2, solo entre 07:00 y 21:00); despues se avisa una vez al cliente que sigue en revision. Si falta 1 h o menos para la cita sin aprobacion, vence y se le ofrecen otros horarios. Valores provisionales hasta validarlos con ella."
   }
 }

@@ -47,6 +47,12 @@ def diagnostico(repo) -> list[dict]:
                 f"{len(config.NUMEROS_PERMITIDOS)} número(s)" + (f"; formato inválido: {malos}" if malos else "")
                 if config.NUMEROS_PERMITIDOS else "ninguno: en modo pruebas el bot no responderá a nadie")
 
+    from app.notificaciones import correo
+    agregar("Correo de respaldo para la propietaria", correo.configurado(),
+            "configurado" if correo.configurado() else
+            "sin configurar (CORREO_USUARIO, CORREO_CLAVE, CORREO_PROPIETARIA): si WhatsApp falla, "
+            "la propietaria no recibe la solicitud", critico=False)
+
     ruta_db = Path(config.RUTA_DB)
     persistente = str(ruta_db).startswith("/data") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH", "") in str(ruta_db)
     agregar("Base de datos", True, f"{ruta_db}", critico=False)

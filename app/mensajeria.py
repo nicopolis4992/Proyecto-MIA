@@ -9,6 +9,10 @@ simulador local (consola) y en las pruebas (captura en memoria).
 SCRUM-87: si el envio falla despues de los reintentos, el mensaje se guarda
 en la cola `mensajes_salientes` y `reintentar_pendientes()` lo vuelve a
 intentar mas tarde. Ningun mensaje se pierde en silencio.
+
+SCRUM-86: si el destino es la propietaria y el envio falla de forma
+definitiva (error permanente o cola agotada), el texto se le manda ademas
+por correo (app/notificaciones/correo.py).
 """
 
 from __future__ import annotations
@@ -17,7 +21,8 @@ import itertools
 import logging
 from typing import Protocol
 
-from app.config import PROPIETARIA_WHATSAPP
+from app import config
+from app.notificaciones import correo
 from app.persistencia.repositorio import Repositorio
 from app.whatsapp_client import FUERA_DE_VENTANA, ErrorWhatsApp, send_text_message
 
@@ -49,9 +54,11 @@ class MensajeroWhatsApp:
             # si el destinatario era un cliente, se avisa a la propietaria para
             # que le escriba ella.
             cola_id = self.repo.encolar_mensaje(destino, texto, motivo)
+            propietaria = config.PROPIETARIA_WHATSAPP
+            if destino == propietaria and correo.respaldo_propietaria(texto, motivo):
+                motivo += " · enviado por correo"
             self.repo.marcar_mensaje(cola_id, "no_entregado", motivo)
             logger.error("Mensaje a %s NO entregado (%s)", destino, motivo)
-            propietaria = PROPIETARIA_WHATSAPP
             if exc.codigo == FUERA_DE_VENTANA and propietaria and destino != propietaria:
                 self.enviar(propietaria, f"⚠️ No pude enviarle este mensaje al cliente {destino} porque "
                                          f"{motivo}. Escríbele tú directamente:\n\n{texto}")
@@ -68,7 +75,11 @@ def reintentar_pendientes(repo: Repositorio) -> dict:
             enviados += 1
         except ErrorWhatsApp as exc:
             agotado = m["intentos"] + 1 >= MAX_INTENTOS_COLA or not exc.transitorio
-            repo.marcar_mensaje(m["id"], "fallido" if agotado else "pendiente", str(exc))
+            error = str(exc)
+            if agotado and m["destino"] == config.PROPIETARIA_WHATSAPP and correo.respaldo_propietaria(
+                    m["cuerpo"], exc.explicacion or error):
+                error += " · enviado por correo"
+            repo.marcar_mensaje(m["id"], "fallido" if agotado else "pendiente", error)
             fallidos += 1
     if enviados or fallidos:
         logger.info("Cola de salida: %d enviados, %d fallidos", enviados, fallidos)

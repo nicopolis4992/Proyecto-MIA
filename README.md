@@ -132,6 +132,23 @@ uvicorn app.main:app --reload --port 8000
 
 Para abrirlo en Railway define `DEMO_CLAVE` y entra con `https://<app>/panel?clave=<DEMO_CLAVE>`.
 
+## La propietaria por WhatsApp
+
+| Escribe | Qué hace |
+|---|---|
+| `listo` / `no` (citando el resumen) | Aprueba o rechaza esa cita |
+| `listo #5` | Aprueba la cita 5 sin citar (sirve desde el correo de respaldo) |
+| `a las 12 está bien`, `cóbrale 20` | Propone el cambio al cliente |
+| `pendientes` | Citas por aprobar |
+| `cobré 22 a la cita #5` | Registra lo cobrado (desviación cotizado vs cobrado en el panel) |
+| `por cobrar` | Citas atendidas sin el cobro registrado |
+
+Si no responde, el sistema le recuerda la solicitud (cada 45 min, máximo 2, entre
+07:00 y 21:00), luego le avisa al cliente que sigue en revisión, y si la cita
+está a 1 h o menos sin aprobar, le ofrece otros horarios al cliente
+(`config_agenda.json` → `seguimiento_aprobacion`). Si WhatsApp no le llega,
+recibe el mismo mensaje por correo (variables `CORREO_*` en `.env.example`).
+
 ## Google Calendar (citas aprobadas → calendario)
 
 1. En [console.cloud.google.com](https://console.cloud.google.com): crear un proyecto,

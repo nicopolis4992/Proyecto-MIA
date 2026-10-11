@@ -190,3 +190,15 @@ def test_cobro_ambiguo_pide_el_numero_y_no_registra_en_citas_sin_confirmar():
     c = _cita(repo)  # pendiente de aprobacion
     assert "no está confirmada" in p.procesar(f"cobré 25 cita #{c}", ahora=DESPUES)
     assert repo.obtener_cita(c)["total_cobrado"] is None
+
+
+def test_aprobar_con_numero_de_cita_sin_citar_el_mensaje():
+    """Desde el correo de respaldo no se puede citar: "listo #N" basta (sin LLM)."""
+    cliente = ClienteFalso()
+    p, repo, _ = _procesador(cliente)
+    a, b = _cita(repo), _cita(repo)
+    assert "confirmada" in p.procesar(f"listo #{b}")
+    assert repo.obtener_cita(b)["estado"] == "confirmada"
+    assert repo.obtener_cita(a)["estado"] == "pendiente_aprobacion"
+    assert cliente.llamadas == []
+    assert "no está esperando" in p.procesar(f"listo #{b}")

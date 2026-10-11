@@ -165,7 +165,13 @@ class ProcesadorAprobacion:
 
     # -- seleccion de la cita a la que responde -----------------------------
 
-    def _cita_objetivo(self, id_citado: str | None) -> tuple[dict | None, str | None]:
+    def _cita_objetivo(self, id_citado: str | None, numero: int | None = None) -> tuple[dict | None, str | None]:
+        if numero is not None:
+            # "listo #5": para responder sin citar (p. ej. desde el correo de respaldo).
+            cita = self.repo.obtener_cita(numero)
+            if cita and cita["estado"] in ("pendiente_aprobacion", "propuesta_cliente"):
+                return cita, None
+            return None, f"La cita #{numero} no está esperando tu aprobación."
         if id_citado:
             cita = self.repo.cita_por_mensaje_aprobacion(id_citado)
             if cita and cita["estado"] in ("pendiente_aprobacion", "propuesta_cliente"):
@@ -194,7 +200,11 @@ class ProcesadorAprobacion:
         if relevo:
             return relevo
 
-        cita, aviso = self._cita_objetivo(id_citado)
+        numero = _NUM_CITA.search(_sin_tildes(texto))
+        if numero:
+            texto = (texto[:numero.start()] + texto[numero.end():]).strip(" ,.:-") or texto
+            numero = int(numero.group(1) or numero.group(2))
+        cita, aviso = self._cita_objetivo(id_citado, numero)
         if cita is None:
             return aviso
 
