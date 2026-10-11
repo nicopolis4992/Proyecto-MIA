@@ -7,6 +7,7 @@ compara con la línea base TF-IDF + regresión logística de Daniel Loza
 (datasets/nlu/reporte_baseline.json), sobre la MISMA partición.
 
     python -m evaluacion.nlu.evaluar_nlu                 # set de prueba (56)
+    python -m evaluacion.nlu.evaluar_nlu --conjunto entrenamiento  # 222 (ciego para el prompt)
     python -m evaluacion.nlu.evaluar_nlu --conjunto completo   # los 278
 
 Las respuestas de Gemini se graban en evaluacion/nlu/grabaciones/: repetir la
@@ -49,7 +50,8 @@ DEL_BOT = {"agendar": "agendar_cita", "consultar": "consultar_servicio_producto"
 
 
 def cargar(conjunto: str) -> list[dict]:
-    archivo = {"prueba": "dataset_nlu_test.csv", "completo": "dataset_nlu_completo.csv"}[conjunto]
+    archivo = {"prueba": "dataset_nlu_test.csv", "entrenamiento": "dataset_nlu_train.csv",
+               "completo": "dataset_nlu_completo.csv"}[conjunto]
     return list(csv.DictReader(open(DATOS / archivo, encoding="utf-8")))
 
 
@@ -152,7 +154,9 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--conjunto", choices=["prueba", "completo"], default="prueba")
+    # "entrenamiento": 222 mensajes nunca inspeccionados al escribir los prompts;
+    # el NLU no se entrena, asi que sirven como conjunto ciego.
+    ap.add_argument("--conjunto", choices=["prueba", "entrenamiento", "completo"], default="prueba")
     ap.add_argument("--solo-lectura", action="store_true", help="no llamar a Gemini (usar grabaciones)")
     args = ap.parse_args()
     res = evaluar(args.conjunto, args.solo_lectura)

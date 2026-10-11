@@ -1,0 +1,133 @@
+{
+  "conjunto": "entrenamiento",
+  "n": 222,
+  "modelo": "gemini-3.5-flash-lite",
+  "version_prompt": "v2",
+  "intencion": {
+    "exactitud": 0.9595,
+    "f1_macro": 0.958,
+    "f1_ponderado": 0.9597,
+    "por_clase": {
+      "agendar_cita": {
+        "precision": 0.988,
+        "recall": 0.976,
+        "f1-score": 0.982,
+        "support": 85.0
+      },
+      "consultar_servicio_producto": {
+        "precision": 0.984,
+        "recall": 0.926,
+        "f1-score": 0.955,
+        "support": 68.0
+      },
+      "consulta_general": {
+        "precision": 0.905,
+        "recall": 0.971,
+        "f1-score": 0.937,
+        "support": 69.0
+      }
+    },
+    "matriz_confusion": {
+      "etiquetas": [
+        "agendar_cita",
+        "consultar_servicio_producto",
+        "consulta_general"
+      ],
+      "matriz": [
+        [
+          83,
+          0,
+          2
+        ],
+        [
+          0,
+          63,
+          5
+        ],
+        [
+          1,
+          1,
+          67
+        ]
+      ]
+    }
+  },
+  "confianza": {
+    "media_aciertos": 0.962,
+    "media_errores": 0.944
+  },
+  "entidades": {
+    "recall_fecha_hora": 0.978,
+    "n_con_temporalidad": 45,
+    "falsas_fechas": 0.045,
+    "recall_tipo_mascota": 1.0,
+    "n_con_raza_o_tamano": 27
+  },
+  "latencia_ms_mediana": 752,
+  "errores": [
+    {
+      "id": "MIA-0032",
+      "texto": "me recuerda a que hora tengo el turno porfa",
+      "real": "agendar_cita",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0102",
+      "texto": "buenas, voy a llegar 15 min tarde a mi cita, no hay problema?",
+      "real": "agendar_cita",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0140",
+      "texto": "cuanto se demora el servicio?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general",
+      "confianza": 0.9
+    },
+    {
+      "id": "MIA-0142",
+      "texto": "es rapido? tengo que esperar o le dejo?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0143",
+      "texto": "me puedo quedar mientras le atiende?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0152",
+      "texto": "hacen envio de los snacks?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0190",
+      "texto": "el precio que me dio es el final o puede cambiar?",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0213",
+      "texto": "manana atienden normal?",
+      "real": "consulta_general",
+      "predicho": "agendar_cita",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0244",
+      "texto": "tiene fotos de cortes para escoger?",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto",
+      "confianza": 0.95
+    }
+  ],
+  "advertencia": "Corpus mayoritariamente sintético (SCRUM-63): mide acuerdo con la guía de anotación, no desempeño en producción. Recalcular con el corpus real anotado."
+}

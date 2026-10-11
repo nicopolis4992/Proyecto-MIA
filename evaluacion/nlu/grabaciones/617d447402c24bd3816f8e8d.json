@@ -1,0 +1,1 @@
+{"text": "{\n  \"intencion\": \"agendar\",\n  \"confianza\": 0.98,\n  \"entidades\": {\n    \"servicio_mencionado\": \"corte de unas\",\n    \"fecha_hora_sugerida\": \"manana\",\n    \"tipo_mascota\": null\n  }\n}"}
