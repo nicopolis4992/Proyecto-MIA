@@ -515,8 +515,10 @@ class AgenteAgenda:
             self.repo.registrar_evento(reprogramada, "nuevo_horario_elegido", {"fecha_hora": inicio})
             cita_id = reprogramada
         else:
+            cliente = sesion.get("cliente") or {}
             cita_id = self.repo.crear_cita(
                 cliente_telefono=telefono, cliente_nombre=r.get("cliente_nombre"),
+                origen=cliente.get("origen") or "linas", referido_por=cliente.get("referido_por"),
                 pedido_especial=r.get("pedido_especial"),
                 mascotas=r["mascotas"], fecha_hora=inicio, modalidad=r["modalidad"],
                 zona=(cotizacion.get("traslado") or {}).get("zona"), sector=r.get("sector"),
@@ -525,6 +527,7 @@ class AgenteAgenda:
         if sesion.get("traza_foto"):
             self.repo.registrar_evento(cita_id, "cotizacion_por_foto", sesion["traza_foto"])
         cita = self.repo.obtener_cita(cita_id)
+        cita["citas_previas"] = self.repo.citas_previas(telefono, excepto=cita_id)
         if self.propietaria:
             encabezado = f"🔁 Cita #{cita_id} reprogramada por el cliente: aprobar nuevo horario" if reprogramada else None
             msg_id = self.mensajero.enviar(self.propietaria, mensajes.resumen_para_propietaria(cita, encabezado))
@@ -533,7 +536,8 @@ class AgenteAgenda:
         else:
             logger.error("PROPIETARIA_WHATSAPP no configurado: la cita #%s no se envio a aprobar", cita_id)
 
-        self.repo.guardar_sesion(telefono, {"cita_en_aprobacion": cita_id})
+        self.repo.guardar_sesion(telefono, {"cita_en_aprobacion": cita_id,
+                                            **({"cliente": sesion["cliente"]} if sesion.get("cliente") else {})})
         valor = cotizacion["mensaje_cliente"]
         if r.get("pedido_especial") and not self._mencionar_precio_pedido():
             valor = "El precio con su pedido especial se lo confirma la propietaria."

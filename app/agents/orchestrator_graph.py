@@ -42,6 +42,7 @@ except ImportError:
 
 from google.genai import types
 
+from app.agenda import origen
 from app.agenda.agente_agenda import AgenteAgenda, reserva_vacia
 from app.agenda.aprobacion import ProcesadorAprobacion
 from app.agenda.disponibilidad import cargar_config
@@ -85,6 +86,8 @@ def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
         "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda"]:
     if d.propietaria and estado["remitente"] == d.propietaria:
         return "aprobacion"
+    # SCRUM-75: origen y referido se anotan al pasar, sin importar a que nodo vaya.
+    origen.anotar(d.repo, estado["remitente"], estado.get("mensaje") or "")
     if estado.get("imagen"):
         return "cotizacion_imagen"
     # Ahorro de llamadas: en medio de una reserva, un mensaje que no es una

@@ -109,7 +109,7 @@ def test_modificar_transporte_recalcula_total():
     p.procesar("en 2$ le dejo el transporte")
     cita = repo.obtener_cita(cid)
     assert cita["cotizacion"]["total"] == [27, 27]
-    assert "27.00$" in mensajes.resumen_para_propietaria(cita)
+    assert "Total: 27$" in mensajes.resumen_para_propietaria(cita)
 
 
 def test_varias_pendientes_sin_cita_referenciada_pide_aclarar():

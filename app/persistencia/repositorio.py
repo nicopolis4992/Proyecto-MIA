@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS citas (
     fecha_cobro TEXT,
     origen TEXT DEFAULT 'whatsapp',
     descuento_aplicado TEXT,
+    referido_por TEXT,
     pedido_especial TEXT,
     requiere_revision_manual INTEGER DEFAULT 0,
     estado TEXT NOT NULL,
@@ -110,7 +111,8 @@ class Repositorio:
             self._con.executescript(_ESQUEMA)
             # Migracion simple: columnas agregadas despues de crear la base.
             columnas = {f[1] for f in self._con.execute("PRAGMA table_info(citas)")}
-            for col, tipo in (("pedido_especial", "TEXT"), ("total_cobrado", "REAL"), ("fecha_cobro", "TEXT")):
+            for col, tipo in (("pedido_especial", "TEXT"), ("total_cobrado", "REAL"), ("fecha_cobro", "TEXT"),
+                             ("referido_por", "TEXT")):
                 if col not in columnas:
                     self._con.execute(f"ALTER TABLE citas ADD COLUMN {col} {tipo}")
             self._con.commit()
@@ -181,6 +183,13 @@ class Repositorio:
             "SELECT * FROM citas WHERE estado = ? ORDER BY id", (estado,)
         ).fetchall()
         return [self._deserializar(f) for f in filas]
+
+    def citas_previas(self, telefono: str, excepto: int | None = None) -> int:
+        """Citas confirmadas anteriores del cliente (cliente nuevo o frecuente)."""
+        fila = self._ejecutar(
+            "SELECT COUNT(*) AS n FROM citas WHERE cliente_telefono = ? AND estado = 'confirmada' "
+            "AND id != ?", (telefono, excepto or -1)).fetchone()
+        return fila["n"]
 
     def vaciar(self) -> None:
         """Borra todos los datos (solo para la base de la demo)."""

@@ -89,7 +89,7 @@ def test_reserva_completa_crea_cita_y_avisa_a_la_propietaria():
     [cita] = repo.citas_por_estado("pendiente_aprobacion")
     assert cita["cotizacion"]["total"] == [30, 30]  # 25 + traslado zona 5
     assert "USD 30.00" in r
-    assert "30.00$" in msj.a(PROP)[0]
+    assert "Total: 30$" in msj.a(PROP)[0]  # estilo de la propietaria (SCRUM-75)
 
 
 # --- Despues de crear la cita (casos de la prueba manual del 06-oct) -------
@@ -231,3 +231,31 @@ def test_sin_reserva_en_curso_pasa_por_el_clasificador():
     repo.guardar_sesion(TEL, {"flujo": "agendando"})
     assert enrutar_entrada(msg, d) == "agente_agenda"                       # sin llamada al NLU
     assert enrutar_entrada({**msg, "mensaje": "¿aceptan tarjeta?"}, d) == "nlu"
+
+
+# -- SCRUM-75: resumen con origen, referido y estilo de la propietaria -------
+
+def test_detectar_origen_y_referido():
+    from app.agenda.origen import detectar
+    assert detectar("Hola, me recomendó la Sra. Ana Pérez") == {"referido_por": "Ana Perez"}
+    assert detectar("me lo recomendó mi vecina Rosa y quiero agendar") == {"referido_por": "Rosa"}
+    assert detectar("lo dejé en el hospedaje la semana pasada") == {"origen": "hospedaje"}
+    assert detectar("me pasó su número Lavet") == {"origen": "lavet"}
+    assert detectar("¿tienen hospedaje?") == {}
+    assert detectar("me recomendaron que lo bañe seguido") == {}
+
+
+def test_resumen_al_estilo_de_la_propietaria():
+    from app.agenda import mensajes
+    cita = {"id": 3, "cliente_telefono": "593900000099", "cliente_nombre": "Rosa", "modalidad": "salon",
+            "mascotas": [{"nombre": "Tita"}, {"nombre": "Cube"}, {"nombre": "Thomas"}],
+            "cotizacion": {"mascotas": [{"rango": [25, 25]}, {"rango": [25, 25]}, {"rango": [12, 12]}],
+                           "total": [62, 62], "descuento_multi_mascota": [0, 0]},
+            "citas_previas": 2, "origen": "lavet", "referido_por": "Ana"}
+    texto = mensajes.resumen_para_propietaria(cita)
+    assert "25$ de Tita y Cube, y 12$ de Thomas. Total: 62$" in texto
+    assert "cliente frecuente (2 cita(s) antes) · viene de Lavet · referido por Ana" in texto
+    # Con rangos no hay linea de estilo: se muestra el total como rango.
+    cita["cotizacion"]["mascotas"][2]["rango"] = [12, 15]
+    cita["cotizacion"]["total"] = [62, 65]
+    assert "Total: entre" in mensajes.resumen_para_propietaria(cita)

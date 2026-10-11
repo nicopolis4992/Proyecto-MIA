@@ -1,10 +1,10 @@
 """
 Redaccion de los mensajes del flujo de agenda.
 
-- resumen_para_propietaria: version minima de SCRUM-75 (Daniel Ocampo, en
-  curso) para poder cerrar el ciclo de SCRUM-77/78 en el prototipo. Cuando
-  SCRUM-75 este listo, reemplazar esta funcion por la suya conservando la
-  firma (recibe la cita, devuelve texto).
+- resumen_para_propietaria: SCRUM-75. Ademas del detalle por mascota, una
+  linea al estilo de la propietaria ("25$ de Tita y Cube, y 12$ de Thomas.
+  Total: 37$"), origen del cliente, referido, cliente nuevo o frecuente y
+  descuentos.
 - confirmacion_cliente / reprogramacion_cliente: SCRUM-78.
 
 Los mensajes se arman con plantillas, no con el LLM: contienen montos y
@@ -82,11 +82,62 @@ def _descripcion_mascota(m: dict) -> str:
     return ", ".join(r for r in rasgos if r) or "sin datos"
 
 
+def _linea_cliente(cita: dict) -> str:
+    from app.agenda.origen import ETIQUETA_ORIGEN
+    partes = []
+    previas = cita.get("citas_previas")
+    if previas is not None:
+        partes.append("cliente nuevo" if previas == 0 else f"cliente frecuente ({previas} cita(s) antes)")
+    if cita.get("origen") in ("lavet", "hospedaje"):
+        partes.append(f"viene de {ETIQUETA_ORIGEN[cita['origen']]}")
+    if cita.get("referido_por"):
+        partes.append(f"referido por {cita['referido_por']}")
+    return " · " + " · ".join(partes) if partes else ""
+
+
+def _descuentos(cita: dict) -> list[str]:
+    salida = []
+    lo, hi = (cita.get("cotizacion") or {}).get("descuento_multi_mascota") or [0, 0]
+    if hi:
+        salida.append(f"Descuento por varias mascotas: -{texto_rango([lo, hi])} (ya restado)")
+    aplicado = cita.get("descuento_aplicado")
+    if aplicado:
+        salida.append(f"Descuento: {aplicado if isinstance(aplicado, str) else aplicado.get('detalle', aplicado)}")
+    return salida
+
+
+def _monto(valor: float) -> str:
+    return f"{valor:g}$" if float(valor).is_integer() else f"{valor:.2f}$"
+
+
+def _estilo_propietaria(cita: dict) -> str | None:
+    """"25$ de Tita y Cube, y 12$ de Thomas. Total: 37$" (solo con precios exactos)."""
+    c = cita.get("cotizacion") or {}
+    total = total_de(cita)
+    detalle = c.get("mascotas") or []
+    if total is None or cita.get("total_acordado") is not None or len(detalle) != len(cita["mascotas"]):
+        return None
+    grupos: dict[float, list[str]] = {}
+    for m, d in zip(cita["mascotas"], detalle):
+        rango = d.get("rango")
+        if not rango or rango[0] != rango[1]:
+            return None
+        grupos.setdefault(rango[0], []).append(m.get("nombre") or "la mascota")
+    trozos = [f"{_monto(p)} de {n[0] if len(n) == 1 else ', '.join(n[:-1]) + ' y ' + n[-1]}"
+              for p, n in grupos.items()]
+    tr = (c.get("traslado") or {}).get("rango")
+    if cita["modalidad"] == "puerta_a_puerta" and tr and tr[1]:
+        trozos.append(f"{_monto(tr[0])} del traslado")
+    texto = trozos[0] if len(trozos) == 1 else ", ".join(trozos[:-1]) + ", y " + trozos[-1]
+    return f"{texto[0].upper()}{texto[1:]}. Total: {_monto(total)}"
+
+
 def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     c = cita.get("cotizacion") or {}
     ciclo = cita.get("ciclo_aprobacion", 1)
     lineas = [encabezado or (f"🐾 Nueva cita #{cita['id']} por aprobar" + (f" (revisión {ciclo})" if ciclo > 1 else ""))]
-    lineas.append(f"Cliente: {cita.get('cliente_nombre') or 'sin nombre'} ({cita['cliente_telefono']})")
+    lineas.append(f"Cliente: {cita.get('cliente_nombre') or 'sin nombre'} ({cita['cliente_telefono']})"
+                  + _linea_cliente(cita))
     detalle = c.get("mascotas") or [{}] * len(cita["mascotas"])
     for m, d in zip(cita["mascotas"], detalle):
         precio = f" — {texto_rango(d['rango'])}" if d.get("rango") else ""
@@ -99,7 +150,10 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
         lineas.append(f"Puerta a puerta: sí — {costo}" + (f" — sector: {cita['sector']}" if cita.get("sector") else ""))
     else:
         lineas.append("Modalidad: en el salón")
-    lineas.append(f"Total: {texto_total(cita)}")
+    for d in _descuentos(cita):
+        lineas.append(f"🏷️ {d}")
+    estilo = _estilo_propietaria(cita)
+    lineas.append(estilo or f"Total: {texto_total(cita)}")
     if cita.get("pedido_especial"):
         lineas.append(f"⚠️ Pedido especial del cliente: {cita['pedido_especial']} → define el precio")
     if c.get("preguntas_pendientes"):
