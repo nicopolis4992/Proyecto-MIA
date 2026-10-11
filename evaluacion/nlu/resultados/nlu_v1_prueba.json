@@ -1,0 +1,98 @@
+{
+  "conjunto": "prueba",
+  "n": 56,
+  "modelo": "gemini-3.5-flash-lite",
+  "version_prompt": "v1",
+  "intencion": {
+    "exactitud": 0.9286,
+    "f1_macro": 0.9249,
+    "f1_ponderado": 0.9295,
+    "por_clase": {
+      "agendar_cita": {
+        "precision": 1.0,
+        "recall": 0.955,
+        "f1-score": 0.977,
+        "support": 22.0
+      },
+      "consultar_servicio_producto": {
+        "precision": 0.81,
+        "recall": 1.0,
+        "f1-score": 0.895,
+        "support": 17.0
+      },
+      "consulta_general": {
+        "precision": 1.0,
+        "recall": 0.824,
+        "f1-score": 0.903,
+        "support": 17.0
+      }
+    },
+    "matriz_confusion": {
+      "etiquetas": [
+        "agendar_cita",
+        "consultar_servicio_producto",
+        "consulta_general"
+      ],
+      "matriz": [
+        [
+          21,
+          1,
+          0
+        ],
+        [
+          0,
+          17,
+          0
+        ],
+        [
+          0,
+          3,
+          14
+        ]
+      ]
+    }
+  },
+  "confianza": {
+    "media_aciertos": 0.95,
+    "media_errores": 0.938
+  },
+  "entidades": {
+    "recall_fecha_hora": 1.0,
+    "n_con_temporalidad": 14,
+    "falsas_fechas": 0.048,
+    "recall_tipo_mascota": 1.0,
+    "n_con_raza_o_tamano": 7
+  },
+  "latencia_ms_mediana": 1,
+  "errores": [
+    {
+      "id": "MIA-0098",
+      "texto": "buenas, quisiera saber que dias tiene libres esta semana",
+      "real": "agendar_cita",
+      "predicho": "consultar_servicio_producto",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0215",
+      "texto": "puedo pagar con tarjeta?",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto",
+      "confianza": 0.95
+    },
+    {
+      "id": "MIA-0227",
+      "texto": "a que hora le puedo ir a recoger?",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto",
+      "confianza": 0.9
+    },
+    {
+      "id": "MIA-0254",
+      "texto": "llevo su toalla o ustedes ponen?",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto",
+      "confianza": 0.95
+    }
+  ],
+  "advertencia": "Corpus mayoritariamente sintético (SCRUM-63): mide acuerdo con la guía de anotación, no desempeño en producción. Recalcular con el corpus real anotado."
+}

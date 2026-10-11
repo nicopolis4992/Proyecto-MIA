@@ -24,6 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("nlu")
 
 MODEL = "gemini-3.5-flash-lite"
+# Version del prompt de SYSTEM_PROMPT, para trazar las evaluaciones (SCRUM-64).
+PROMPT_VERSION = "v1"
 
 # Las 3 intenciones definidas en el alcance del proyecto (ver Alternativa 1
 # de la propuesta): agendar cita, consultar servicio/producto, consulta general.
