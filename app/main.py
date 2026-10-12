@@ -18,7 +18,10 @@ import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
+from pathlib import Path
+
 from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
+from fastapi.responses import FileResponse
 
 from app import config
 from app.agents.orchestrator_graph import procesar_mensaje
@@ -85,6 +88,12 @@ app.include_router(router_panel)  # demo web + dashboard de la propietaria
 @app.get("/")
 def read_root():
     return {"status": "ok", "service": "linas-pet-salon-bot", "modo": config.MODO}
+
+
+@app.get("/privacidad")
+def privacidad():
+    """Politica de privacidad publica: Meta la exige para publicar la app."""
+    return FileResponse(Path(__file__).parent / "static" / "privacidad.html", media_type="text/html")
 
 
 @app.get("/webhook")

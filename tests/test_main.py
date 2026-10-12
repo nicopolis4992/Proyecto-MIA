@@ -38,3 +38,8 @@ def test_webhook_verification_wrong_token():
         },
     )
     assert response.status_code == 403
+
+
+def test_politica_de_privacidad_publica():
+    r = client.get("/privacidad")
+    assert r.status_code == 200 and "Protección de Datos Personales" in r.text
