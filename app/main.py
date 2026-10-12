@@ -144,6 +144,26 @@ def _extract_incoming_message(payload: dict):
         return None
 
 
+def _registrar_estados(payload: dict) -> None:
+    """
+    Meta acepta un envio (HTTP 200) y lo entrega despues: si la entrega falla,
+    el motivo solo llega aqui, como un estado "failed" con su codigo de error.
+    Sin este registro, un mensaje que no llega no deja rastro.
+    """
+    try:
+        estados = payload["entry"][0]["changes"][0]["value"].get("statuses") or []
+    except (KeyError, IndexError, TypeError):
+        return
+    for e in estados:
+        errores = e.get("errors") or []
+        if e.get("status") == "failed" or errores:
+            for err in errores or [{}]:
+                logger.error("Entrega FALLIDA a %s: codigo %s - %s %s", e.get("recipient_id"), err.get("code"),
+                             err.get("title"), (err.get("error_data") or {}).get("details", ""))
+        else:
+            logger.info("Estado de entrega a %s: %s", e.get("recipient_id"), e.get("status"))
+
+
 def _procesar(entrante: dict) -> None:
     repo = obtener_repositorio()
     mensajero = MensajeroWhatsApp(repo)
@@ -196,6 +216,7 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     except ValueError:
         return Response(status_code=200)
 
+    _registrar_estados(payload)
     entrante = _extract_incoming_message(payload)
     if entrante is None:
         return Response(status_code=200)

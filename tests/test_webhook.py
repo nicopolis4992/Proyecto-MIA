@@ -196,3 +196,13 @@ def test_pedidos_que_empiezan_con_que_o_como_no_son_preguntas():
     assert parece_pregunta("que dias tiene libres?")
     assert parece_pregunta("cuanto cuesta el baño")
     assert parece_pregunta("qué incluye el premium")
+
+
+def test_estado_de_entrega_fallido_queda_en_el_log(caplog):
+    payload = {"entry": [{"changes": [{"value": {"statuses": [{
+        "status": "failed", "recipient_id": "593900000000",
+        "errors": [{"code": 131042, "title": "Business eligibility payment issue",
+                    "error_data": {"details": "x"}}]}]}}]}]}
+    with caplog.at_level("ERROR", logger="main"):
+        assert client.post("/webhook", json=payload).status_code == 200
+    assert "codigo 131042" in caplog.text
