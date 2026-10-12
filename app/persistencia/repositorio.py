@@ -272,6 +272,13 @@ class Repositorio:
         ).fetchall()
         return [dict(f) for f in filas]
 
+    def mensajes_en_espera(self, destino: str) -> list[dict]:
+        """Mensajes retenidos por la regla de 24 h, en orden, para un destino."""
+        filas = self._ejecutar(
+            "SELECT * FROM mensajes_salientes WHERE estado = 'esperando_ventana' AND destino = ? "
+            "ORDER BY id", (destino,)).fetchall()
+        return [dict(f) for f in filas]
+
     def mensajes_no_entregados(self, limite: int = 20) -> list[dict]:
         filas = self._ejecutar(
             "SELECT * FROM mensajes_salientes WHERE estado IN ('no_entregado', 'fallido') "

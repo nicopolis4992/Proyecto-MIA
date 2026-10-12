@@ -22,7 +22,7 @@ from fastapi import BackgroundTasks, FastAPI, Header, Query, Request, Response
 
 from app import config
 from app.agents.orchestrator_graph import procesar_mensaje
-from app.mensajeria import MensajeroWhatsApp, reintentar_pendientes
+from app.mensajeria import MensajeroWhatsApp, entregar_en_espera, reintentar_pendientes
 from app.panel.rutas import router as router_panel
 from app.persistencia.repositorio import obtener_repositorio
 from app.whatsapp_client import download_media
@@ -36,7 +36,8 @@ logger = logging.getLogger("main")
 # en Meta for Developers.
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
 INTERVALO_COLA_S = int(os.getenv("COLA_INTERVALO_S", "60"))
-INTERVALO_SEGUIMIENTO_S = int(os.getenv("SEGUIMIENTO_INTERVALO_S", "300"))
+_SOLO_VER = {"ver", "ver.", "ver detalle", "detalle"}  # palabra que pide la plantilla
+INTERVALO_SEGUIMIENTO_S =int(os.getenv("SEGUIMIENTO_INTERVALO_S", "300"))
 
 
 async def _bucle_cola_salida():
@@ -139,15 +140,36 @@ def _procesar(entrante: dict) -> None:
     mensajero = MensajeroWhatsApp(repo)
     sender = entrante["from"]
     try:
+        # Escribio: la ventana de 24 h se abre y sale lo que estaba en espera.
+        # Si solo respondio "ver" a la plantilla, no hay nada mas que procesar.
+        if entregar_en_espera(repo, sender) and (entrante["texto"] or "").strip().lower() in _SOLO_VER:
+            return
         if entrante["tipo"] not in ("text", "image"):
             mensajero.enviar(sender, "Por ahora solo puedo leer mensajes de texto y fotos 🙏")
             return
         imagen = download_media(entrante["media_id"]) if entrante["media_id"] else None
         reply_text = procesar_mensaje(sender, entrante["texto"] or "", imagen, entrante["id_citado"])
         if reply_text:
+            aviso = _aviso_privacidad(repo, sender)
+            if aviso:
+                mensajero.enviar(sender, aviso)
             mensajero.enviar(sender, reply_text)
     except Exception:  # noqa: BLE001
         logger.exception("Error procesando mensaje de %s", sender)
+
+
+def _aviso_privacidad(repo, telefono: str) -> str | None:
+    """SCRUM-92 (LOPDP): una sola vez por cliente, antes de su primera respuesta."""
+    from app.agenda.disponibilidad import cargar_config
+
+    aviso = cargar_config().get("aviso_privacidad") or {}
+    if not aviso.get("activo") or telefono == config.PROPIETARIA_WHATSAPP:
+        return None
+    clave = f"aviso:{telefono}"  # aparte de la sesion, que se reinicia en cada reserva
+    if repo.obtener_sesion(clave).get("enviado"):
+        return None
+    repo.guardar_sesion(clave, {"enviado": config.ahora().isoformat(timespec="minutes")})
+    return aviso["texto"]
 
 
 @app.post("/webhook")

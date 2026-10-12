@@ -28,13 +28,22 @@ def _texto(sender, text, wa_id="wamid.1", context=None):
 @patch("app.mensajeria.send_text_message")
 @patch("app.main.procesar_mensaje")
 def test_webhook_responde_a_mensaje_de_texto(mock_procesar, mock_send):
+    from app.persistencia.repositorio import obtener_repositorio
+
+    obtener_repositorio().borrar_sesion("aviso:593999999999")
     mock_procesar.return_value = "¡Hola! Gracias por escribirnos."
 
     response = client.post("/webhook", json=_texto("593999999999", "Hola, quiero una cita", "wamid.t1"))
 
     assert response.status_code == 200
     mock_procesar.assert_called_once_with("593999999999", "Hola, quiero una cita", None, None)
-    mock_send.assert_called_once_with(to="593999999999", body="¡Hola! Gracias por escribirnos.")
+    # Primer contacto: antes de la respuesta va el aviso de privacidad (LOPDP), una sola vez.
+    aviso, respuesta = [c.kwargs["body"] for c in mock_send.call_args_list]
+    assert "Protección de Datos Personales" in aviso
+    assert respuesta == "¡Hola! Gracias por escribirnos."
+    client.post("/webhook", json=_texto("593999999999", "otra cosa", "wamid.t1b"))
+    assert mock_send.call_args_list[-1].kwargs["body"] == "¡Hola! Gracias por escribirnos."
+    assert mock_send.call_count == 3
 
 
 @patch("app.mensajeria.send_text_message")

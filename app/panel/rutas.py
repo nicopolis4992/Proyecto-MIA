@@ -11,9 +11,10 @@ Panel web: demo conversacional + agenda + dashboard de la propietaria.
 
 La demo corre el MISMO orquestador que WhatsApp (NLU, RAG, foto, agenda,
 aprobacion) contra una base aparte (data/demo.sqlite3); los mensajes
-salientes se muestran en pantalla en vez de enviarse por Meta. Si Google
-Calendar esta configurado, las citas aprobadas en la demo tambien aparecen
-en el calendario real.
+salientes se muestran en pantalla en vez de enviarse por Meta. En modo
+pruebas, si Google Calendar esta configurado, las citas aprobadas en la demo
+tambien aparecen en el calendario; en el piloto (modo produccion) la demo
+nunca toca el calendario del negocio.
 
 Acceso: con DEMO_CLAVE definida se exige la clave (cabecera X-Panel-Clave o
 ?clave=). Sin DEMO_CLAVE, el panel solo responde desde la propia maquina.
@@ -31,7 +32,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse
 
-from app.config import RAIZ_APP, ZONA_HORARIA
+from app import config
+from app.config import RAIZ_APP, RUTA_DB, ZONA_HORARIA
 from app.mensajeria import MensajeroMemoria
 from app.panel import datos
 from app.persistencia.repositorio import Repositorio, obtener_repositorio
@@ -40,7 +42,8 @@ router = APIRouter(prefix="/panel")
 
 CLIENTE_DEMO = "593900000099"
 PROPIETARIA_DEMO = "593900000001"
-RUTA_DB_DEMO = RAIZ_APP.parent / "data" / "demo.sqlite3"
+# Junto a la base real (en Railway, dentro del volumen), pero en otro archivo.
+RUTA_DB_DEMO = (Path(RUTA_DB).parent if RUTA_DB != ":memory:" else RAIZ_APP.parent / "data") / "demo.sqlite3"
 HTML = Path(__file__).parent / "static" / "index.html"
 
 
@@ -85,7 +88,8 @@ class Demo:
             from app.agents import orchestrator_graph as og
 
             self.deps = og.crear_dependencias(repo=self.repo, mensajero=self.mensajero,
-                                              propietaria=PROPIETARIA_DEMO)
+                                              propietaria=PROPIETARIA_DEMO,
+                                              calendario=None if config.MODO == "pruebas" else False)
             self.grafo = og.construir_grafo(self.deps)
         return self.grafo
 

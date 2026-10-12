@@ -101,15 +101,26 @@ def send_text_message(to: str, body: str) -> str | None:
 
     Lanza ErrorWhatsApp si no se pudo enviar tras los reintentos.
     """
+    return _enviar_payload(to, {"type": "text", "text": {"body": body}}, f"Envio a {to}")
+
+
+def send_template_message(to: str, plantilla: str, parametros: list[str], idioma: str = "es") -> str | None:
+    """
+    Envia una plantilla aprobada por Meta. Es la unica forma de escribirle a
+    alguien que no le ha escrito al bot en las ultimas 24 h (error 131047).
+    Los parametros no pueden tener saltos de linea ni tabulaciones.
+    """
+    componentes = [{"type": "body", "parameters": [{"type": "text", "text": p} for p in parametros]}]
+    return _enviar_payload(to, {"type": "template", "template": {
+        "name": plantilla, "language": {"code": idioma}, "components": componentes}},
+        f"Plantilla {plantilla} a {to}")
+
+
+def _enviar_payload(to: str, contenido: dict, descripcion: str) -> str | None:
     access_token, phone_number_id = _credenciales()
     url = f"https://graph.facebook.com/{GRAPH_API_VERSION}/{phone_number_id}/messages"
     headers = {"Authorization": f"Bearer {access_token}"}
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to,
-        "type": "text",
-        "text": {"body": body},
-    }
+    payload = {"messaging_product": "whatsapp", "to": to, **contenido}
 
     def _enviar():
         with httpx.Client(timeout=10) as client:
@@ -118,7 +129,7 @@ def send_text_message(to: str, body: str) -> str | None:
             mensajes = response.json().get("messages") or [{}]
             return mensajes[0].get("id")
 
-    return _con_reintentos(_enviar, f"Envio a {to}")
+    return _con_reintentos(_enviar, descripcion)
 
 
 def download_media(media_id: str) -> bytes:

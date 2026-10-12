@@ -13,6 +13,10 @@ intentar mas tarde. Ningun mensaje se pierde en silencio.
 SCRUM-86: si el destino es la propietaria y el envio falla de forma
 definitiva (error permanente o cola agotada), el texto se le manda ademas
 por correo (app/notificaciones/correo.py).
+
+Regla de 24 h de Meta (error 131047): si hay plantilla configurada
+(WHATSAPP_PLANTILLA_*), se envia la plantilla con un resumen corto y el
+mensaje completo queda "esperando_ventana" hasta que la persona responda.
 """
 
 from __future__ import annotations
@@ -24,7 +28,7 @@ from typing import Protocol
 from app import config
 from app.notificaciones import correo
 from app.persistencia.repositorio import Repositorio
-from app.whatsapp_client import FUERA_DE_VENTANA, ErrorWhatsApp, send_text_message
+from app.whatsapp_client import FUERA_DE_VENTANA, ErrorWhatsApp, send_template_message, send_text_message
 
 logger = logging.getLogger("mensajeria")
 
@@ -55,6 +59,12 @@ class MensajeroWhatsApp:
             # que le escriba ella.
             cola_id = self.repo.encolar_mensaje(destino, texto, motivo)
             propietaria = config.PROPIETARIA_WHATSAPP
+            if exc.codigo == FUERA_DE_VENTANA:
+                aviso_id = self._avisar_con_plantilla(destino, texto)
+                if aviso_id:
+                    # El texto completo sale cuando responda (entregar_en_espera).
+                    self.repo.marcar_mensaje(cola_id, "esperando_ventana", motivo + " · se envió plantilla")
+                    return aviso_id
             if destino == propietaria and correo.respaldo_propietaria(texto, motivo):
                 motivo += " · enviado por correo"
             self.repo.marcar_mensaje(cola_id, "no_entregado", motivo)
@@ -63,6 +73,49 @@ class MensajeroWhatsApp:
                 self.enviar(propietaria, f"⚠️ No pude enviarle este mensaje al cliente {destino} porque "
                                          f"{motivo}. Escríbele tú directamente:\n\n{texto}")
             return None
+
+    def _avisar_con_plantilla(self, destino: str, texto: str) -> str | None:
+        """
+        Fuera de la ventana de 24 h solo se puede enviar una plantilla aprobada
+        por Meta. Se envia un aviso corto ("tiene una actualización: ...") y el
+        mensaje completo queda en espera hasta que la persona responda.
+        Devuelve el id del aviso: si la propietaria lo cita, se asocia a la cita.
+        """
+        plantilla = (config.PLANTILLA_PROPIETARIA if destino == config.PROPIETARIA_WHATSAPP
+                     else config.PLANTILLA_CLIENTE)
+        if not plantilla:
+            return None
+        try:
+            return send_template_message(destino, plantilla, [resumen_corto(texto)], config.PLANTILLA_IDIOMA)
+        except ErrorWhatsApp as exc:
+            logger.error("Tampoco se pudo enviar la plantilla %s a %s: %s", plantilla, destino, exc)
+            return None
+
+
+def resumen_corto(texto: str, limite: int = 160) -> str:
+    """Parametro de plantilla: una linea, sin tabulaciones ni espacios repetidos."""
+    lineas = [ln.strip(" •-") for ln in texto.splitlines() if ln.strip()]
+    plano = " · ".join(lineas[:3])
+    plano = " ".join(plano.replace("\t", " ").split())
+    return plano if len(plano) <= limite else plano[:limite - 1].rstrip() + "…"
+
+
+def entregar_en_espera(repo: Repositorio, destino: str) -> int:
+    """
+    La persona escribio: la ventana de 24 h esta abierta otra vez y se le
+    entregan los mensajes que quedaron en espera. Devuelve cuantos salieron.
+    """
+    entregados = 0
+    for m in repo.mensajes_en_espera(destino):
+        try:
+            send_text_message(to=destino, body=m["cuerpo"])
+            repo.marcar_mensaje(m["id"], "enviado")
+            entregados += 1
+        except ErrorWhatsApp as exc:
+            repo.marcar_mensaje(m["id"], "esperando_ventana", str(exc))
+    if entregados:
+        logger.info("Entregados %d mensaje(s) en espera a %s", entregados, destino)
+    return entregados
 
 
 def reintentar_pendientes(repo: Repositorio) -> dict:

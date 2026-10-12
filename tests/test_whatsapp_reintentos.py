@@ -167,3 +167,60 @@ def test_sin_configuracion_no_se_intenta_enviar(monkeypatch):
     for k in ("CORREO_USUARIO", "CORREO_CLAVE", "CORREO_PROPIETARIA"):
         monkeypatch.delenv(k, raising=False)
     assert correo.enviar_correo("x", "y") is False
+
+
+# -- regla de 24 h: plantilla + entrega al responder ---------------------------
+
+def _meta_con_ventana(monkeypatch, abierta: dict):
+    """Simula Meta: texto a un numero sin ventana -> 131047; plantillas siempre salen."""
+    enviados = []
+
+    def handler(request):
+        cuerpo = __import__("json").loads(request.content)
+        enviados.append(cuerpo)
+        if cuerpo["type"] == "text" and not abierta.get(cuerpo["to"]):
+            return httpx.Response(400, json={"error": {"code": whatsapp_client.FUERA_DE_VENTANA, "message": "x"}})
+        return httpx.Response(200, json={"messages": [{"id": f"wamid.{len(enviados)}"}]})
+
+    monkeypatch.setattr(whatsapp_client.httpx, "Client",
+                        lambda **kw: CLIENTE_HTTP_REAL(transport=httpx.MockTransport(handler), **kw))
+    return enviados
+
+
+def test_fuera_de_ventana_envia_plantilla_y_entrega_al_responder(monkeypatch):
+    from app.mensajeria import entregar_en_espera
+
+    monkeypatch.setattr(config, "PROPIETARIA_WHATSAPP", "593900000001")
+    monkeypatch.setattr(config, "PLANTILLA_PROPIETARIA", "solicitud_cita")
+    ventana: dict = {}
+    enviados = _meta_con_ventana(monkeypatch, ventana)
+    repo = Repositorio(":memory:")
+    resumen = "🐾 Nueva cita #7 por aprobar\nCliente: Rosa\n• Luna: Baño Completo\n\nResponde a ESTE mensaje"
+
+    msg_id = MensajeroWhatsApp(repo).enviar("593900000001", resumen)
+    assert msg_id                                   # el id de la plantilla: citarla sirve para aprobar
+    plantilla = enviados[-1]["template"]
+    assert plantilla["name"] == "solicitud_cita"
+    parametro = plantilla["components"][0]["parameters"][0]["text"]
+    assert "\n" not in parametro and "Nueva cita #7" in parametro
+    assert repo.mensajes_no_entregados() == []      # no es un fallo: esta en espera
+
+    ventana["593900000001"] = True                  # la propietaria escribe
+    assert entregar_en_espera(repo, "593900000001") == 1
+    assert enviados[-1]["text"]["body"] == resumen
+    assert entregar_en_espera(repo, "593900000001") == 0
+
+
+def test_sin_plantilla_configurada_sigue_el_camino_anterior(monkeypatch):
+    monkeypatch.setattr(config, "PROPIETARIA_WHATSAPP", "593900000001")
+    monkeypatch.setattr(config, "PLANTILLA_CLIENTE", "")
+    _meta_con_ventana(monkeypatch, {"593900000001": True})
+    repo = Repositorio(":memory:")
+    assert MensajeroWhatsApp(repo).enviar("593900000099", "¡Listo! Queda agendado") is None
+    assert repo.mensajes_no_entregados()[0]["estado"] == "no_entregado"
+
+
+def test_resumen_corto_para_parametro_de_plantilla():
+    from app.mensajeria import resumen_corto
+    assert resumen_corto("a\n\n• b\t c     d\ne\nf") == "a · b c d · e"
+    assert len(resumen_corto("x" * 500)) == 160

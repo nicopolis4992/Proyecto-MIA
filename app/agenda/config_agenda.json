@@ -51,5 +51,10 @@
       "21:00"
     ],
     "comentario": "SCRUM-76. Si la propietaria no responde: recordatorio cada 45 min (max. 2, solo entre 07:00 y 21:00); despues se avisa una vez al cliente que sigue en revision. Si falta 1 h o menos para la cita sin aprobacion, vence y se le ofrecen otros horarios. Valores provisionales hasta validarlos con ella."
+  },
+  "aviso_privacidad": {
+    "activo": true,
+    "texto": "Hola 👋 Le atiende el asistente virtual de Lina's Pet Salón: respondo de forma automática y la propietaria revisa cada cita antes de confirmarla. Los datos que me comparta (nombre, número, datos y fotos de su mascota, sector si pide puerta a puerta) se usan solo para cotizar y agendar, conforme a la Ley Orgánica de Protección de Datos Personales. Si desea consultar, corregir o eliminar sus datos, escríbalo aquí y la propietaria le atiende.",
+    "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). BORRADOR: validar redaccion con la propietaria y el tutor."
   }
 }

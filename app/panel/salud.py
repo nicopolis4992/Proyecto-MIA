@@ -47,6 +47,13 @@ def diagnostico(repo) -> list[dict]:
                 f"{len(config.NUMEROS_PERMITIDOS)} número(s)" + (f"; formato inválido: {malos}" if malos else "")
                 if config.NUMEROS_PERMITIDOS else "ninguno: en modo pruebas el bot no responderá a nadie")
 
+    plantillas = [n for n, v in (("propietaria", config.PLANTILLA_PROPIETARIA),
+                                 ("cliente", config.PLANTILLA_CLIENTE)) if v]
+    agregar("Plantillas de Meta (regla de 24 h)", len(plantillas) == 2,
+            "configuradas" if len(plantillas) == 2 else
+            f"faltan ({', '.join({'propietaria', 'cliente'} - set(plantillas))}): si alguien no escribió en "
+            "24 h, el bot no puede avisarle (ver docs/plantillas_meta.md)", critico=config.MODO == "produccion")
+
     pausado = repo.bot_pausado()
     agregar("Bot", not pausado, "PAUSADO por la propietaria: los mensajes se le reenvían a ella "
             "(\"activar bot\" para reanudar)" if pausado else "atendiendo", critico=False)

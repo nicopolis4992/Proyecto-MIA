@@ -30,6 +30,12 @@ ZONA_HORARIA = timezone(timedelta(hours=-5), name="America/Guayaquil")
 # de aprobacion (SCRUM-77), nunca como mensajes de cliente.
 PROPIETARIA_WHATSAPP = os.getenv("PROPIETARIA_WHATSAPP", "").strip().lstrip("+")
 
+# Plantillas aprobadas por Meta para escribir fuera de la ventana de 24 h
+# (texto a registrar en docs/plantillas_meta.md). Vacias: no se usan.
+PLANTILLA_PROPIETARIA = os.getenv("WHATSAPP_PLANTILLA_PROPIETARIA", "").strip()
+PLANTILLA_CLIENTE = os.getenv("WHATSAPP_PLANTILLA_CLIENTE", "").strip()
+PLANTILLA_IDIOMA = os.getenv("WHATSAPP_PLANTILLA_IDIOMA", "es").strip()
+
 # Modo de operacion:
 # - "pruebas" (por defecto): piloto interno del equipo. Solo se atiende a los
 #   numeros de NUMEROS_PERMITIDOS (mas PROPIETARIA_WHATSAPP, que en pruebas
