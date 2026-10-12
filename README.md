@@ -100,7 +100,7 @@ pero confirma que Gemini sí generó una respuesta antes de fallar el envío.
 
 ## Piloto interno (modo pruebas) y paso a producción
 
-**Guías:** [despliegue en Railway (pruebas y piloto)](docs/despliegue.md) ·
+**Guías:** [plan de cierre paso a paso](docs/plan_cierre.md) · [despliegue en Railway (pruebas y piloto)](docs/despliegue.md) ·
 [plantillas para Meta](docs/plantillas_meta.md) ·
 [guía para la propietaria](docs/guia_propietaria.md).
 
