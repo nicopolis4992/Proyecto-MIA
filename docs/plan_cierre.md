@@ -120,7 +120,7 @@ restaurar el token.
 Hasta entonces, quien hace de propietaria debe escribirle al bot cada mañana
 para que se abra la ventana de 24 h.
 
-### A6. Guion de pruebas (1 h) — (Claude)
+### A6. Guion de pruebas — listo: [guion_pruebas.md](guion_pruebas.md)
 
 Casos repartidos por persona: quién es cliente, quién propietaria, qué escribir
 y qué debe pasar, con una hoja para anotar cada falla. Sale del catálogo de
