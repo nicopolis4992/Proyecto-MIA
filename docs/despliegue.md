@@ -37,7 +37,13 @@ agenda, aprobación) y sirve para la demo con el tutor.
    GEMINI_API_KEY=...
    MIA_DB_PATH=/data/mia.sqlite3
    DEMO_CLAVE=<clave larga>
+   MIA_CLAVES_CIFRADO=<clave Fernet>
+   MIA_CLAVE_SEUDONIMO_OPERACION=<texto aleatorio de 32+ caracteres>
    ```
+   Las dos últimas cifran los teléfonos, nombres y mensajes guardados (LOPDP). La clave Fernet se genera con
+   `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+   **Guardarlas también en un lugar seguro**: sin ellas no se pueden leer los datos. Si se agregan sobre una base
+   que ya tiene datos, se cifran solos al arrancar.
 6. Esperar el despliegue y abrir `https://<app>.up.railway.app/panel?clave=<DEMO_CLAVE>`.
 7. Revisar la pestaña **"Estado del sistema"**: WhatsApp aparecerá en rojo (todavía no hay
    tokens); el resto debe estar en verde o en aviso.

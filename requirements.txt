@@ -8,5 +8,7 @@ pytest==9.1.1
 # Cotizacion por imagen (SCRUM-103/104): control de calidad de la foto
 pillow==12.3.0
 numpy==2.5.3
+# Cifrado de datos personales en la base (LOPDP)
+cryptography==50.0.1
 # Al tener el modelo CNN entrenado (SCRUM-102), agregar: onnxruntime
 # Para RAG_BACKEND=pgvector (Supabase), agregar: psycopg[binary]

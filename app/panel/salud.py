@@ -54,6 +54,12 @@ def diagnostico(repo) -> list[dict]:
             f"faltan ({', '.join({'propietaria', 'cliente'} - set(plantillas))}): si alguien no escribió en "
             "24 h, el bot no puede avisarle (ver docs/plantillas_meta.md)", critico=config.MODO == "produccion")
 
+    cifrado = getattr(getattr(repo, "proteccion", None), "activa", False)
+    agregar("Cifrado de datos personales en la base", cifrado,
+            "activo: teléfonos, nombres, sesiones y mensajes cifrados" if cifrado else
+            "desactivado: faltan MIA_CLAVES_CIFRADO y MIA_CLAVE_SEUDONIMO_OPERACION",
+            critico=config.MODO == "produccion")
+
     pausado = repo.bot_pausado()
     agregar("Bot", not pausado, "PAUSADO por la propietaria: los mensajes se le reenvían a ella "
             "(\"activar bot\" para reanudar)" if pausado else "atendiendo", critico=False)

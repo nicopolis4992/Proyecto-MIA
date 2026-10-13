@@ -65,12 +65,20 @@ def _seguimiento_aprobaciones() -> dict | None:
 
 
 async def _bucle_seguimiento():
+    ultima_purga = None
     while True:
         await asyncio.sleep(INTERVALO_SEGUIMIENTO_S)
         try:
             await asyncio.to_thread(_seguimiento_aprobaciones)
         except Exception:  # noqa: BLE001
             logger.exception("Fallo el seguimiento de aprobaciones")
+        # Una vez al dia: retencion minima de datos operativos (LOPDP).
+        if ultima_purga != config.ahora().date():
+            try:
+                await asyncio.to_thread(obtener_repositorio().purgar)
+                ultima_purga = config.ahora().date()
+            except Exception:  # noqa: BLE001
+                logger.exception("Fallo la purga de datos operativos")
 
 
 @asynccontextmanager
