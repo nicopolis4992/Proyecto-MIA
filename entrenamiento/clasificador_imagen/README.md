@@ -4,7 +4,7 @@
    (`manifiesto.csv` + carpetas de imágenes de `datos/procesado`).
 2. En Colab (Entorno de ejecución → GPU T4):
    ```
-   !pip install -q onnx onnxruntime scikit-learn
+   !pip install -q onnx onnxscript onnxruntime scikit-learn matplotlib
    from google.colab import drive; drive.mount('/content/drive')
    !git clone <url-del-repo> mia && cd mia && python entrenamiento/clasificador_imagen/entrenar_colab.py \
        --manifiesto /content/drive/MyDrive/MIA/procesado/manifiesto.csv \

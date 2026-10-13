@@ -34,10 +34,14 @@ Decisiones de entrenamiento:
 
 Salida (copiar a app/vision/modelos/ del repo):
     clasificador_v1.onnx   modelo con salidas "tamano", "grupo" y "estado" (logits)
-    clasificador_v1.json   clases, temperatura, normalizacion, metricas
+    clasificador_v1.json   clases, temperatura, normalizacion, metricas (F1 macro,
+                           por clase, matriz de confusion e IC 95 % por bootstrap)
+Ademas, para la evaluacion de SCRUM-105 (no se copian a la app):
+    clasificador_v1_predicciones_test.csv   real / predicho / probabilidad por foto
+    gradcam/                                mapas de atencion y su energia de borde
 
 Uso en Colab:
-    !pip install -q onnx onnxruntime scikit-learn
+    !pip install -q onnx onnxscript onnxruntime scikit-learn matplotlib
     !git clone <repo> && cd <repo>
     !python entrenamiento/clasificador_imagen/entrenar_colab.py \
         --manifiesto /content/drive/MyDrive/MIA/procesado/manifiesto.csv \
@@ -194,6 +198,129 @@ def ajustar_temperatura(logits, y) -> float:
     return float(log_t.exp().clamp(0.5, 5.0))
 
 
+def metricas_por_clase(cabezas, logits, ys, n_boot: int = 1000) -> dict:
+    """Precision, recall, F1 y soporte por clase, matriz de confusion e IC 95 % del F1 macro."""
+    from sklearn.metrics import confusion_matrix
+
+    rng = np.random.default_rng(SEMILLA)
+    salida = {}
+    for (nombre, clases, _), lg, y in zip(cabezas, logits, ys):
+        m = (y != IGNORAR).numpy()
+        if not m.any():
+            continue
+        real, pred = y.numpy()[m], lg.argmax(1).numpy()[m]
+        etiquetas = list(range(len(clases)))
+        rep = classification_report(real, pred, labels=etiquetas, target_names=clases,
+                                    output_dict=True, zero_division=0)
+        boot = []
+        for _ in range(n_boot):
+            idx = rng.integers(0, len(real), len(real))
+            boot.append(f1_score(real[idx], pred[idx], labels=etiquetas, average="macro", zero_division=0))
+        salida[nombre] = {
+            "por_clase": {c: {k: round(float(v), 3) for k, v in rep[c].items()} for c in clases},
+            "f1_macro": round(float(rep["macro avg"]["f1-score"]), 3),
+            "f1_macro_ic95": [round(float(np.percentile(boot, 2.5)), 3), round(float(np.percentile(boot, 97.5)), 3)],
+            "exactitud": round(float((real == pred).mean()), 3),
+            "n": int(m.sum()),
+            "matriz_confusion": {"clases": clases,
+                                 "matriz": confusion_matrix(real, pred, labels=etiquetas).tolist()},
+        }
+    return salida
+
+
+def guardar_predicciones(ruta: Path, filas: list[dict], cabezas, logits, temperatura: dict) -> None:
+    """Una fila por imagen: etiqueta real, prediccion y probabilidad calibrada por cabeza.
+    Sirve para comparar con la linea base de Gemini sobre las MISMAS imagenes (SCRUM-105)."""
+    campos = ["ruta", "mascota_id"]
+    for n, _, _ in cabezas:
+        campos += [f"{n}_real", f"{n}_pred", f"{n}_prob"]
+    with open(ruta, "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=campos)
+        w.writeheader()
+        for i, f in enumerate(filas):
+            fila = {"ruta": f["ruta"], "mascota_id": f.get("mascota_id", "")}
+            for (n, clases, _), lg in zip(cabezas, logits):
+                p = F.softmax(lg[i] / temperatura.get(n, 1.0), dim=0)
+                fila.update({f"{n}_real": f.get(n, ""), f"{n}_pred": clases[int(p.argmax())],
+                             f"{n}_prob": round(float(p.max()), 3)})
+            w.writerow(fila)
+    print("Predicciones de prueba:", ruta)
+
+
+def mapa_gradcam(modelo, x, cabeza: int) -> tuple[np.ndarray, int]:
+    """Grad-CAM (Selvaraju et al., 2017) sobre el ultimo mapa de rasgos del backbone,
+    para la clase predicha por la cabeza indicada. Devuelve el mapa 224x224 en [0, 1]."""
+    modelo.eval()
+    x = x.clone().requires_grad_(True)  # por si el backbone quedo congelado
+    rasgos = modelo.backbone(x)
+    rasgos.retain_grad()
+    h = torch.flatten(modelo.pool(rasgos), 1)
+    salida = (modelo.cabeza_tamano, modelo.cabeza_grupo, modelo.cabeza_estado)[cabeza](h)
+    clase = int(salida.argmax(1))
+    modelo.zero_grad()
+    salida[0, clase].backward()
+    pesos = rasgos.grad.mean(dim=(2, 3), keepdim=True)
+    cam = F.relu((pesos * rasgos).sum(1, keepdim=True))
+    cam = F.interpolate(cam, size=(LADO, LADO), mode="bilinear", align_corners=False)[0, 0]
+    cam = cam - cam.min()
+    return (cam / (cam.max() + 1e-8)).detach().cpu().numpy(), clase
+
+
+def _superponer(img: Image.Image, cam: np.ndarray) -> Image.Image:
+    try:
+        from matplotlib import colormaps
+        color = (colormaps["jet"](cam)[..., :3] * 255).astype(np.uint8)
+    except Exception:  # pragma: no cover - sin matplotlib: mapa en rojo
+        color = np.stack([cam * 255, np.zeros_like(cam), np.zeros_like(cam)], -1).astype(np.uint8)
+    return Image.blend(img, Image.fromarray(color), 0.45)
+
+
+def generar_gradcam(modelo, filas: list[dict], raiz: Path, carpeta: Path, dispositivo) -> dict:
+    """
+    Guarda una imagen por foto (original + mapa de grupo + mapa de estado) y mide
+    que parte de la atencion cae en el BORDE de la foto (franja exterior del 15 %),
+    donde estan el marco y el logo de la plantilla de Facebook. Una energia de
+    borde alta es senal de atajo y hay que revisar esas fotos a mano.
+    """
+    carpeta.mkdir(parents=True, exist_ok=True)
+    prep = DatasetMIA([], raiz, entrenamiento=False).tf
+    recorte = transforms.Compose([transforms.Resize(int(LADO * 1.14)), transforms.CenterCrop(LADO)])
+    banda = int(LADO * 0.15)
+    borde = np.ones((LADO, LADO), dtype=bool)
+    borde[banda:-banda, banda:-banda] = False
+    modelo.to(dispositivo)
+    energias = {"grupo": [], "estado": []}
+    resumen = []
+    for f in filas:
+        img = recorte(Image.open(raiz / f["ruta"]).convert("RGB"))
+        x = prep(Image.open(raiz / f["ruta"]).convert("RGB")).unsqueeze(0).to(dispositivo)
+        paneles = [img]
+        for nombre, cabeza, clases in (("grupo", 1, CLASES_GRUPO), ("estado", 2, CLASES_ESTADO)):
+            cam, clase = mapa_gradcam(modelo, x, cabeza)
+            energia = float(cam[borde].sum() / (cam.sum() + 1e-8))
+            energias[nombre].append(energia)
+            paneles.append(_superponer(img, cam))
+            resumen.append({"ruta": f["ruta"], "cabeza": nombre, "pred": clases[clase],
+                            "real": f.get(nombre, ""), "energia_borde": round(energia, 3)})
+        lienzo = Image.new("RGB", (LADO * len(paneles), LADO))
+        for i, p in enumerate(paneles):
+            lienzo.paste(p, (i * LADO, 0))
+        lienzo.save(carpeta / (Path(f["ruta"]).stem + "_gradcam.jpg"), quality=85)
+    with open(carpeta / "gradcam_resumen.csv", "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["ruta", "cabeza", "pred", "real", "energia_borde"])
+        w.writeheader()
+        w.writerows(resumen)
+    # La franja del 15 % ocupa el 51 % del area: con atencion uniforme la energia de borde seria ~0,51.
+    area_borde = float(borde.mean())
+    return {
+        "imagenes": len(filas),
+        "area_borde": round(area_borde, 3),
+        **{f"energia_borde_media_{n}": round(float(np.mean(v)), 3) for n, v in energias.items() if v},
+        **{f"fotos_con_atajo_probable_{n}": int(sum(e > area_borde for e in v)) for n, v in energias.items() if v},
+        "carpeta": str(carpeta),
+    }
+
+
 def entrenar_epoch(modelo, cargador, opt, criterios, dispositivo):
     modelo.train()
     total = 0.0
@@ -222,7 +349,9 @@ def main():
     ap.add_argument("--epocas-cabezas", type=int, default=4)
     ap.add_argument("--epocas-ajuste", type=int, default=12)
     ap.add_argument("--lote", type=int, default=32)
+    ap.add_argument("--gradcam", type=int, default=60, help="imagenes de prueba con Grad-CAM (0 = no generar)")
     args = ap.parse_args()
+    args.salida.mkdir(parents=True, exist_ok=True)
 
     fijar_semilla(SEMILLA)
     dispositivo = "cuda" if torch.cuda.is_available() else "cpu"
@@ -298,16 +427,31 @@ def main():
         logits, ys = predecir(modelo, cargadores["val"], dispositivo)
         temperatura = {n: ajustar_temperatura(l, y) for (n, _, _), l, y in zip(cabezas, logits, ys)}
         metricas["val"] = {f"f1_macro_{n}": f1_macro(l, y) for (n, _, _), l, y in zip(cabezas, logits, ys)}
+    if "val" in cargadores:
+        metricas["val_por_clase"] = metricas_por_clase(cabezas, logits, ys)
     if "test" in cargadores:
         logits, ys = predecir(modelo, cargadores["test"], dispositivo)
         metricas["test"] = {f"f1_macro_{n}": f1_macro(l, y) for (n, _, _), l, y in zip(cabezas, logits, ys)}
+        # SCRUM-105: por clase (no solo el promedio), matriz de confusion e IC 95 %
+        # por bootstrap: con tan pocas imagenes por clase, el intervalo importa.
+        metricas["test_por_clase"] = metricas_por_clase(cabezas, logits, ys)
         for (nombre, clases, _), lg, y in zip(cabezas, logits, ys):
             m = y != IGNORAR
             if m.any():
                 print(f"\nTEST {nombre}\n", classification_report(
                     y[m].numpy(), lg[m].argmax(1).numpy(), labels=list(range(len(clases))),
                     target_names=clases, zero_division=0))
-    print("Temperaturas:", temperatura, "| Metricas:", metricas)
+        guardar_predicciones(args.salida / f"{args.version}_predicciones_test.csv", part["test"],
+                             cabezas, logits, temperatura)
+    print("Temperaturas:", temperatura, "| Metricas:", json.dumps(metricas, ensure_ascii=False)[:2000])
+
+    # SCRUM-105: Grad-CAM sobre el conjunto de prueba (o validacion si no hay prueba),
+    # para revisar si el modelo mira al perro o a la panoleta, el marco o el logo.
+    filas_cam = part["test"] or part["val"]
+    if args.gradcam and filas_cam:
+        metricas["gradcam"] = generar_gradcam(modelo, filas_cam[:args.gradcam], raiz,
+                                              args.salida / "gradcam", dispositivo)
+        print("Grad-CAM:", metricas["gradcam"])
 
     # Exportacion
     args.salida.mkdir(parents=True, exist_ok=True)
@@ -320,6 +464,14 @@ def main():
                       "estado": {0: "lote"}},
         opset_version=17,
     )
+    # Las versiones nuevas de PyTorch guardan los pesos en un archivo aparte
+    # (.onnx.data). Se juntan en un solo archivo (~20 MB) para copiar solo el .onnx.
+    import onnx
+
+    onnx.save(onnx.load(str(ruta_onnx)), str(ruta_onnx), save_as_external_data=False)
+    externo = ruta_onnx.with_name(ruta_onnx.name + ".data")
+    if externo.exists():
+        externo.unlink()
     meta = {
         "version": args.version,
         "arquitectura": "efficientnet_b0 + cabezas tamano/grupo/estado",
