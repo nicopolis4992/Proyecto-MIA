@@ -127,6 +127,8 @@ Para comparar "antes y después" del asistente:
 1. **Tiempo hasta confirmar una cita hoy:** ¿cuánto tarda normalmente? (el proyecto declara de 30 min a 2 h)
 2. **Diferencia entre lo cotizado y lo cobrado hoy:** ¿cada cuánto cobra distinto de lo que dijo, y por cuánto?
 3. **Historial:** ¿nos autoriza a usar el export de WhatsApp *anonimizado* (sin nombres ni números) para medirlo?
+   Si dice que sí, entregarle la hoja [exportar_whatsapp.md](exportar_whatsapp.md) y, si hay tiempo, hacer con ella el primer chat en la misma reunión.
+   Pedir también el **registro de Excel de clientes y servicios** (historial de los clientes recurrentes y lo cobrado).
 4. Durante el piloto, ¿se compromete a escribir **"cobré X a la cita #N"** después de cada atención?
 5. **Clientes para el piloto:** ¿a quiénes invitamos? (unos 10–12 de confianza)
 
