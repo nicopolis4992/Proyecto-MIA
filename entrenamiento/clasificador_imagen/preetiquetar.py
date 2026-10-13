@@ -26,7 +26,8 @@ Dos pasos:
         --etiquetas READ/etiquetas_propuestas.csv --salida READ/manifiesto_v2.csv
    Solo entran filas con revisado = si. La partición agrupa por mascota
    (id_mascota_prov, semilla 42) para que el mismo perro no quede en
-   entrenamiento y prueba a la vez.
+   entrenamiento y prueba a la vez, y se estratifica por etiqueta para que
+   las clases raras aparezcan también en validación y prueba.
 
 Cuidado metodológico (para el informe): si las etiquetas no se revisan, la
 CNN aprende a imitar a Gemini (destilación), no a la propietaria. Las fotos
@@ -120,6 +121,63 @@ def proponer(dataset: Path, imagenes_extra: list[Path], salida: Path, limite: in
     print(f"\n{len(resultado)} filas en {salida}. {dudosas} con confianza < {UMBRAL_REVISAR}: revisarlas primero.")
 
 
+PROPORCIONES = {"train": 0.70, "val": 0.15, "test": 0.15}
+
+
+def particion_estratificada(filas: list[dict], semilla: int = 42) -> dict[str, str]:
+    """
+    Particion 70/15/15 AGRUPADA por mascota (el mismo perro nunca queda en dos
+    conjuntos) y ESTRATIFICADA por las etiquetas: el dataset es muy desbalanceado
+    (casi todo pequeno y de pelo de maquina) y una particion al azar dejaba la
+    prueba sin perros grandes, sin pelo de cepillado y sin estado severo.
+
+    Metodo voraz y determinista: se ordenan las mascotas de la clase mas rara a la
+    mas comun y cada una va al conjunto que mas le falta para llegar a su
+    proporcion objetivo en esas clases (y en tamano total).
+    """
+    por_mascota: dict[str, list[dict]] = {}
+    for f in filas:
+        por_mascota.setdefault(f["id_mascota_prov"], []).append(f)
+
+    def etiquetas(fs):
+        return {f"{k}={f[k]}" for f in fs for k in ("tamano", "grupo", "estado") if f.get(k)}
+
+    total = {}
+    for f in filas:
+        for e in etiquetas([f]):
+            total[e] = total.get(e, 0) + 1
+    mascotas = sorted(por_mascota)
+    random.Random(semilla).shuffle(mascotas)          # desempate reproducible
+    mascotas.sort(key=lambda m: min(total[e] for e in etiquetas(por_mascota[m])) if etiquetas(por_mascota[m]) else 10**6)
+
+    conteo = {s: {} for s in PROPORCIONES}
+    imagenes = {s: 0 for s in PROPORCIONES}
+    n_total = len(filas)
+    asignacion = {}
+    for m in mascotas:
+        fs = por_mascota[m]
+        mias = {}
+        for f in fs:
+            for e in etiquetas([f]):
+                mias[e] = mias.get(e, 0) + 1
+
+        # Clave de estratificacion: la etiqueta MAS RARA de la mascota. Va al conjunto
+        # menos lleno respecto de su objetivo en esa clase; desempata el tamano total.
+        clave = min(mias, key=lambda e: total[e]) if mias else None
+
+        def llenado(s):
+            p = PROPORCIONES[s]
+            de_clase = conteo[s].get(clave, 0) / (p * total[clave]) if clave else 0.0
+            return (de_clase, imagenes[s] / (p * n_total))
+
+        destino = min(PROPORCIONES, key=llenado)
+        asignacion[m] = destino
+        imagenes[destino] += len(fs)
+        for e, c in mias.items():
+            conteo[destino][e] = conteo[destino].get(e, 0) + c
+    return asignacion
+
+
 def manifiesto(etiquetas: Path, salida: Path, semilla: int = 42) -> None:
     filas = [f for f in csv.DictReader(open(etiquetas, encoding="utf-8-sig"))
              if f.get("revisado", "").strip().lower() in ("si", "sí", "x", "1")
@@ -127,13 +185,8 @@ def manifiesto(etiquetas: Path, salida: Path, semilla: int = 42) -> None:
     if not filas:
         raise SystemExit("No hay filas con revisado = si. Revisar el CSV primero.")
 
-    # Particion agrupada por mascota: 70 / 15 / 15.
-    mascotas = sorted({f["id_mascota_prov"] for f in filas})
-    random.Random(semilla).shuffle(mascotas)
-    n = len(mascotas)
-    corte_val, corte_test = int(n * 0.70), int(n * 0.85)
-    particion = {m: ("train" if i < corte_val else "val" if i < corte_test else "test")
-                 for i, m in enumerate(mascotas)}
+    particion = particion_estratificada(filas, semilla)
+    n = len(particion)
 
     with open(salida, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=["ruta", "fuente", "mascota_id", "tamano", "tamano_ambiguo",
