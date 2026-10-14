@@ -1,0 +1,419 @@
+{
+  "version": "clasificador_v1",
+  "arquitectura": "efficientnet_b0 + cabezas tamano/grupo/estado",
+  "clases_tamano": [
+    "pequeno",
+    "mediano",
+    "grande"
+  ],
+  "clases_grupo": [
+    "A_maquina",
+    "B_deslanado",
+    "C_cepillado",
+    "D_corto"
+  ],
+  "clases_estado": [
+    "sin_motas",
+    "moderado",
+    "severo"
+  ],
+  "tamano_entrada": 224,
+  "media": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "desv": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "temperatura": {
+    "tamano": 0.8991643190383911,
+    "grupo": 0.5,
+    "estado": 1.6201469898223877
+  },
+  "metricas": {
+    "mejor_epoca": "ajuste_11",
+    "val": {
+      "f1_macro_tamano": 0.6274509803921569,
+      "f1_macro_grupo": 0.6386446886446886,
+      "f1_macro_estado": 0.3235294117647059
+    },
+    "val_por_clase": {
+      "tamano": {
+        "por_clase": {
+          "pequeno": {
+            "precision": 0.968,
+            "recall": 0.811,
+            "f1-score": 0.882,
+            "support": 37.0
+          },
+          "mediano": {
+            "precision": 0.462,
+            "recall": 0.545,
+            "f1-score": 0.5,
+            "support": 11.0
+          },
+          "grande": {
+            "precision": 0.333,
+            "recall": 1.0,
+            "f1-score": 0.5,
+            "support": 2.0
+          }
+        },
+        "f1_macro": 0.627,
+        "f1_macro_ic95": [
+          0.411,
+          0.792
+        ],
+        "exactitud": 0.76,
+        "n": 50,
+        "matriz_confusion": {
+          "clases": [
+            "pequeno",
+            "mediano",
+            "grande"
+          ],
+          "matriz": [
+            [
+              30,
+              7,
+              0
+            ],
+            [
+              1,
+              6,
+              4
+            ],
+            [
+              0,
+              0,
+              2
+            ]
+          ]
+        }
+      },
+      "grupo": {
+        "por_clase": {
+          "A_maquina": {
+            "precision": 1.0,
+            "recall": 0.814,
+            "f1-score": 0.897,
+            "support": 43.0
+          },
+          "B_deslanado": {
+            "precision": 0.25,
+            "recall": 1.0,
+            "f1-score": 0.4,
+            "support": 2.0
+          },
+          "C_cepillado": {
+            "precision": 0.75,
+            "recall": 1.0,
+            "f1-score": 0.857,
+            "support": 3.0
+          },
+          "D_corto": {
+            "precision": 0.333,
+            "recall": 0.5,
+            "f1-score": 0.4,
+            "support": 2.0
+          }
+        },
+        "f1_macro": 0.639,
+        "f1_macro_ic95": [
+          0.383,
+          0.81
+        ],
+        "exactitud": 0.82,
+        "n": 50,
+        "matriz_confusion": {
+          "clases": [
+            "A_maquina",
+            "B_deslanado",
+            "C_cepillado",
+            "D_corto"
+          ],
+          "matriz": [
+            [
+              35,
+              5,
+              1,
+              2
+            ],
+            [
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              0,
+              3,
+              0
+            ],
+            [
+              0,
+              1,
+              0,
+              1
+            ]
+          ]
+        }
+      },
+      "estado": {
+        "por_clase": {
+          "sin_motas": {
+            "precision": 0.923,
+            "recall": 0.343,
+            "f1-score": 0.5,
+            "support": 35.0
+          },
+          "moderado": {
+            "precision": 0.333,
+            "recall": 0.8,
+            "f1-score": 0.471,
+            "support": 5.0
+          },
+          "severo": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1.0
+          }
+        },
+        "f1_macro": 0.324,
+        "f1_macro_ic95": [
+          0.194,
+          0.439
+        ],
+        "exactitud": 0.39,
+        "n": 41,
+        "matriz_confusion": {
+          "clases": [
+            "sin_motas",
+            "moderado",
+            "severo"
+          ],
+          "matriz": [
+            [
+              12,
+              7,
+              16
+            ],
+            [
+              1,
+              4,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "test": {
+      "f1_macro_tamano": 0.4765300059417706,
+      "f1_macro_grupo": 0.6200617283950617,
+      "f1_macro_estado": 0.38692810457516336
+    },
+    "test_por_clase": {
+      "tamano": {
+        "por_clase": {
+          "pequeno": {
+            "precision": 0.875,
+            "recall": 0.778,
+            "f1-score": 0.824,
+            "support": 36.0
+          },
+          "mediano": {
+            "precision": 0.25,
+            "recall": 0.3,
+            "f1-score": 0.273,
+            "support": 10.0
+          },
+          "grande": {
+            "precision": 0.25,
+            "recall": 0.5,
+            "f1-score": 0.333,
+            "support": 2.0
+          }
+        },
+        "f1_macro": 0.477,
+        "f1_macro_ic95": [
+          0.282,
+          0.665
+        ],
+        "exactitud": 0.667,
+        "n": 48,
+        "matriz_confusion": {
+          "clases": [
+            "pequeno",
+            "mediano",
+            "grande"
+          ],
+          "matriz": [
+            [
+              28,
+              8,
+              0
+            ],
+            [
+              4,
+              3,
+              3
+            ],
+            [
+              0,
+              1,
+              1
+            ]
+          ]
+        }
+      },
+      "grupo": {
+        "por_clase": {
+          "A_maquina": {
+            "precision": 0.974,
+            "recall": 0.86,
+            "f1-score": 0.914,
+            "support": 43.0
+          },
+          "B_deslanado": {
+            "precision": 0.5,
+            "recall": 1.0,
+            "f1-score": 0.667,
+            "support": 2.0
+          },
+          "C_cepillado": {
+            "precision": 0.333,
+            "recall": 0.5,
+            "f1-score": 0.4,
+            "support": 2.0
+          },
+          "D_corto": {
+            "precision": 0.333,
+            "recall": 1.0,
+            "f1-score": 0.5,
+            "support": 1.0
+          }
+        },
+        "f1_macro": 0.62,
+        "f1_macro_ic95": [
+          0.317,
+          0.829
+        ],
+        "exactitud": 0.854,
+        "n": 48,
+        "matriz_confusion": {
+          "clases": [
+            "A_maquina",
+            "B_deslanado",
+            "C_cepillado",
+            "D_corto"
+          ],
+          "matriz": [
+            [
+              37,
+              2,
+              2,
+              2
+            ],
+            [
+              0,
+              2,
+              0,
+              0
+            ],
+            [
+              1,
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              0,
+              1
+            ]
+          ]
+        }
+      },
+      "estado": {
+        "por_clase": {
+          "sin_motas": {
+            "precision": 1.0,
+            "recall": 0.457,
+            "f1-score": 0.627,
+            "support": 35.0
+          },
+          "moderado": {
+            "precision": 0.4,
+            "recall": 0.8,
+            "f1-score": 0.533,
+            "support": 5.0
+          },
+          "severo": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1-score": 0.0,
+            "support": 1.0
+          }
+        },
+        "f1_macro": 0.387,
+        "f1_macro_ic95": [
+          0.24,
+          0.502
+        ],
+        "exactitud": 0.488,
+        "n": 41,
+        "matriz_confusion": {
+          "clases": [
+            "sin_motas",
+            "moderado",
+            "severo"
+          ],
+          "matriz": [
+            [
+              16,
+              5,
+              14
+            ],
+            [
+              0,
+              4,
+              1
+            ],
+            [
+              0,
+              1,
+              0
+            ]
+          ]
+        }
+      }
+    },
+    "gradcam": {
+      "imagenes": 48,
+      "area_borde": 0.502,
+      "energia_borde_media_grupo": 0.299,
+      "energia_borde_media_estado": 0.305,
+      "fotos_con_atajo_probable_grupo": 9,
+      "fotos_con_atajo_probable_estado": 9,
+      "carpeta": "/content/drive/MyDrive/Grupo7_VisionArtificial_S1/Proyecto_MIA/modelo/gradcam"
+    }
+  },
+  "particiones": {
+    "train": 216,
+    "val": 50,
+    "test": 48
+  },
+  "semilla": 42,
+  "entrenado": "2026-10-14 15:28"
+}

@@ -137,3 +137,20 @@ def test_contexto_parecido_que_no_responde_se_trata_como_no_se(tmp_path):
     reindexar(almacen, emb)
     r = responder("atienden perros agresivos o gatos", ClienteFalso(MARCA_SIN_CONTEXTO), almacen, emb, umbral=0.1)
     assert not r.fundamentada and r.texto == RESPUESTA_SIN_CONTEXTO
+
+
+def test_la_cache_distingue_imagenes_distintas():
+    """repr() de un Part no incluye los bytes: dos fotos daban la misma huella."""
+    from google.genai import types
+
+    from app.llm_cache import _huella
+
+    def parte(datos):
+        return [types.Part.from_bytes(data=datos, mime_type="image/jpeg"), "prompt"]
+
+    assert _huella("generate", "m", parte(b"foto-1"), None) != _huella("generate", "m", parte(b"foto-2"), None)
+    assert _huella("generate", "m", parte(b"foto-1"), None) == _huella("generate", "m", parte(b"foto-1"), None)
+    # Sin binarios la huella no cambia (las grabaciones existentes siguen valiendo)
+    import hashlib
+    assert _huella("generate", "m", "hola", None) == hashlib.sha256(
+        repr(("generate", "m", "hola", None)).encode()).hexdigest()[:24]

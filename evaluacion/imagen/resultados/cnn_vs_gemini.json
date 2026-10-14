@@ -1,0 +1,214 @@
+{
+  "n_fotos": 48,
+  "cnn": {
+    "tamano": {
+      "n": 48,
+      "f1_macro": 0.477,
+      "f1_macro_ic95": [
+        0.282,
+        0.665
+      ],
+      "exactitud": 0.667,
+      "f1_por_clase": {
+        "pequeno": 0.824,
+        "mediano": 0.273,
+        "grande": 0.333
+      },
+      "matriz": [
+        [
+          28,
+          8,
+          0
+        ],
+        [
+          4,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ]
+    },
+    "grupo": {
+      "n": 48,
+      "f1_macro": 0.62,
+      "f1_macro_ic95": [
+        0.295,
+        0.842
+      ],
+      "exactitud": 0.854,
+      "f1_por_clase": {
+        "A_maquina": 0.914,
+        "B_deslanado": 0.667,
+        "C_cepillado": 0.4,
+        "D_corto": 0.5
+      },
+      "matriz": [
+        [
+          37,
+          2,
+          2,
+          2
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "estado": {
+      "n": 41,
+      "f1_macro": 0.387,
+      "f1_macro_ic95": [
+        0.23,
+        0.497
+      ],
+      "exactitud": 0.488,
+      "f1_por_clase": {
+        "sin_motas": 0.627,
+        "moderado": 0.533,
+        "severo": 0.0
+      },
+      "matriz": [
+        [
+          16,
+          5,
+          14
+        ],
+        [
+          0,
+          4,
+          1
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ]
+    }
+  },
+  "gemini": {
+    "tamano": {
+      "n": 48,
+      "f1_macro": 0.979,
+      "f1_macro_ic95": [
+        0.63,
+        1.0
+      ],
+      "exactitud": 0.979,
+      "f1_por_clase": {
+        "pequeno": 0.986,
+        "mediano": 0.952,
+        "grande": 1.0
+      },
+      "matriz": [
+        [
+          35,
+          1,
+          0
+        ],
+        [
+          0,
+          10,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ]
+    },
+    "grupo": {
+      "n": 48,
+      "f1_macro": 1.0,
+      "f1_macro_ic95": [
+        0.5,
+        1.0
+      ],
+      "exactitud": 1.0,
+      "f1_por_clase": {
+        "A_maquina": 1.0,
+        "B_deslanado": 1.0,
+        "C_cepillado": 1.0,
+        "D_corto": 1.0
+      },
+      "matriz": [
+        [
+          43,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "estado": {
+      "n": 41,
+      "f1_macro": 0.491,
+      "f1_macro_ic95": [
+        0.32,
+        0.615
+      ],
+      "exactitud": 0.902,
+      "f1_por_clase": {
+        "sin_motas": 0.972,
+        "moderado": 0.5,
+        "severo": 0.0
+      },
+      "matriz": [
+        [
+          35,
+          0,
+          0
+        ],
+        [
+          2,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ]
+    }
+  },
+  "advertencia": "Las etiquetas partieron de propuestas de Gemini revisadas por el equipo: el resultado de Gemini es una cota optimista."
+}

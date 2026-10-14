@@ -1,0 +1,1 @@
+{"text": "{\n  \"es_perro\": true,\n  \"num_perros\": 1,\n  \"tamano\": \"grande\",\n  \"confianza_tamano\": 0.85,\n  \"grupo\": \"B_deslanado\",\n  \"confianza_grupo\": 0.9,\n  \"estado\": \"sin_motas\",\n  \"confianza_estado\": 0.85,\n  \"observacion\": null\n}"}

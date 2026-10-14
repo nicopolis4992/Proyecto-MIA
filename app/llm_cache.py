@@ -27,7 +27,24 @@ class GrabacionFaltante(RuntimeError):
     pass
 
 
+def _bytes_en(obj):
+    """Bytes de imagenes u otros binarios dentro del contenido (Part.inline_data)."""
+    if isinstance(obj, (bytes, bytearray)):
+        yield bytes(obj)
+    elif isinstance(obj, (list, tuple)):
+        for x in obj:
+            yield from _bytes_en(x)
+    elif getattr(obj, "inline_data", None) is not None and getattr(obj.inline_data, "data", None):
+        yield obj.inline_data.data
+
+
 def _huella(*partes) -> str:
+    # repr() de un Part no incluye sus bytes: dos fotos distintas daban la misma
+    # huella. Si hay binarios, se agrega su hash. Sin binarios la huella no
+    # cambia, asi las grabaciones existentes siguen sirviendo.
+    binarios = [hashlib.sha256(b).hexdigest() for b in _bytes_en(partes)]
+    if binarios:
+        partes = (*partes, binarios)
     return hashlib.sha256(repr(partes).encode("utf-8", "surrogatepass")).hexdigest()[:24]
 
 

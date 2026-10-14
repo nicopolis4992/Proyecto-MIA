@@ -1,0 +1,1 @@
+{"text": "{\n  \"es_perro\": true,\n  \"num_perros\": 1,\n  \"tamano\": \"pequeno\",\n  \"confianza_tamano\": 0.85,\n  \"grupo\": \"A_maquina\",\n  \"confianza_grupo\": 0.9,\n  \"estado\": \"sin_motas\",\n  \"confianza_estado\": 0.7,\n  \"observacion\": \"Perro limpio con corte reciente en el cuerpo\"\n}"}
