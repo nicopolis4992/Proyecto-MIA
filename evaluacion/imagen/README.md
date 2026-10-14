@@ -19,7 +19,14 @@ la de grupo mira el fondo cuando se equivoca. Es un atajo: las fotos "después"
 llevan accesorio y están sin nudos.
 
 **Siguiente paso:** etiquetado ciego de las 48 fotos por la propietaria (estándar de
-oro independiente) para comparar ambos modelos de forma válida.
+oro independiente) para comparar ambos modelos de forma válida:
+
+    python -m entrenamiento.clasificador_imagen.revisar --ciego
+    python -m evaluacion.imagen.comparar_cnn_gemini --predicciones-cnn READ/modelo/clasificador_v1_predicciones_test.csv         --imagenes READ/para_colab/dataset --solo-lectura --estandar-oro READ/estandar_oro_propietaria.csv
+
+El modo ciego muestra solo la foto: sin propuestas, sin nombre de la mascota y sin
+"antes/después" (que insinúa el estado). La comparación reporta además cuánto
+coinciden las etiquetas del equipo con las de la propietaria.
 
 Archivos: `resultados/cnn_vs_gemini.json` y `resultados/cnn_vs_gemini_detalle.csv`;
 métricas del entrenamiento en `resultados/cnn_clasificador_v1_metricas.json`.

@@ -10,6 +10,15 @@ como revisada; todo se guarda en el mismo CSV al instante.
 
 Atajos: J / K = siguiente / anterior foto, R = marcar revisada y avanzar.
 Solo escucha en localhost: las fotos no salen del computador.
+
+Modo ciego (estándar de oro, SCRUM-105): la propietaria etiqueta las fotos de
+PRUEBA sin ver ninguna propuesta, para evaluar la CNN y Gemini contra un
+criterio independiente (las etiquetas del equipo partieron de propuestas de Gemini):
+
+    python -m entrenamiento.clasificador_imagen.revisar --ciego --manifiesto READ/manifiesto_v2.csv
+
+Crea READ/estandar_oro_propietaria.csv (solo las fotos de prueba, en orden
+aleatorio y sin etiquetas) y guarda ahí sus respuestas.
 """
 
 from __future__ import annotations
@@ -17,6 +26,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import random
 import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -52,7 +62,7 @@ const G={A_maquina:"A · máquina (shih tzu, schnauzer, poodle)",B_deslanado:"B 
 const T={pequeno:"pequeño (≤9 kg)",mediano:"mediano (9–18 kg)",grande:"grande (18–45 kg)"};
 const E={"":"— (no aplica / no se ve)",sin_motas:"sin nudos",moderado:"algunos nudos",severo:"muy enredado"};
 let filas=[],act=0;
-const opts=(o,v)=>Object.entries(o).map(([k,t])=>`<option value="${k}"${k===(v||"")?" selected":""}>${t}</option>`).join("");
+const opts=(o,v)=>((v||"")===""&&!("" in o)?`<option value="" selected>— elegir —</option>`:"")+Object.entries(o).map(([k,t])=>`<option value="${k}"${k===(v||"")?" selected":""}>${t}</option>`).join("");
 const conf=v=>v===""||v==null?"":`<span class="conf ${+v<0.75?"baja":""}">${(+v).toFixed(2)}</span>`;
 function visibles(){const f=document.getElementById("filtro").value;return filas.map((r,i)=>[r,i]).filter(([r])=>f==="todas"||(f==="pend"&&r.revisado!=="si")||(f==="dudosas"&&Math.min(+r.conf_tamano||1,+r.conf_grupo||1)<0.75));}
 function pintar(){
@@ -159,9 +169,36 @@ def servidor(rev: Revision, puerto: int) -> ThreadingHTTPServer:
     return ThreadingHTTPServer(("127.0.0.1", puerto), Manejador)
 
 
+COLUMNAS_CIEGO = ["id_imagen", "ruta", "id_mascota_prov", "momento", "nombre_leido", "tamano", "conf_tamano",
+                  "grupo", "conf_grupo", "estado", "conf_estado", "es_perro", "observacion", "revisado",
+                  "nota_revision"]
+
+
+def preparar_ciego(manifiesto: Path, salida: Path, semilla: int = 42) -> int:
+    """CSV sin etiquetas con las fotos de prueba, en orden aleatorio. No pisa uno existente."""
+    if salida.exists():
+        return sum(1 for _ in csv.DictReader(open(salida, encoding="utf-8-sig")))
+    filas = [f for f in csv.DictReader(open(manifiesto, encoding="utf-8")) if f["particion"] == "test"]
+    random.Random(semilla).shuffle(filas)
+    with open(salida, "w", newline="", encoding="utf-8-sig") as fh:
+        w = csv.DictWriter(fh, fieldnames=COLUMNAS_CIEGO)
+        w.writeheader()
+        for i, f in enumerate(filas, 1):
+            # Ni la mascota ni el momento (antes/despues): solo la foto.
+            # El nombre del archivo dice "antes"/"despues" (pista del estado): se usa un id neutro.
+            w.writerow({**{c: "" for c in COLUMNAS_CIEGO}, "id_imagen": f"foto_{i:03d}",
+                        "ruta": f["ruta"], "es_perro": "si"})
+    return len(filas)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--etiquetas", type=Path, default=RAIZ / "READ" / "etiquetas_propuestas.csv")
+    ap.add_argument("--etiquetas", type=Path, default=None,
+                    help="CSV a revisar (por defecto READ/etiquetas_propuestas.csv; en modo ciego, "
+                         "READ/estandar_oro_propietaria.csv)")
+    ap.add_argument("--ciego", action="store_true", help="etiquetado sin propuestas (estandar de oro)")
+    ap.add_argument("--manifiesto", type=Path, default=RAIZ / "READ" / "manifiesto_v2.csv",
+                    help="en modo ciego: de aqui salen las fotos de prueba")
     ap.add_argument("--imagenes", type=Path, action="append", default=None,
                     help="carpetas con las fotos (por defecto, las dos partes del dataset en READ/)")
     ap.add_argument("--puerto", type=int, default=8790)
@@ -173,6 +210,14 @@ def main():
         RAIZ / "READ" / "Dataset_FB_v1_SCRUM101_parte1" / "dataset_fb_v1" / "imagenes",
         RAIZ / "READ" / "Dataset_FB_v1_SCRUM101_parte2" / "dataset_fb_v1" / "imagenes",
     ]
+    global PAGINA
+    if args.ciego:
+        args.etiquetas = args.etiquetas or RAIZ / "READ" / "estandar_oro_propietaria.csv"
+        n = preparar_ciego(args.manifiesto, args.etiquetas)
+        print(f"Modo ciego: {n} fotos de prueba en {args.etiquetas} (sin propuestas de ningún modelo).")
+        PAGINA = (PAGINA.replace("🐾 Revisión de etiquetas", "🐾 Etiquetado a ciegas")
+                        .replace('<option value="dudosas">dudosas (&lt;0.75)</option>', ""))
+    args.etiquetas = args.etiquetas or RAIZ / "READ" / "etiquetas_propuestas.csv"
     rev = Revision(args.etiquetas, raices)
     srv = servidor(rev, args.puerto)
     url = f"http://localhost:{args.puerto}"
