@@ -3,6 +3,8 @@
 Backend del sistema multiagente conversacional para automatizar atención,
 cotización y agendamiento de citas de grooming, vía WhatsApp Business Cloud API.
 
+> **¿Primera vez aquí?** Empieza por el [estado del proyecto](docs/ESTADO_DEL_PROYECTO.md): qué se logró, resultados, datos, ética y qué falta, con enlaces a todo.
+
 ## Estado actual (5-oct-2026, rama `prototipo-s4`)
 
 - [x] Webhook de WhatsApp: recepción (texto e imágenes), envío, reintentos y cola (SCRUM-83/84/87)
