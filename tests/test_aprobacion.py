@@ -231,3 +231,22 @@ def test_pausar_bot_reenvia_a_la_propietaria_y_su_respuesta_vuelve_al_cliente():
     assert "activo" in p.procesar("activar bot")
     assert not repo.bot_pausado()
     assert enrutar_entrada(msg, d) != "pausado"
+
+
+def test_indicadores_de_supervision_humana_en_el_panel():
+    """Riesgo de sello automatico: % aprobadas sin cambios y tiempo de decision."""
+    import json as _json
+    from app.panel.datos import indicadores_aprobacion
+
+    llm = _json.dumps({"tipo": "modificar", "nueva_fecha_hora": "2026-10-01T12:00", "nuevo_total": None,
+                       "nuevo_costo_transporte": None, "motivo": None})
+    p, repo, _ = _procesador(ClienteFalso(llm))
+    a, b = _cita(repo), _cita(repo)
+    for cid in (a, b):
+        repo.registrar_evento(cid, "enviada_a_propietaria")
+    p.procesar("listo", id_citado=f"wamid.cita{a}")
+    p.procesar("a las 12 mejor", id_citado=f"wamid.cita{b}")
+    k = indicadores_aprobacion(repo, repo.todas_las_citas())
+    assert k["decisiones_propietaria"] == 2
+    assert k["pct_aprobadas_sin_cambios"] == 50 and k["pct_modificadas"] == 50
+    assert k["tiempo_decision_mediana_min"] is not None

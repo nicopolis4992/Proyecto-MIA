@@ -75,6 +75,33 @@ def _monto(c: dict) -> float:
     return (total[0] + total[1]) / 2 if total else 0.0
 
 
+def indicadores_aprobacion(repo, citas: list[dict]) -> dict:
+    """
+    Supervision humana significativa (riesgo de "sello automatico", Parasuraman y
+    Manzey, 2010): que parte de las decisiones de la propietaria son aprobaciones
+    sin cambios y cuanto tarda en decidir desde que recibe la solicitud.
+    """
+    decisiones, minutos = [], []
+    for c in citas:
+        enviada = None
+        for e in repo.eventos_de_cita(c["id"]):
+            if e["tipo"] == "enviada_a_propietaria":
+                enviada = e["fecha"]
+            elif e["tipo"] == "respuesta_propietaria" and (e.get("detalle") or {}).get("decision") in (
+                    "aprobar", "rechazar", "modificar"):
+                decisiones.append(e["detalle"]["decision"])
+                if enviada:
+                    minutos.append((datetime.fromisoformat(e["fecha"]) - datetime.fromisoformat(enviada)).total_seconds() / 60)
+                    enviada = None
+    minutos.sort()
+    return {
+        "decisiones_propietaria": len(decisiones),
+        "pct_aprobadas_sin_cambios": round(100 * decisiones.count("aprobar") / len(decisiones)) if decisiones else None,
+        "pct_modificadas": round(100 * decisiones.count("modificar") / len(decisiones)) if decisiones else None,
+        "tiempo_decision_mediana_min": round(minutos[len(minutos) // 2], 1) if minutos else None,
+    }
+
+
 def resumen(repo, desde: datetime | None = None) -> dict:
     citas = repo.todas_las_citas()
     hoy = ahora()
@@ -88,6 +115,8 @@ def resumen(repo, desde: datetime | None = None) -> dict:
         if "creada" in ev and "confirmada" in ev:
             delta = datetime.fromisoformat(ev["confirmada"]) - datetime.fromisoformat(ev["creada"])
             tiempos.append(delta.total_seconds() / 60)
+
+    aprobacion = indicadores_aprobacion(repo, citas)
 
     cotizadas = [c for c in citas if c.get("cotizacion")]
     exactas = [c for c in cotizadas if _cita_publica(c)["comprometido"]]
@@ -121,6 +150,7 @@ def resumen(repo, desde: datetime | None = None) -> dict:
             "ingresos_estimados": round(sum(_monto(c) for c in confirmadas), 2),
             "pendientes_aprobacion": len(pendientes),
             "tiempo_confirmacion_min": round(sum(tiempos) / len(tiempos), 1) if tiempos else None,
+            **aprobacion,
             "pct_precio_exacto": round(100 * len(exactas) / len(cotizadas)) if cotizadas else None,
             "amplitud_media_usd": round(sum(amplitudes) / len(amplitudes), 2) if amplitudes else None,
             "pct_puerta_a_puerta": round(100 * sum(1 for c in confirmadas if c["modalidad"] == "puerta_a_puerta")

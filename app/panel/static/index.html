@@ -373,6 +373,7 @@ function pintarPanel() {
     kpi("Ingresos estimados (citas confirmadas)", usd(k.ingresos_estimados), "Lo cobrado; si aún no se registra, el precio acordado o el punto medio del rango", true) +
     kpi("Citas confirmadas", k.citas_confirmadas, `${k.rechazadas} rechazada(s) o cancelada(s)`) +
     kpi("En proceso", `${k.pendientes_aprobacion ? "⏳ " : ""}${k.pendientes_aprobacion}`, "Por aprobar, esperando al cliente o reprogramando") +
+    kpi("Decisiones de la propietaria", k.decisiones_propietaria ? `${k.pct_aprobadas_sin_cambios}% sin cambios` : "—", k.decisiones_propietaria ? `${k.pct_modificadas}% modificadas · respondió en ${k.tiempo_decision_mediana_min == null ? "—" : Math.round(k.tiempo_decision_mediana_min) + " min"} (mediana)` : "Aún no hay decisiones registradas") +
     kpi("Tiempo hasta confirmar", k.tiempo_confirmacion_min == null ? "—" : `${Math.round(k.tiempo_confirmacion_min)} min`, "Promedio: solicitud → confirmación al cliente") +
     kpi("Cotizaciones con precio exacto", k.pct_precio_exacto == null ? "—" : `${k.pct_precio_exacto}%`, k.amplitud_media_usd == null ? "" : `Amplitud media del rango: ${usd(k.amplitud_media_usd)}`) +
     kpi("Desviación cotizado vs cobrado", k.desviacion_media_usd == null ? "—" : usd(k.desviacion_media_usd), k.citas_cobradas ? `Promedio en ${k.citas_cobradas} cita(s) cobrada(s) · ${k.pct_cobro_como_cotizado}% cobradas como se cotizó` : "La propietaria registra el cobro: \"cobré 22 a la cita #5\"") +
