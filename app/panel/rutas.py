@@ -158,6 +158,22 @@ def cita(request: Request, cita_id: int, fuente: str = "demo"):
     return d
 
 
+@router.post("/api/probar-correo")
+def probar_correo(request: Request):
+    """SCRUM-86: envia un correo de prueba a CORREO_PROPIETARIA sin provocar una caida de WhatsApp."""
+    _autorizar(request)
+    from app.notificaciones import correo
+
+    if not correo.configurado():
+        return {"ok": False, "detalle": "Faltan CORREO_USUARIO, CORREO_CLAVE o CORREO_PROPIETARIA"}
+    ok = correo.enviar_correo(
+        "Lina's Pet Salón: prueba del correo de respaldo",
+        "Este es un correo de prueba del asistente de WhatsApp.\n\nSi WhatsApp no logra entregarte una "
+        "solicitud de cita, te llegará por aquí con el mismo contenido. No hace falta responder.")
+    return {"ok": ok, "detalle": "Enviado: revisa la bandeja de entrada (y spam)" if ok else
+            "No se pudo enviar: revisa usuario, contraseña de aplicación y los registros del servidor"}
+
+
 @router.get("/api/salud")
 def salud(request: Request):
     """Diagnostico de configuracion (sin valores secretos), sobre la base real."""

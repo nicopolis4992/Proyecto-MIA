@@ -57,3 +57,21 @@ def test_diagnostico_no_expone_claves(monkeypatch):
     revisiones = diagnostico(Repositorio(":memory:"))
     assert all("clave-super-secreta" not in r["detalle"] for r in revisiones)
     assert {r["nombre"] for r in revisiones} >= {"Gemini (GEMINI_API_KEY)", "Número de la propietaria"}
+
+
+def test_boton_de_correo_de_prueba(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.notificaciones import correo
+
+    cliente = TestClient(app)
+    for k in ("CORREO_USUARIO", "CORREO_CLAVE", "CORREO_PROPIETARIA"):
+        monkeypatch.delenv(k, raising=False)
+    assert cliente.post("/panel/api/probar-correo").json()["ok"] is False      # sin configurar
+    for k, v in {"CORREO_USUARIO": "bot@x.com", "CORREO_CLAVE": "c", "CORREO_PROPIETARIA": "lina@x.com"}.items():
+        monkeypatch.setenv(k, v)
+    enviados = []
+    monkeypatch.setattr(correo, "enviar_correo", lambda asunto, texto: enviados.append(asunto) or True)
+    assert cliente.post("/panel/api/probar-correo").json()["ok"] is True
+    assert "prueba" in enviados[0]

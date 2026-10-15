@@ -211,6 +211,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
         <h2>Estado del sistema</h2>
         <p class="desc">Configuración del servidor (sin mostrar claves).</p>
         <div id="tabla-salud"></div>
+        <p style="margin:10px 0 0"><button class="btn" id="probar-correo">Enviar correo de prueba</button> <span id="res-correo" class="desc"></span></p>
       </div>
     </div>
   </section>
@@ -498,6 +499,11 @@ async function pintarSalud() {
       return `<tr><td><span class="estado"><i style="background:${c}"></i>${i}</span></td><td>${esc(r.nombre)}</td><td>${esc(r.detalle)}</td></tr>`; }).join("")}</table>`;
   } catch (e) { $("#tabla-salud").innerHTML = `<div class="vacio">No disponible</div>`; }
 }
+$("#probar-correo").onclick = async () => {
+  $("#res-correo").textContent = "Enviando…";
+  try { const r = await api("/panel/api/probar-correo", { method: "POST" }); $("#res-correo").textContent = (r.ok ? "✓ " : "✕ ") + r.detalle; }
+  catch (e) { $("#res-correo").textContent = "✕ Error al llamar al servidor"; }
+};
 async function refrescar() {
   datos = await api(`/panel/api/dashboard?fuente=${fuente()}`);
   pintarPanel(); pintarAgenda(); pintarSalud();
