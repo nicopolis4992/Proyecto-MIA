@@ -163,19 +163,32 @@ Para comparar "antes y después" del asistente:
 4. Durante el piloto, ¿se compromete a escribir **"cobré X a la cita #N"** después de cada atención?
 5. **Clientes para el piloto:** ¿a quiénes invitamos? (unos 10–12 de confianza)
 
-## 6b. Etiquetar 48 fotos a ciegas (15 min)
+## 6b. Clasificar 48 fotos a ciegas (1 min en la reunión; ella lo hace después)
 
 Es la referencia independiente para evaluar el clasificador de fotos (SCRUM-105).
 Las etiquetas del equipo partieron de propuestas de Gemini; las de ella no.
 
-1. En el computador de Nico, antes de la reunión:
-   `python -m entrenamiento.clasificador_imagen.revisar --ciego`
-   (abre `http://localhost:8790` con las 48 fotos de prueba, sin ninguna propuesta).
-2. Ella elige para cada foto **tamaño**, **tipo de pelo** y **estado del pelo**, como lo haría
-   al cotizar, y marca "Revisada". Si una foto no le sirve, pone "no / no sirve".
-3. **No le sugerimos nada.** Si pregunta, solo se le explican las opciones.
-4. Se guarda solo en `READ/estandar_oro_propietaria.csv`. Después:
-   `python -m evaluacion.imagen.comparar_cnn_gemini --predicciones-cnn READ/modelo/clasificador_v1_predicciones_test.csv --imagenes READ/para_colab/dataset --solo-lectura --estandar-oro READ/estandar_oro_propietaria.csv`
+**Antes de la reunión (Nico, 5 min):**
+1. `python -m entrenamiento.clasificador_imagen.formulario_ciego script` genera `READ/formulario_ciego.gs`.
+2. En [script.google.com](https://script.google.com): **Nuevo proyecto**, pegar todo el archivo, **Guardar**,
+   elegir `crearFormulario` y **Ejecutar** (autorizar Drive y Forms la primera vez).
+3. En **Registro de ejecución** aparece el **ENLACE PARA LA PROPIETARIA**. Abrirlo una vez y revisar que se ven las fotos.
+
+**En la reunión:** explicarle en un minuto qué es y mandarle el enlace por WhatsApp.
+- Lo responde desde el celular cuando pueda (unos 15 min): tamaño, tipo de pelo y estado de cada foto, como lo haría al cotizar.
+- **No le sugerimos nada.** Si pregunta, solo se le explican las opciones.
+- Pedirle una fecha, por ejemplo dentro de 2–3 días.
+
+**Cuando responda:**
+- En el formulario: **Respuestas → Ver en Hojas de cálculo → Archivo → Descargar → CSV**.
+- Después:
+  ```
+  python -m entrenamiento.clasificador_imagen.formulario_ciego importar --respuestas <csv descargado>
+  python -m evaluacion.imagen.comparar_cnn_gemini --predicciones-cnn READ/modelo/clasificador_v1_predicciones_test.csv --imagenes READ/para_colab/dataset --solo-lectura --estandar-oro READ/estandar_oro_propietaria.csv
+  ```
+
+**Respaldo:** si prefiere hacerlo en la reunión, `python -m entrenamiento.clasificador_imagen.revisar --ciego`
+y compartir pantalla. Ella dice la respuesta y Nico hace clic.
 
 ## 7. Consentimiento (2 min)
 
