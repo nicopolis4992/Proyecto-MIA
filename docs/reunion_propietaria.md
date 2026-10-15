@@ -8,7 +8,7 @@ pasárselas a Claude para actualizar el sistema.
 - RUC del negocio;
 - un documento con el nombre y la dirección del negocio (planilla de servicios o certificado del SRI);
 - acceso a su Facebook personal (para crear o administrar el portfolio de Meta);
-- su cuenta de Google (Calendar).
+- su iPhone y, si tiene, su cuenta de Google (para el calendario del negocio, sección 2b).
 
 ---
 
@@ -46,6 +46,37 @@ Por eso lo hace ella; no se puede desde la cuenta de un estudiante.
 Datos: nombre legal ______________________ · RUC ______________ · correo del negocio ______________
 
 **2.3 Nombre visible del asistente en WhatsApp** (lo aprueba Meta): ________________
+
+## 2b. Calendario del negocio en su iPhone (10 min)
+
+Ella usa el app **Calendario del iPhone**. El bot no puede escribir en el
+calendario de iCloud (Apple no ofrece una API oficial), pero sí en uno de
+Google, que **aparece dentro del mismo app Calendario**: no cambia de app.
+
+**Con el iPhone de ella en la mano:**
+1. Si no tiene cuenta de Google, crear una para el negocio (por ejemplo
+   `linaspetsalon@gmail.com`).
+2. En [calendar.google.com](https://calendar.google.com) (desde el computador):
+   **Otros calendarios → + → Crear calendario**, con el nombre "Lina's Pet Salón".
+3. En el iPhone: **Ajustes → Calendario → Cuentas → Añadir cuenta → Google**,
+   iniciar sesión y dejar activado **Calendarios**.
+4. En **Ajustes → Calendario → Calendario por omisión**, elegir **"Lina's Pet Salón"**.
+   **Este paso es clave:** si queda iCloud por omisión, lo que ella anote nuevo
+   no lo ve el bot, que podría ofrecer un horario ocupado.
+5. Abrir el app Calendario → **Calendarios** (abajo) y verificar que aparece
+   "Lina's Pet Salón" activado.
+6. Nosotros, después de la reunión: compartir ese calendario con la cuenta de
+   servicio del bot ("Hacer cambios en eventos") y poner su ID en Railway
+   (`GOOGLE_CALENDAR_ID`). Pasos en `docs/plan_cierre.md`, A3.
+
+**Qué cambia para ella:**
+- Las citas que aprueba **aparecen solas** en su Calendario, con mascota, servicio y modalidad.
+- Lo que anote en "Lina's Pet Salón" (citas por fuera del bot, días libres, bloqueos) el bot lo
+  respeta y no ofrece esos horarios.
+- Sus eventos personales pueden seguir en iCloud; el bot no los ve. Si quiere que un compromiso
+  personal bloquee la agenda, lo anota en "Lina's Pet Salón".
+
+Datos: correo de Google del calendario ______________________ · ¿Se configuró en el iPhone? Sí / No
 
 ## 3. Precios por validar (15 min)
 
