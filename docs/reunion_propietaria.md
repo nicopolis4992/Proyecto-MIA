@@ -159,9 +159,25 @@ Para comparar "antes y después" del asistente:
 2. **Diferencia entre lo cotizado y lo cobrado hoy:** ¿cada cuánto cobra distinto de lo que dijo, y por cuánto?
 3. **Historial:** ¿nos autoriza a usar el export de WhatsApp *anonimizado* (sin nombres ni números) para medirlo?
    Si dice que sí, entregarle la hoja [exportar_whatsapp.md](exportar_whatsapp.md) y, si hay tiempo, hacer con ella el primer chat en la misma reunión.
-   Pedir también el **registro de Excel de clientes y servicios** (historial de los clientes recurrentes y lo cobrado).
-4. Durante el piloto, ¿se compromete a escribir **"cobré X a la cita #N"** después de cada atención?
-5. **Clientes para el piloto:** ¿a quiénes invitamos? (unos 10–12 de confianza)
+   El chat con una clienta frecuente ya lo tiene Ocampo (SCRUM-72): pedir **chats de otros clientes** para
+   que la línea base sea representativa.
+4. **Registro de Excel:** ya lo tiene Ocampo (28 hojas, sept-2024 a sept-2026), **no hay que pedírselo**.
+   Solo preguntarle lo que Ocampo no haya sabido responder:
+
+   | Pregunta | Respuesta |
+   |---|---|
+   | SC = | |
+   | SB = | |
+   | SP = | |
+   | BA = | |
+   | BM = | |
+   | BB = | |
+   | SBas = | |
+   | El precio anotado, ¿es antes o después del descuento? | |
+   | ¿Incluye el traslado puerta a puerta? | |
+   | Con varias mascotas, ¿una fila por mascota o por visita? | |
+5. Durante el piloto, ¿se compromete a escribir **"cobré X a la cita #N"** después de cada atención?
+6. **Clientes para el piloto:** ¿a quiénes invitamos? (unos 10–12 de confianza)
 
 ## 6b. Clasificar 48 fotos a ciegas (1 min en la reunión; ella lo hace después)
 
