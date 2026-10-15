@@ -28,7 +28,8 @@ from typing import Protocol
 from app import config
 from app.notificaciones import correo
 from app.persistencia.repositorio import Repositorio
-from app.whatsapp_client import FUERA_DE_VENTANA, ErrorWhatsApp, send_template_message, send_text_message
+from app.whatsapp_client import (FUERA_DE_VENTANA, ErrorWhatsApp, send_audio_message, send_template_message,
+                                 send_text_message)
 
 logger = logging.getLogger("mensajeria")
 
@@ -38,6 +39,9 @@ MAX_INTENTOS_COLA = 5
 class Mensajero(Protocol):
     def enviar(self, destino: str, texto: str) -> str | None:
         """Envia texto y devuelve el id del mensaje (o None si quedo en cola)."""
+
+    def enviar_audio(self, destino: str, datos: bytes, mime: str) -> str | None:
+        """Reenvia una nota de voz. None si no se pudo (no se encola)."""
 
 
 class MensajeroWhatsApp:
@@ -72,6 +76,13 @@ class MensajeroWhatsApp:
             if exc.codigo == FUERA_DE_VENTANA and propietaria and destino != propietaria:
                 self.enviar(propietaria, f"⚠️ No pude enviarle este mensaje al cliente {destino} porque "
                                          f"{motivo}. Escríbele tú directamente:\n\n{texto}")
+            return None
+
+    def enviar_audio(self, destino: str, datos: bytes, mime: str = "audio/ogg") -> str | None:
+        try:
+            return send_audio_message(destino, datos, mime)
+        except ErrorWhatsApp as exc:
+            logger.error("No se pudo reenviar la nota de voz a %s: %s", destino, exc.explicacion or exc)
             return None
 
     def _avisar_con_plantilla(self, destino: str, texto: str) -> str | None:
@@ -152,6 +163,11 @@ class MensajeroMemoria:
         self.enviados.append((destino, texto, msg_id))
         if self.eco:
             print(f"\n  >>> [a {destino}] ({msg_id})\n  {texto.replace(chr(10), chr(10) + '  ')}\n")
+        return msg_id
+
+    def enviar_audio(self, destino: str, datos: bytes, mime: str = "audio/ogg") -> str | None:
+        msg_id = f"wamid.sim.{next(self._ids)}"
+        self.enviados.append((destino, f"[audio {len(datos)} bytes]", msg_id))
         return msg_id
 
     def a(self, destino: str) -> list[str]:

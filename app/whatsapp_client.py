@@ -153,3 +153,24 @@ def download_media(media_id: str) -> bytes:
             return archivo.content
 
     return _con_reintentos(_descargar, f"Descarga de media {media_id}")
+
+
+def send_audio_message(to: str, datos: bytes, mime: str = "audio/ogg") -> str | None:
+    """
+    Reenvia una nota de voz: Meta no deja reutilizar el id de un audio recibido,
+    asi que se sube de nuevo (POST /media) y se envia con el id nuevo.
+    """
+    access_token, phone_number_id = _credenciales()
+    headers = {"Authorization": f"Bearer {access_token}"}
+    mime = mime.split(";")[0].strip() or "audio/ogg"
+
+    def _subir():
+        with httpx.Client(timeout=30) as client:
+            r = client.post(f"https://graph.facebook.com/{GRAPH_API_VERSION}/{phone_number_id}/media",
+                            headers=headers, data={"messaging_product": "whatsapp", "type": mime},
+                            files={"file": ("nota_de_voz", datos, mime)})
+            r.raise_for_status()
+            return r.json()["id"]
+
+    media_id = _con_reintentos(_subir, f"Subida de audio para {to}")
+    return _enviar_payload(to, {"type": "audio", "audio": {"id": media_id}}, f"Audio a {to}")

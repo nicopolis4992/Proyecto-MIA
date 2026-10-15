@@ -206,3 +206,47 @@ def test_estado_de_entrega_fallido_queda_en_el_log(caplog):
     with caplog.at_level("ERROR", logger="main"):
         assert client.post("/webhook", json=payload).status_code == 200
     assert "codigo 131042" in caplog.text
+
+
+# -- notas de voz: se reenvian a la propietaria y su respuesta vuelve al cliente ----
+
+def _audio(sender, wa_id, context=None):
+    m = {"id": wa_id, "type": "audio", "audio": {"id": f"media-{wa_id}", "mime_type": "audio/ogg; codecs=opus"}}
+    if context:
+        m["context"] = {"id": context}
+    return _payload(sender, m)
+
+
+@patch("app.main.download_media", return_value=b"ogg")
+@patch("app.mensajeria.send_audio_message")
+@patch("app.mensajeria.send_text_message")
+def test_nota_de_voz_del_cliente_llega_a_la_propietaria_y_su_audio_vuelve(mock_texto, mock_audio, mock_media, monkeypatch):
+    from app import config
+    from app.persistencia.repositorio import obtener_repositorio
+
+    monkeypatch.setattr(config, "PROPIETARIA_WHATSAPP", "593922222222")
+    obtener_repositorio().guardar_sesion("aviso:593911110000", {"enviado": "x"})
+    mock_audio.side_effect = ["wamid.audio-a-ella", "wamid.audio-al-cliente"]
+
+    client.post("/webhook", json=_audio("593911110000", "wamid.voz1"))
+    assert mock_audio.call_args_list[0].args[:2] == ("593922222222", b"ogg")    # el audio le llega a ella
+    textos = [(c.kwargs["to"], c.kwargs["body"]) for c in mock_texto.call_args_list]
+    assert any(to == "593911110000" and "nota de voz" in b for to, b in textos)  # el cliente sabe que la recibio
+    assert any(to == "593922222222" and "Respóndele" in b for to, b in textos)
+
+    # Ella responde con otra nota de voz deslizando el audio reenviado
+    client.post("/webhook", json=_audio("593922222222", "wamid.voz2", context="wamid.audio-a-ella"))
+    assert mock_audio.call_args_list[1].args[0] == "593911110000"
+    assert mock_media.call_count == 2
+
+
+@patch("app.main.download_media", return_value=b"ogg")
+@patch("app.mensajeria.send_audio_message")
+@patch("app.mensajeria.send_text_message")
+def test_audio_de_la_propietaria_sin_citar_recibe_instrucciones(mock_texto, mock_audio, mock_media, monkeypatch):
+    from app import config
+
+    monkeypatch.setattr(config, "PROPIETARIA_WHATSAPP", "593922222222")
+    client.post("/webhook", json=_audio("593922222222", "wamid.voz3"))
+    mock_audio.assert_not_called()
+    assert "desliza su mensaje" in mock_texto.call_args.kwargs["body"]

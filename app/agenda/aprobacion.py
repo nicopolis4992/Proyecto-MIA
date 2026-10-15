@@ -159,6 +159,18 @@ def interpretar_respuesta(texto: str, cita: dict, client) -> Decision:
                     d.get("motivo"), origen="llm")
 
 
+def registrar_consulta(repo, propietaria: str, msg_id: str | None, cliente: str, pregunta: str) -> None:
+    """Guarda a que cliente corresponde un mensaje reenviado a la propietaria (relevo)."""
+    if not msg_id:
+        return
+    sesion = repo.obtener_sesion(propietaria)
+    consultas = sesion.setdefault("consultas", {})
+    consultas[msg_id] = {"cliente": cliente, "pregunta": pregunta}
+    sesion["consultas"] = dict(list(consultas.items())[-20:])  # solo las recientes
+    sesion["ultima_consulta"] = msg_id
+    repo.guardar_sesion(propietaria, sesion)
+
+
 class ProcesadorAprobacion:
     def __init__(self, client, repo, mensajero, cotizador, cfg_agenda: dict, propietaria: str,
                  calendario=None):
@@ -237,15 +249,7 @@ class ProcesadorAprobacion:
     # -- relevo de consultas sin respuesta -----------------------------------
 
     def registrar_consulta(self, msg_id: str | None, cliente: str, pregunta: str) -> None:
-        """Guarda a que cliente corresponde un aviso de "pregunta sin respuesta"."""
-        if not msg_id:
-            return
-        sesion = self.repo.obtener_sesion(self.propietaria)
-        consultas = sesion.setdefault("consultas", {})
-        consultas[msg_id] = {"cliente": cliente, "pregunta": pregunta}
-        sesion["consultas"] = dict(list(consultas.items())[-20:])  # solo las recientes
-        sesion["ultima_consulta"] = msg_id
-        self.repo.guardar_sesion(self.propietaria, sesion)
+        registrar_consulta(self.repo, self.propietaria, msg_id, cliente, pregunta)
 
     def _relevar_consulta(self, texto: str, id_citado: str | None) -> str | None:
         sesion = self.repo.obtener_sesion(self.propietaria)

@@ -147,6 +147,9 @@ def _extract_incoming_message(payload: dict):
         if tipo == "image":
             return {**base, "texto": message["image"].get("caption", ""),
                     "media_id": message["image"]["id"]}
+        if tipo == "audio":
+            return {**base, "texto": None, "media_id": message["audio"]["id"],
+                    "mime": message["audio"].get("mime_type", "audio/ogg")}
         return {**base, "texto": None, "media_id": None}
     except (KeyError, IndexError, TypeError):
         return None
@@ -181,6 +184,9 @@ def _procesar(entrante: dict) -> None:
         # Si solo respondio "ver" a la plantilla, no hay nada mas que procesar.
         if entregar_en_espera(repo, sender) and (entrante["texto"] or "").strip().lower() in _SOLO_VER:
             return
+        if entrante["tipo"] == "audio" and entrante.get("media_id"):
+            _nota_de_voz(entrante, repo, mensajero)
+            return
         if entrante["tipo"] not in ("text", "image"):
             mensajero.enviar(sender, "Por ahora solo puedo leer mensajes de texto y fotos 🙏")
             return
@@ -193,6 +199,47 @@ def _procesar(entrante: dict) -> None:
             mensajero.enviar(sender, reply_text)
     except Exception:  # noqa: BLE001
         logger.exception("Error procesando mensaje de %s", sender)
+
+
+def _nota_de_voz(entrante: dict, repo, mensajero) -> None:
+    """
+    El asistente no transcribe audios: para no dejar sin atención a quien prefiere
+    la voz, la nota se le reenvia a la propietaria y su respuesta (deslizando el
+    audio, con texto o con otra nota de voz) vuelve al cliente por el relevo.
+    """
+    from app.agenda.aprobacion import registrar_consulta
+
+    sender, propietaria = entrante["from"], config.PROPIETARIA_WHATSAPP
+    mime = entrante.get("mime") or "audio/ogg"
+    if not propietaria:
+        mensajero.enviar(sender, "Por ahora solo puedo leer mensajes de texto y fotos 🙏 ¿Me lo puede escribir?")
+        return
+    datos = download_media(entrante["media_id"])
+
+    if sender == propietaria:
+        sesion = repo.obtener_sesion(propietaria)
+        consulta = (sesion.get("consultas") or {}).pop(entrante.get("id_citado") or "", None)
+        if consulta is None:
+            mensajero.enviar(propietaria, "Para responderle a un cliente con audio, desliza su mensaje y graba la "
+                                          "nota de voz. Para aprobar citas, escríbeme el texto 🙏")
+            return
+        repo.guardar_sesion(propietaria, sesion)
+        if mensajero.enviar_audio(consulta["cliente"], datos, mime):
+            mensajero.enviar(propietaria, f"📨 Le envié tu nota de voz al cliente {consulta['cliente']}.")
+        else:
+            mensajero.enviar(propietaria, f"⚠️ No pude enviarle tu audio al cliente {consulta['cliente']}. "
+                                          "¿Me lo escribes y se lo paso?")
+        return
+
+    msg_id = mensajero.enviar_audio(propietaria, datos, mime)
+    if not msg_id:
+        mensajero.enviar(sender, "Por ahora solo puedo leer mensajes de texto y fotos 🙏 ¿Me lo puede escribir?")
+        return
+    registrar_consulta(repo, propietaria, msg_id, sender, "[nota de voz]")
+    mensajero.enviar(propietaria, f"🎤 Nota de voz de {sender} (arriba). Respóndele deslizando el audio: "
+                                  "con texto o con otra nota de voz.")
+    mensajero.enviar(sender, "Recibí su nota de voz 🙏 Se la pasé a la propietaria, que le responde por aquí. "
+                             "Si prefiere, también puede escribirme.")
 
 
 def _aviso_privacidad(repo, telefono: str) -> str | None:
