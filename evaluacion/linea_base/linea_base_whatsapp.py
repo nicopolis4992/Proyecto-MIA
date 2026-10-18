@@ -59,6 +59,10 @@ PIDE_CITA = re.compile(
 CONFIRMA = re.compile(
     r"\b(le agendo|la agendo|lo agendo|agendad[oa]|queda (?:agendad|confirmad|separad)\w*|"
     r"le espero|la espero|lo espero|listo,? (?:entonces|le|a las|para)|confirmad[oa]|separad[oa])\b")
+# Respuestas automaticas de WhatsApp Business (bienvenida y fuera de horario):
+# no son la propietaria contestando, asi que no cuentan como respuesta. Con
+# ellas la mediana de primera respuesta salia en ~1 minuto.
+AUTOMATICO = re.compile(r"gracias por comunicarte con|no nos encontramos dentro del horario de atencion")
 MONTO = re.compile(r"(?:\$\s*(\d{1,3}(?:[.,]\d{1,2})?)|(\d{1,3}(?:[.,]\d{1,2})?)\s*(?:\$|usd|d[oó]lares|dolares))")
 
 
@@ -95,6 +99,7 @@ def _momento(fecha: str, hora: str, dia_primero: bool) -> datetime | None:
 def leer_export(ruta: Path, propietaria: str, dia_primero: bool = True) -> list[Mensaje]:
     """Mensajes de un chat, con fecha y hora. Las líneas de continuación se unen al anterior."""
     mensajes: list[Mensaje] = []
+    ultimo_automatico = False
     for linea in ruta.read_text(encoding="utf-8", errors="replace").splitlines():
         linea = linea.replace("‎", "").replace(" ", " ")
         m = LINEA_ANDROID.match(linea) or LINEA_IOS.match(linea)
@@ -103,8 +108,13 @@ def leer_export(ruta: Path, propietaria: str, dia_primero: bool = True) -> list[
             if momento is None:
                 continue
             autor = m["autor"].strip()
-            mensajes.append(Mensaje(momento, propietaria.lower() in autor.lower(), m["texto"]))
-        elif mensajes and linea.strip():
+            de_ella = propietaria.lower() in autor.lower()
+            if de_ella and AUTOMATICO.search(_sin_tildes(m["texto"])):
+                ultimo_automatico = True
+                continue
+            ultimo_automatico = False
+            mensajes.append(Mensaje(momento, de_ella, m["texto"]))
+        elif mensajes and linea.strip() and not ultimo_automatico:
             mensajes[-1].texto += " " + linea.strip()
     return mensajes
 

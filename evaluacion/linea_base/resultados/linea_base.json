@@ -1,0 +1,32 @@
+{
+  "chats": 1,
+  "chats_con_propietaria": 1,
+  "mensajes": 393,
+  "primera_respuesta": {
+    "n": 116,
+    "mediana_min": 1.7,
+    "media_min": 4971.4,
+    "p75_min": 10.2,
+    "p90_min": 143.9
+  },
+  "primera_respuesta_mismo_dia": {
+    "n": 108,
+    "mediana_min": 1.5,
+    "media_min": 15.7,
+    "p75_min": 5.6,
+    "p90_min": 36.9
+  },
+  "tiempo_hasta_confirmar": {
+    "n": 4,
+    "mediana_min": 906.2,
+    "media_min": 1489.7,
+    "p75_min": 4146.1,
+    "p90_min": 4146.1
+  },
+  "variacion_precio_usd": {
+    "n": 12,
+    "mediana": 10.5,
+    "media": 13.92
+  },
+  "advertencia": "Detección por reglas: revisar a mano el archivo de revisión antes de reportar. La variación de precio es indicativa (un segundo monto puede ser otro servicio)."
+}
