@@ -155,6 +155,18 @@ def pedido_personalizado(texto: str) -> bool:
     return bool(_PERSONALIZACION.search(texto.lower()))
 
 
+# "Quiero un baño completo para Fara" pide el servicio (agendar), aunque el NLU
+# lo lea como "consultar" por mencionar un servicio. Prueba del 17-oct: sin
+# esto la reserva nunca empezaba y el RAG respondia precios.
+_PIDE_SERVICIO = re.compile(
+    r"\b(quiero|quisiera|necesito|me gustar[ií]a|deseo|quer[ií]a)\b.{0,40}"
+    r"\b(ba[nñ]o|corte|peluquer[ií]a|servicio|deslanad|cita|turno|agendar)")
+
+
+def pide_servicio(texto: str) -> bool:
+    return not parece_pregunta(texto) and bool(_PIDE_SERVICIO.search(texto.lower()))
+
+
 def enrutar_por_intencion(
     estado: EstadoConversacion,
 ) -> Literal["agente_rag", "agente_agenda", "agente_general"]:
@@ -164,6 +176,8 @@ def enrutar_por_intencion(
     # hay que cortarlo") suena a "consultar" para el NLU, pero es la respuesta
     # a una pregunta del agente de agenda. Solo una pregunta explicita va al RAG.
     if intencion == "consultar" and estado.get("en_flujo_agenda") and va_a_la_agenda(estado["mensaje"]):
+        return "agente_agenda"
+    if intencion == "consultar" and pide_servicio(estado["mensaje"]):
         return "agente_agenda"
     if intencion == "consultar":
         return "agente_rag"

@@ -98,6 +98,7 @@ def test_escenario_prueba_propietaria_17oct():
     assert any("turnos a las 08:00, 10:00, 12:00, 14:00 y 16:00" in t for t in cliente)
     assert sum("¿Qué día y a qué hora" in t for t in cliente) <= 1               # no repite la pregunta
     assert any("no tiene espacio" in t and "22.00$" in t for t in cliente)       # pide otro dia con el precio
+    assert not any("USD 15.50" in t for t in cliente[cliente.index(next(t for t in cliente if "no tiene espacio" in t)):])
     [cita] = demo.repo.todas_las_citas()
     assert cita["estado"] == "confirmada" and cita["total_acordado"] == 22
     assert not cita["fecha_hora"].startswith("2026-10-06")                      # no el martes que no podia

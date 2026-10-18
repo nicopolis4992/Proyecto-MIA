@@ -138,7 +138,7 @@ def test_a_esa_hora_no_puedo_reprograma_la_cita_existente():
     r2 = ag.atender(TEL, "1", AHORA)
     cita = repo.obtener_cita(cid)
     assert cita["estado"] == "pendiente_aprobacion" and cita["ciclo_aprobacion"] == 2
-    assert "reprogramada por el cliente" in msj.a(PROP)[-1]
+    assert "el cliente eligió otro horario" in msj.a(PROP)[-1]
     assert len(repo.todas_las_citas()) == 1                          # misma cita, no una nueva
     assert cita["total_acordado"] == 22                               # el precio acordado se mantiene
     assert "Le confirmo" in r2
@@ -154,7 +154,7 @@ def test_otro_horario_ante_una_propuesta_reprograma_en_vez_de_aceptar():
     cita = repo.obtener_cita(cid)
     assert "Queda agendado" not in r and cita["estado"] == "pendiente_aprobacion"
     assert cita["fecha_hora"].startswith("2026-10-13T08:00")
-    assert "reprogramada por el cliente" in msj.a(PROP)[-1]
+    assert "el cliente eligió otro horario" in msj.a(PROP)[-1]
     assert len(repo.todas_las_citas()) == 1 and cita["total_acordado"] == 22
 
 
@@ -353,3 +353,12 @@ def test_cliente_que_vuelve_se_le_pregunta_si_es_para_la_misma_mascota():
     repo.crear_cita(cliente_telefono=TEL, mascotas=[previa], estado="confirmada", modalidad="salon",
                     fecha_hora=datetime(2026, 9, 20, 10, 0, tzinfo=ZONA_HORARIA), cotizacion=COT.cotizar([previa]))
     assert "¿Es para Fara?" in ag.atender(TEL, "hola, quiero agendar", AHORA)
+
+
+def test_quiero_un_baño_para_mi_perrita_va_a_la_agenda_aunque_el_nlu_diga_consultar():
+    from app.agents.orchestrator_graph import pide_servicio
+
+    assert pide_servicio("Quiero un baño completo para mi perrita Fara, es mediana de doble capa")
+    assert pide_servicio("quisiera agendar una cita para Toby")
+    assert not pide_servicio("¿cuánto cuesta el baño completo?")
+    assert not pide_servicio("quiero saber si aceptan tarjeta")

@@ -635,7 +635,7 @@ class AgenteAgenda:
         cita = self.repo.obtener_cita(cita_id)
         cita["citas_previas"] = self.repo.citas_previas(telefono, excepto=cita_id)
         if self.propietaria:
-            encabezado = f"🔁 Cita #{cita_id} reprogramada por el cliente: aprobar nuevo horario" if reprogramada else None
+            encabezado = f"🔁 Cita #{cita_id}: el cliente eligió otro horario, aprobar" if reprogramada else None
             msg_id = self.mensajero.enviar(self.propietaria, mensajes.resumen_para_propietaria(cita, encabezado))
             self.repo.actualizar_cita(cita_id, msg_aprobacion_id=msg_id)
             self.repo.registrar_evento(cita_id, "enviada_a_propietaria", {"wa_id": msg_id})
@@ -647,5 +647,8 @@ class AgenteAgenda:
         valor = cotizacion["mensaje_cliente"]
         if r.get("pedido_especial") and not self._mencionar_precio_pedido():
             valor = "El precio con su pedido especial se lo confirma la propietaria."
+        if cita.get("total_acordado") is not None:
+            # La propietaria ya fijo el precio (p. ej. "el martes no puedo, seria 22").
+            valor = f"El total acordado es {mensajes.texto_total(cita)}."
         return (f"¡Perfecto! Tengo todo para el {mensajes.fecha_legible(inicio)}. "
                 f"{valor} Le confirmo en un momento, apenas se revise la agenda 🙌")
