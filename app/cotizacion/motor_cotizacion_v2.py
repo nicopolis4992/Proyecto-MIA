@@ -152,9 +152,13 @@ class Tarifario:
     def piso(self, servicio: str) -> float:
         return self.datos["servicios"][servicio]["piso"]
 
-    def recargo_estado(self, estado: str, tamano: str) -> float:
+    def recargo_estado(self, estado: str, tamano: str) -> tuple[float, float, float]:
+        """(porcentaje, monto fijo minimo, monto fijo maximo) por el estado del pelo."""
         valor = self.datos["recargo_estado_manto"][estado][tamano]
-        return valor if isinstance(valor, (int, float)) else valor["pct"]
+        if isinstance(valor, (int, float)):
+            return valor, 0.0, 0.0
+        lo, hi = valor.get("monto", [0.0, 0.0])
+        return valor.get("pct", 0.0), lo, hi
 
     def recargo_comportamiento(self, comportamiento: str) -> tuple[float, float]:
         lo, hi = self.datos["recargo_comportamiento"][comportamiento]["pct"]
@@ -185,14 +189,15 @@ def precio_escenario(t: Tarifario, servicio: str, tamano: str, grupo: str,
         base_lo = base_hi = t.piso(servicio) * t.factor(tamano, grupo)
         origen_base = f"piso {servicio} {t.piso(servicio)} x factor {tamano}/{grupo} {t.factor(tamano, grupo)}"
 
-    pct_estado = t.recargo_estado(estado, tamano)
+    pct_estado, monto_lo, monto_hi = t.recargo_estado(estado, tamano)
     pc_lo, pc_hi = t.recargo_comportamiento(comportamiento)
 
-    lo = redondear(base_lo * (1 + pct_estado) * (1 + pc_lo), t.paso)
-    hi = redondear(base_hi * (1 + pct_estado) * (1 + pc_hi), t.paso)
+    lo = redondear(base_lo * (1 + pct_estado) * (1 + pc_lo) + monto_lo, t.paso)
+    hi = redondear(base_hi * (1 + pct_estado) * (1 + pc_hi) + monto_hi, t.paso)
     desglose = {
         "base": origen_base,
         "recargo_estado_pct": pct_estado,
+        "recargo_estado_monto": [monto_lo, monto_hi],
         "recargo_comportamiento_pct": [pc_lo, pc_hi],
     }
     return lo, hi, desglose
@@ -398,7 +403,7 @@ def _cotizar_mascota(t: Tarifario, m: dict) -> dict:
     if determinado:
         resultado["desglose"] = escenarios[0]["desglose"]
     if m.get("comportamiento") == "dificil":
-        resultado["nota"] = "Recargo por comportamiento pendiente de la propietaria."
+        resultado["nota"] = "Nervioso o miedoso: sin recargo, salvo un caso especial que decide la propietaria."
     return resultado
 
 

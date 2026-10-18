@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
-  "fecha": "2026-10-04",
+  "version": "2.1.0",
+  "fecha": "2026-10-17",
   "reemplaza": "tarifario_v1.json (precios de referencia del mercado de Quito)",
   "moneda": "USD",
   "redondeo": 0.5,
@@ -109,7 +109,8 @@
       ],
       "fuente": "PROPIETARIA"
     },
-    "_nota": "La propietaria acepta los rangos, pero no pesa a los perros: decide por raza y apariencia. El motor clasifica por limite superior (peso <= maximo), asi no quedan huecos entre rangos."
+    "_nota": "La propietaria acepta los rangos, pero no pesa a los perros: decide por raza y apariencia. El motor clasifica por limite superior (peso <= maximo), asi no quedan huecos entre rangos.",
+    "_nota_17oct": "La propietaria usa 5 categorias: miniatura, pequeño, mediano, grande y extragrande. Mientras no de precios propios para miniatura y extragrande, se cotizan como pequeño y grande; el tamaño que dice la clienta se muestra igual a la propietaria y ella ajusta al aprobar."
   },
   "grupos_manto": {
     "A_maquina": {
@@ -475,7 +476,7 @@
     }
   },
   "servicios_especiales": {
-    "_nota": "No están en el catálogo. PENDIENTE: si se suman a un servicio del catálogo o se cobran aparte. Aquí se modelan como servicio aparte (así los describió la propietaria).",
+    "_nota": "17-oct: la propietaria aclara que el deslanado es parte del Baño Completo (doble capa y pelo corto). El agente ya no lo ofrece aparte; los precios quedan como referencia historica de sus audios.",
     "deslanado": {
       "pequeno": {
         "precio": [
@@ -506,7 +507,7 @@
     }
   },
   "recargo_estado_manto": {
-    "_uso": "Porcentaje sobre el precio base. 'severo' = desenredo de pelo recuperable.",
+    "_uso": "'pct' = porcentaje sobre el precio base; 'monto' = recargo fijo en USD [min, max]. 'moderado' = algunos nudos; 'severo' = quitar motas (desenredo de pelo recuperable).",
     "sin_motas": {
       "pequeno": 0.0,
       "mediano": 0.0,
@@ -515,19 +516,28 @@
     },
     "moderado": {
       "pequeno": {
-        "pct": 0.17,
-        "fuente": "INTERPOLADO",
-        "evidencia": "mitad del severo"
+        "monto": [
+          2,
+          3
+        ],
+        "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+        "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
       },
       "mediano": {
-        "pct": 0.22,
-        "fuente": "PROPIETARIA",
-        "evidencia": "mestiza mediana: 18 -> 22"
+        "monto": [
+          2,
+          3
+        ],
+        "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+        "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
       },
       "grande": {
-        "pct": 0.28,
-        "fuente": "INTERPOLADO",
-        "evidencia": "mitad del severo"
+        "monto": [
+          2,
+          3
+        ],
+        "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+        "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
       }
     },
     "severo": {
@@ -550,7 +560,8 @@
     "no_recuperable": {
       "accion": "rapado en lugar de desenredo; precio a confirmar por la propietaria",
       "fuente": "PROPIETARIA: el desenredo se hace 'siempre que el pelaje se pueda recuperar'"
-    }
+    },
+    "_nota_17oct": "Quitar motas (severo) se cobra mas y la propietaria fija el valor al ver al perro: se mantienen los porcentajes de sus audios del 04-oct como rango orientativo."
   },
   "recargo_comportamiento": {
     "tranquilo": {
@@ -563,10 +574,10 @@
     "dificil": {
       "pct": [
         0.0,
-        0.2
+        0.0
       ],
-      "fuente": "PENDIENTE",
-      "evidencia": "La propietaria confirma que sube 'un poco' con perros nerviosos, miedosos o con sospecha de agresividad; no dio monto. El rango 0–20 % es provisional y solo ensancha la banda."
+      "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+      "evidencia": "nervioso o miedoso: no se agrega costo, salvo casos especiales que decide ella al aprobar"
     },
     "agresivo_declarado": {
       "accion": "RECHAZAR",
@@ -779,7 +790,11 @@
       "mediana": "mediano",
       "grande": "grande",
       "grandote": "grande",
-      "gigante": "grande"
+      "gigante": "grande",
+      "miniatura": "pequeno",
+      "toy": "pequeno",
+      "extragrande": "grande",
+      "extra grande": "grande"
     },
     "estado": {
       "sin nudos": "sin_motas",
@@ -816,15 +831,16 @@
       "peluqueria": "completo",
       "grooming": "completo",
       "bano premium": "premium",
-      "deslanar": "deslanado"
+      "deslanar": "completo",
+      "deslanado": "completo"
     }
   },
   "preguntas_cliente": {
     "_uso": "Como pregunta el agente cada dato faltante, en lenguaje de la clienta. El orden lo decide el motor por impacto en USD.",
     "servicio": "¿Qué servicio le gustaría? Tenemos Baño Express (desde $7), Básico (desde $9), Completo con corte (desde $12) y Premium con baño medicado (desde $15).",
-    "tamano": "¿Más o menos cuánto pesa, o es pequeño, mediano o grande? Si prefiere, envíeme una foto de cuerpo entero 📸",
+    "tamano": "¿Me envía una foto de cuerpo entero? 📸 Así la propietaria confirma el tamaño. Si prefiere, dígame si es miniatura, pequeño, mediano, grande o extragrande.",
     "raza_o_grupo_manto": "¿De qué raza es? Si es mestizo, cuénteme cómo es su pelo: ¿corto, le crece y hay que cortárselo, o es tupido y bota mucho pelo?",
     "estado_manto": "¿Tiene nudos o el pelo enredado?",
-    "comportamiento": "¿Cómo se porta durante el baño: tranquilo o se pone nervioso?"
+    "comportamiento": "¿Cómo se porta durante el baño: tranquilo, nervioso o agresivo?"
   }
 }

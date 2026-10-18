@@ -12,6 +12,29 @@ pasárselas a Claude para actualizar el sistema.
 
 ---
 
+## Respuestas de la reunión del 17-oct-2026 (ya aplicadas en el sistema)
+
+| Tema | Lo que dijo | Cómo quedó |
+|---|---|---|
+| Turnos | Agenda cada 2 horas, desde las 8 hasta las 4 | Citas solo a las 08:00, 10:00, 12:00, 14:00 y 16:00 (`config_agenda.json`) |
+| Foto | Que la foto le llegue primero a ella para decidir el tamaño | La foto se le reenvía con lo que estimó el sistema; ella responde citándola y le llega al cliente. Al cliente ya no se le da el rango por foto |
+| Pedir foto | Pedirle al cliente una foto del perro | Se pide una vez, después del servicio y el nombre (no si la mascota ya vino antes) |
+| Preguntas | Nombre, vacunas, desparasitado, nervioso o agresivo, servicio | Se agregó vacunas y desparasitación (sale en el resumen de la cita) y "agresivo" en la pregunta de comportamiento |
+| Nudos | Recargo fijo de 2 o 3 $, no por porcentaje; quitar motas se cobra más y lo ve ella | Nudos: +2 a 3 $ fijos. Motas (muy enredado): rango orientativo, ella fija el valor al aprobar |
+| Comportamiento | Nervioso o miedoso no paga más, salvo casos especiales | Sin recargo; agresivo se sigue rechazando |
+| Deslanado | Es parte del Baño Completo (doble capa y pelo corto) | Ya no se ofrece aparte: si lo piden, se agenda un Completo |
+| Gastos médicos | El dueño asume los gastos médicos causados por la mascota | Agregado a las políticas (base de conocimiento) |
+| Memoria de clientes | Que recuerde a los clientes | Reconoce a la mascota por su nombre y reusa raza, tamaño y pelo de citas anteriores |
+| Tamaños | Miniatura, pequeño, mediano, grande y extragrande | El cliente puede decirlos; **falta** que ella dé precios propios para miniatura y extragrande (hoy se cotizan como pequeño y grande) |
+| Asistente virtual | Preguntó si sería mejor que no se sepa | Recomendación del equipo: decirlo (transparencia y LOPDP). Se acortó el aviso de bienvenida |
+
+**Pendiente de aclarar con ella:**
+- "Si piden un baño premium pero es solo baño medicado, es un baño completo y el precio no cambia": ¿el baño medicado se hace dentro del Completo al mismo precio?
+- Precios de miniatura y extragrande, y sus rangos de peso.
+- Qué días atiende (hoy el sistema ofrece todos los días).
+
+---
+
 ## 1. Presentación (5 min)
 
 - Mostrarle el panel (pestaña **Demo en vivo**). Hacer una conversación de
@@ -87,8 +110,8 @@ escribir el precio correcto. *(Hoy son supuestos del equipo).*
 
 | Tamaño y tipo de pelo | Ejemplo | Precio actual | ¿Correcto? |
 |---|---|---|---|
-| Pequeño, doble capa | pomerania, pug | 12 $ | |
-| Pequeño, pelo de cepillado | (mestizo pequeño de pelo largo) | 15 $ | |
+| Pequeño, doble capa | pomerania(manto largo y deligado - $18), pug(pelo corto - $12) | 12 $ |  |
+| Pequeño, pelo de cepillado | (mestizo pequeño de pelo largo) | 15 $ |tiene pelo largo, corto , suabe duro? | putbul puede ser $18
 | Pequeño, pelo corto | chihuahua, salchicha | 12 $ | |
 | Mediano, doble capa | (mestizo mediano con subpelo) | 15,50 $ | |
 | Mediano, pelo de cepillado | border collie | 20 $ | |
@@ -123,9 +146,9 @@ pequinés, chihuahua y salchicha.
 | Horario: L, X y V de 11:00 a 18:00; M, J, S y D de 08:00 a 18:00 | (del historial de WhatsApp) | |
 | Si no responde una solicitud: recordatorio a los 45 min, máximo 2, solo entre 07:00 y 21:00 | | |
 | Si falta 1 h para la cita sin aprobar, se le ofrecen otros horarios al cliente | | |
-| Pedidos especiales ("sin el accesorio"): ¿el bot menciona precio? | No, salvo que el cliente pregunte; entonces dice que ella lo valida | |
-| ¿Cuánto dura cada servicio? (para no cruzar citas) | Supuestos: completo pequeño 1:30–2 h; grande 2:30–4 h | |
-| ¿Cuántas mascotas atiende a la vez? | Una | |
+| Pedidos especiales ("sin el accesorio"): ¿el bot menciona precio? | No, salvo que el cliente pregunte; entonces dice que ella lo valida |el bot puede dar costos estimados pero se tiene que validar con la dueña |
+| ¿Cuánto dura cada servicio? (para no cruzar citas) | Supuestos: completo pequeño 1:30–2 h; grande 2:30–4 h | de 1:30 a 2 pero depende del perro, si es grande de 3 a 4h como el husky|
+| ¿Cuántas mascotas atiende a la vez? | Una |si, amenos que sean de la misma casa y se les da descuento, solo bajo aprobacion |
 | Correo para el respaldo cuando falle WhatsApp | | |
 
 **Aviso de privacidad** (lo recibe cada cliente la primera vez). Leérselo y confirmar:
@@ -143,11 +166,11 @@ pequinés, chihuahua y salchicha.
 
 | Pregunta de clientes | Respuesta |
 |---|---|
-| Dirección exacta del salón | |
-| ¿Acepta efectivo o tarjeta, además de transferencia? | |
-| ¿El cliente puede quedarse durante el servicio? | |
-| ¿Atiende gatos? | |
-| Hospedaje y snacks: ¿el bot da algún dato o siempre se lo pasa a ella? | |
+| Dirección exacta del salón |dar la ubicacion, tratar de que los clientes vengas antes de ofrecer puerta a puerta al centro norte de quito $8, si es cerca no tiene costo. llano chico $5  |
+| ¿Acepta efectivo o tarjeta, además de transferencia? |no tarjeta |
+| ¿El cliente puede quedarse durante el servicio? |si lo solicita. o si van a ayudar |
+| ¿Atiende gatos? |no |
+| Hospedaje y snacks: ¿el bot da algún dato o siempre se lo pasa a ella? | no se menciona |
 
 Y repasar con ella el contenido de la base de conocimiento: checklist de la
 sección 5 de `app/rag/ESQUEMA_CONTENIDO.md`.
@@ -166,13 +189,13 @@ Para comparar "antes y después" del asistente:
 
    | Pregunta | Respuesta |
    |---|---|
-   | SC = | |
-   | SB = | |
-   | SP = | |
-   | BA = | |
-   | BM = | |
-   | BB = | |
-   | SBas = | |
+   | SC = |servicio completo |
+   | SB = |solo baño|
+   | SP = |servicio primio |
+   | BA = |pulgas |
+   | BM = | medicado|
+   | BB = |blanqueadr |
+   | SBas = | servicio basico|
    | El precio anotado, ¿es antes o después del descuento? | |
    | ¿Incluye el traslado puerta a puerta? | |
    | Con varias mascotas, ¿una fila por mascota o por visita? | |

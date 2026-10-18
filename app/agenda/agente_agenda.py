@@ -6,21 +6,33 @@ cotiza con el tarifario v2, valida el horario y registra la cita en estado
 pendiente_aprobacion enviando el resumen a la propietaria. NUNCA confirma la
 cita: eso solo ocurre en aprobacion.py cuando ella aprueba.
 
-Que se pregunta y en que orden:
+Que se pregunta y en que orden (reunion con la propietaria, 17-oct):
 1. Servicio y nombre de la mascota (siempre).
-2. Los datos que mueven el precio, en el orden de impacto en USD que calcula
-   el motor (normalmente tamano primero). Cada pregunta se hace UNA vez y en
-   lenguaje de la clienta (tarifario_v2.json > preguntas_cliente). Si no sabe
-   o no responde, se sigue con el rango: la propietaria ajusta al aprobar.
-   Nudos y comportamiento se preguntan juntos para no alargar la charla.
-3. Modalidad, sector (si es puerta a puerta) y fecha/hora.
+2. Una foto de cuerpo entero (o el tamano), una vez: la foto le llega a la
+   propietaria, que decide el tamano. No se pide si la mascota ya vino antes.
+3. Los demas datos que mueven el precio, en el orden de impacto en USD que
+   calcula el motor. Cada pregunta se hace UNA vez y en lenguaje de la
+   clienta (tarifario_v2.json > preguntas_cliente). Si no sabe o no responde,
+   se sigue con el rango: la propietaria ajusta al aprobar. Nudos y
+   comportamiento (tranquilo, nervioso o agresivo) se preguntan juntos.
+4. Vacunas y desparasitacion (no cambia el precio; se anota para ella).
+5. Modalidad, sector (si es puerta a puerta) y fecha/hora.
+
+Memoria de clientes: si el cliente ya tuvo citas confirmadas, la mascota se
+reconoce por su nombre y se reusan su raza, tamano y tipo de pelo.
+El deslanado es parte del Baño Completo (doble capa y pelo corto): si lo
+piden, se agenda un Completo.
 
 Despues de crear la cita, la conversacion sigue viva:
 - si la propietaria cambio hora o precio, el cliente acepta o pide otro horario;
 - con una cita confirmada, el cliente puede reprogramarla o cancelarla
   ("a esa hora ya no puedo"), y la propietaria recibe el aviso;
 - "¿que horarios tiene el martes?" se responde con horarios libres reales,
-  sin inventar una hora.
+  sin inventar una hora; "¿cuales son sus horarios?" con los turnos de
+  atencion y los mas cercanos libres (prueba con la propietaria, 17-oct: el
+  bot repetia "¿Que dia y a que hora...?" sin responder);
+- si ante una propuesta de la propietaria el cliente elige OTRO horario
+  ("martes a las 8 esta bien"), es una reprogramacion, no una aceptacion.
 
 Mestizos y cruces: la clienta puede decir "es mestizo", "cruce de schnauzer
 con poodle" o describir el pelo ("le crece y hay que cortarlo"); el LLM lo
@@ -45,7 +57,8 @@ from google.genai import types
 
 from app.agenda import mensajes
 from app.agenda.calendario import quitar_del_calendario, registrar_en_calendario
-from app.agenda.disponibilidad import ocupado_combinado, proponer_alternativas, validar_horario
+from app.agenda.disponibilidad import (DIAS, ocupado_combinado, proponer_alternativas, texto_turnos,
+                                       validar_horario)
 from app.config import MODELO_LLM, ZONA_HORARIA
 from app.cotizacion.cotizador import Cotizador
 
@@ -162,7 +175,15 @@ def construir_esquema(cotizador: Cotizador) -> types.Schema:
 
 _ACEPTAR = {"si", "sí", "si dale", "dale", "ok", "listo", "perfecto", "de una", "esta bien", "si esta bien",
             "si me parece", "si perfecto", "claro", "👍"}
-_ATRIBUTOS = ("tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento")
+_ATRIBUTOS = ("tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento", "salud")
+PREGUNTA_FECHA = "¿Qué día y a qué hora le gustaría la cita?"
+PREGUNTA_SALUD = "¿Tiene sus vacunas y la desparasitación al día?"
+_DATOS_QUE_SE_RECUERDAN = ("raza", "tamano", "grupo", "peso_kg")
+# "¿cuales son sus horarios?", "¿a que hora atienden?": horario de atencion,
+# no un dia concreto (eso lo extrae el LLM como dia_consultado).
+_PIDE_HORARIOS = re.compile(
+    r"horarios?\b(?! de las)|a qu[eé] hora (abren|atienden|trabajan|cierran)|hasta qu[eé] hora|"
+    r"qu[eé] d[ií]as (atienden|trabajan|abren)")
 
 
 def _normalizar(texto: str) -> str:
@@ -243,9 +264,20 @@ class AgenteAgenda:
         if cita and cita["estado"] == "propuesta_cliente" and _normalizar(mensaje) in _ACEPTAR:
             return self._aceptar_propuesta(telefono, cita)
 
+        if sesion.get("ultima_pregunta") == PREGUNTA_SALUD and mensaje.strip() and "?" not in mensaje:
+            # La respuesta se anota tal cual para la propietaria: no cambia el precio.
+            sesion["reserva"]["salud"] = mensaje.strip()[:200]
+        if "previas" not in sesion:
+            sesion["previas"] = self.repo.mascotas_previas(telefono)
+
         datos = self.extraer(mensaje, sesion["reserva"], alternativas, ahora, cita)
         logger.info("Agenda | %s | extraido=%s", telefono, datos)
         accion = datos.get("accion_cita") or "ninguna"
+        if cita and accion in ("aceptar_propuesta", "ninguna") and not sesion.get("reprogramar_cita_id") \
+                and self._elige_otro_horario(datos, alternativas, cita):
+            # "martes a las 8 esta bien" ante una propuesta para el lunes: el
+            # "esta bien" no acepta la propuesta, pide otro horario.
+            accion = "reprogramar"
 
         if cita and accion == "aceptar_propuesta" and cita["estado"] == "propuesta_cliente":
             return self._aceptar_propuesta(telefono, cita)
@@ -269,6 +301,7 @@ class AgenteAgenda:
             # se conserva el original y no se vuelve a anunciar.
             datos["pedido_especial"] = None
         reserva = self._fusionar(sesion["reserva"], datos)
+        self._recordar_mascotas(sesion, reserva)
         n = datos.get("eligio_alternativa")
         if n and 1 <= n <= len(alternativas):
             reserva["fecha_hora"] = alternativas[n - 1]
@@ -297,7 +330,56 @@ class AgenteAgenda:
             return self._ofrecer_horarios_del_dia(telefono, sesion, dia, ahora, cita)
         if accion in ("reprogramar", "rechazar_propuesta") and not reserva.get("fecha_hora"):
             return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora, cita)
+        if not reserva.get("fecha_hora") and _PIDE_HORARIOS.search(mensaje.lower()):
+            return self._responder_horario_de_atencion(telefono, sesion, ahora)
         return self.continuar(telefono, sesion, ahora)
+
+    @staticmethod
+    def _recordar_mascotas(sesion: dict, reserva: dict) -> None:
+        """Cliente que vuelve: la mascota se reconoce por su nombre y no se le pregunta de nuevo."""
+        for m in reserva["mascotas"]:
+            previa = (sesion.get("previas") or {}).get((m.get("nombre") or "").strip().lower())
+            if not previa:
+                continue
+            for campo in _DATOS_QUE_SE_RECUERDAN:
+                if m.get(campo) is None and previa.get(campo) is not None:
+                    m[campo] = previa[campo]
+            if m.get("tamano"):
+                # Ya la conoce la propietaria: no se pide foto.
+                preguntado = sesion.setdefault("preguntado", [])
+                if "tamano" not in preguntado:
+                    preguntado.append("tamano")
+
+    def _elige_otro_horario(self, datos: dict, alternativas: list[str], cita: dict) -> bool:
+        """El cliente da un horario distinto al de su cita (y no es para otra mascota)."""
+        n = datos.get("eligio_alternativa")
+        nuevo = alternativas[n - 1] if n and 1 <= n <= len(alternativas) else datos.get("fecha_hora")
+        if not nuevo:
+            return False
+        nombres = {(m.get("nombre") or "").lower() for m in cita["mascotas"]}
+        if any(m.get("nombre") and m["nombre"].lower() not in nombres for m in datos.get("mascotas") or []):
+            return False
+        try:
+            f = datetime.fromisoformat(nuevo)
+        except ValueError:
+            return False
+        f = f if f.tzinfo else f.replace(tzinfo=ZONA_HORARIA)
+        return f != datetime.fromisoformat(cita["fecha_hora"])
+
+    def _texto_horario_de_atencion(self) -> str:
+        dias = [d for d in DIAS if self.cfg["horario_laboral"].get(d)]
+        cuando = "todos los días" if len(dias) == 7 else ", ".join(dias)
+        if self.cfg.get("turnos"):
+            return f"Atendemos con cita {cuando}, en turnos a las {texto_turnos(self.cfg)}."
+        return f"Atendemos con cita {cuando}."
+
+    def _responder_horario_de_atencion(self, telefono: str, sesion: dict, ahora: datetime) -> str:
+        """Responde la pregunta y sigue con la reserva; si ya solo falta la fecha, da opciones libres."""
+        siguiente = self.continuar(telefono, sesion, ahora)
+        if siguiente == PREGUNTA_FECHA:
+            sesion["ultima_pregunta"] = None
+            siguiente = self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora)
+        return f"{self._texto_horario_de_atencion()}\n\n{siguiente}"
 
     # -- citas existentes (propuestas, reprogramacion, cancelacion) ----------
 
@@ -414,7 +496,12 @@ class AgenteAgenda:
     def continuar(self, telefono: str, sesion: dict, ahora: datetime) -> str:
         """Decide el siguiente paso con la reserva actual (tambien tras una foto)."""
         pregunta = self.siguiente_pregunta(sesion)
+        if pregunta == PREGUNTA_FECHA and sesion.get("ultima_pregunta") == PREGUNTA_FECHA:
+            # No responde con un dia y hora: en vez de repetir la pregunta, opciones concretas.
+            sesion["ultima_pregunta"] = None
+            return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora)
         if pregunta:
+            sesion["ultima_pregunta"] = pregunta
             self.repo.guardar_sesion(telefono, sesion)
             return pregunta
         return self._cerrar_reserva(telefono, sesion, ahora)
@@ -432,6 +519,10 @@ class AgenteAgenda:
             mascotas.append(base)
         # Si el LLM devuelve menos mascotas que antes, no se pierden datos.
         mascotas.extend(previas[len(mascotas):])
+        for m in mascotas:
+            if m.get("servicio") == "deslanado":
+                # Propietaria, 17-oct: el deslanado es parte del Baño Completo.
+                m["servicio"] = "completo"
         r["mascotas"] = mascotas
         if r.get("fecha_hora"):
             try:
@@ -445,6 +536,10 @@ class AgenteAgenda:
         r = sesion["reserva"]
         mascotas = r["mascotas"]
         if not mascotas or any(not m.get("servicio") for m in mascotas):
+            conocidas = [m.get("nombre") for m in (sesion.get("previas") or {}).values() if m.get("nombre")]
+            if conocidas and not mascotas:
+                nombres = conocidas[0] if len(conocidas) == 1 else ", ".join(conocidas[:-1]) + " o " + conocidas[-1]
+                return f"¡Con gusto le agendo! 🐶 ¿Es para {nombres}? " + self.cotizador.pregunta("servicio")
             return "¡Con gusto le agendo! 🐶 " + self.cotizador.pregunta("servicio")
         if any(not m.get("nombre") for m in mascotas):
             return "¿Cómo se llama su perrito?" if len(mascotas) == 1 else "¿Cómo se llaman sus perritos?"
@@ -460,6 +555,12 @@ class AgenteAgenda:
                 return previa["mensaje_cliente"] + " ¿Le parece bien?"
 
         preguntado = sesion.setdefault("preguntado", [])
+        nombre = mascotas[0].get("nombre")
+        if "tamano" not in preguntado and not sesion.get("traza_foto") and not sesion.get("fotos_intentos"):
+            # Reunion 17-oct: siempre se pide la foto; la propietaria decide el tamano con ella.
+            preguntado.append("tamano")
+            texto = self.cotizador.pregunta("tamano")
+            return texto if len(mascotas) > 1 or not nombre else f"Sobre {nombre}: {texto}"
         for atributo in previa["preguntas_pendientes"]:
             if atributo in preguntado:
                 continue
@@ -470,15 +571,17 @@ class AgenteAgenda:
                 return f"{self.cotizador.pregunta('estado_manto')} {self.cotizador.pregunta('comportamiento')}"
             preguntado.append(atributo)
             texto = self.cotizador.pregunta(atributo)
-            nombre = mascotas[0].get("nombre")
             return texto if len(mascotas) > 1 or not nombre else f"Sobre {nombre}: {texto}"
+        if "salud" not in preguntado:
+            preguntado.append("salud")
+            return PREGUNTA_SALUD
 
         if not r.get("modalidad"):
             return "¿Lo trae usted al salón o prefiere el servicio puerta a puerta (lo retiramos y entregamos)?"
         if r["modalidad"] == "puerta_a_puerta" and not r.get("sector"):
             return "¿En qué sector de Quito lo retiramos?"
         if not r.get("fecha_hora"):
-            return "¿Qué día y a qué hora le gustaría la cita?"
+            return PREGUNTA_FECHA
         return None
 
     def _terminar(self, telefono: str, sesion: dict) -> None:
@@ -516,6 +619,9 @@ class AgenteAgenda:
             cita_id = reprogramada
         else:
             cliente = sesion.get("cliente") or {}
+            if r.get("salud"):
+                for m in r["mascotas"]:
+                    m.setdefault("salud", r["salud"])
             cita_id = self.repo.crear_cita(
                 cliente_telefono=telefono, cliente_nombre=r.get("cliente_nombre"),
                 origen=cliente.get("origen") or "linas", referido_por=cliente.get("referido_por"),

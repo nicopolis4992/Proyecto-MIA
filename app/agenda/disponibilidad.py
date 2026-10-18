@@ -2,7 +2,8 @@
 Validacion de horarios y propuesta de alternativas.
 
 Combina tres restricciones:
-1. Horario laboral (config_agenda.json, provisional).
+1. Horario laboral y turnos de 2 horas (config_agenda.json: la propietaria
+   agenda a las 08:00, 10:00, 12:00, 14:00 y 16:00).
 2. Restriccion vehicular para puerta a puerta (parametrizada en el
    tarifario v2, seccion pico_y_placa; evaluada por el Cotizador).
 3. Ocupacion del calendario: PUNTO DE INTEGRACION con SCRUM-72 (Google
@@ -23,6 +24,16 @@ DIAS = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"
 
 def cargar_config(ruta: Path = RUTA_CONFIG) -> dict:
     return json.loads(Path(ruta).read_text(encoding="utf-8"))
+
+
+def turnos(cfg: dict) -> list[time]:
+    """Horas en que puede empezar una cita (vacio = cualquier hora del horario)."""
+    return [time.fromisoformat(t) for t in cfg.get("turnos") or []]
+
+
+def texto_turnos(cfg: dict) -> str:
+    horas = [t.strftime("%H:%M") for t in turnos(cfg)]
+    return ", ".join(horas[:-1]) + " y " + horas[-1] if len(horas) > 1 else "".join(horas)
 
 
 def _dentro_de_horario(inicio: datetime, duracion_min: int, cfg: dict) -> bool:
@@ -47,6 +58,8 @@ def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, cotizad
                        "a domicilio; si prefiere traerlo al salón, puedo revisar ese horario")
     if not _dentro_de_horario(inicio, duracion_min, cfg):
         return False, "está fuera del horario de atención"
+    if turnos(cfg) and inicio.time().replace(second=0, microsecond=0) not in turnos(cfg):
+        return False, f"trabajamos con turnos a las {texto_turnos(cfg)}"
     if ocupado and ocupado(inicio, duracion_min):
         return False, "ese horario ya está ocupado"
     return True, None
@@ -84,15 +97,21 @@ def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, co
     for _ in range(dias_busqueda):
         horario = cfg["horario_laboral"].get(DIAS[dia.weekday()])
         if horario:
-            apertura = time.fromisoformat(horario[0])
-            t = dia.replace(hour=apertura.hour, minute=apertura.minute)
+            if turnos(cfg):
+                candidatos = [dia.replace(hour=h.hour, minute=h.minute) for h in turnos(cfg)]
+            else:
+                apertura = time.fromisoformat(horario[0])
+                t = dia.replace(hour=apertura.hour, minute=apertura.minute)
+                candidatos = []
+                while t.date() == dia.date():
+                    candidatos.append(t)
+                    t += paso
             del_dia = []
-            while t.date() == dia.date():
+            for t in candidatos:
                 en_franja = desde_franja <= t.time() < hasta_franja and (hora_minima is None or t.time() >= hora_minima)
                 if t != desde and en_franja and validar_horario(t, duracion_min, modalidad, cotizador, cfg,
                                                                ocupado, ahora)[0]:
                     del_dia.append(t)
-                t += paso
             elegidos += _repartir(del_dia, n - len(elegidos))
             if len(elegidos) >= n:
                 return elegidos

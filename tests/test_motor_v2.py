@@ -32,8 +32,6 @@ class TestCasosReales:
                                              estado="sin_motas", servicio="premium"), 17, 0),
         ("mestiza mediana sin motas", dict(raza="mestizo", tamano="mediano", grupo="A_maquina",
                                            estado="sin_motas", servicio="completo"), 18, 0),
-        ("mestiza mediana con motas", dict(raza="mestizo", tamano="mediano", grupo="A_maquina",
-                                           estado="moderado", servicio="completo"), 22, 0),
         ("pug deslanado", dict(raza="pug", estado="sin_motas", servicio="deslanado"), 12, 0),
     ])
     def test_precio_puntual(self, caso, mascota, esperado, tol):
@@ -93,11 +91,18 @@ class TestBanda:
         assert anchos == sorted(anchos, reverse=True)
         assert anchos[-1] == 0
 
-    def test_comportamiento_dificil_no_compromete(self):
+    def test_nervioso_no_tiene_recargo(self):
+        """Propietaria, 17-oct: nervioso/miedoso no agrega costo salvo casos especiales."""
         r = cotizar_mascota(T, {"raza": "shih tzu", "estado": "sin_motas",
                                 "comportamiento": "dificil", "servicio": "completo"})
-        assert r["rango"] == [15, 18]
-        assert not r["comprometido"]
+        assert r["rango"] == [15, 15] and r["comprometido"] and "sin recargo" in r["nota"]
+
+    def test_nudos_suman_un_monto_fijo_de_2_a_3(self):
+        """Propietaria, 17-oct: con nudos, 2 o 3 $ fijos, no por porcentaje."""
+        for raza, base in (("shih tzu", 15), ("golden", 25), ("pastor ingles", 45)):
+            r = cotizar_mascota(T, {"raza": raza, "estado": "moderado", "comportamiento": "tranquilo",
+                                    "servicio": "completo"})
+            assert r["rango"] == [base + 2, base + 3], raza
 
     def test_preguntas_ordenadas_por_impacto(self):
         r = cotizar_mascota(T, {"servicio": "completo"})

@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "estado": "Horario tomado del historial de WhatsApp del negocio (SCRUM-66). Pendiente de validacion por la propietaria. La disponibilidad real (citas ya tomadas) viene de Google Calendar (SCRUM-72).",
-    "fuente_horario": "historial de WhatsApp del negocio (SCRUM-66, analisis del equipo)",
-    "vigente_desde": "2026-10-11",
-    "validado_por_propietaria": "no"
+    "estado": "Turnos y horario dichos por la propietaria en la reunion del 17-oct-2026. La disponibilidad real (citas ya tomadas) viene de Google Calendar (SCRUM-72).",
+    "fuente_horario": "propietaria, reunion del 17-oct-2026: 'agenda a 2 horas desde las 8 hasta las 4'",
+    "vigente_desde": "2026-10-17",
+    "validado_por_propietaria": "si (turnos); dias de atencion por confirmar"
   },
   "horario_laboral": {
     "lunes": [
-      "11:00",
+      "08:00",
       "18:00"
     ],
     "martes": [
@@ -15,7 +15,7 @@
       "18:00"
     ],
     "miercoles": [
-      "11:00",
+      "08:00",
       "18:00"
     ],
     "jueves": [
@@ -23,7 +23,7 @@
       "18:00"
     ],
     "viernes": [
-      "11:00",
+      "08:00",
       "18:00"
     ],
     "sabado": [
@@ -35,6 +35,14 @@
       "18:00"
     ]
   },
+  "turnos": [
+    "08:00",
+    "10:00",
+    "12:00",
+    "14:00",
+    "16:00"
+  ],
+  "comentario_turnos": "Las citas empiezan solo en estos turnos de 2 horas (el ultimo a las 16:00). El cierre de horario_laboral limita servicios largos en el ultimo turno.",
   "paso_alternativas_min": 60,
   "num_alternativas": 3,
   "antelacion_minima_horas": 2,
@@ -54,7 +62,7 @@
   },
   "aviso_privacidad": {
     "activo": true,
-    "texto": "Hola 👋 Le atiende el asistente virtual de Lina's Pet Salón: respondo de forma automática y la propietaria revisa cada cita antes de confirmarla. Los datos que me comparta (nombre, número, datos y fotos de su mascota, sector si pide puerta a puerta) se usan solo para cotizar y agendar, conforme a la Ley Orgánica de Protección de Datos Personales. Si desea consultar, corregir o eliminar sus datos, escríbalo aquí y la propietaria le atiende.",
-    "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). BORRADOR: validar redaccion con la propietaria y el tutor."
+    "texto": "Hola 👋 Soy el asistente virtual de Lina's Pet Salón. Le ayudo con precios y citas, y la propietaria revisa cada cita antes de confirmarla. Sus datos y los de su mascota se usan solo para atenderle (Ley de Protección de Datos Personales); si desea consultarlos o borrarlos, escríbalo aquí.",
+    "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). 17-oct: version corta; se mantiene que es un asistente virtual (transparencia, LOPDP)."
   }
 }

@@ -1,7 +1,7 @@
 ---
 categoria: servicios
 fuente: catálogo publicado por el negocio y audios de la propietaria (tarifario v2, SCRUM-98, 04-oct-2026)
-vigente_desde: 2026-10-04
+vigente_desde: 2026-10-17
 validado_por_propietaria: parcial
 ---
 # Servicios de Lina's Pet Salón
@@ -36,12 +36,12 @@ antipulgas o potenciador de color. Es el servicio a elegir si su perrito
 necesita baño antipulgas o medicado.
 
 ## Deslanado
-El deslanado retira el subpelo de los perros de doble capa (por ejemplo husky,
-pug, labrador o pastor alemán) y se cobra aparte de los baños. A los perros de
-pelo que se corta con máquina (shih tzu, schnauzer, poodle) no se les hace
-deslanado: para ellos corresponde el Baño Completo.
+El deslanado (retiro del subpelo) es parte del Baño Completo para los perros de
+doble capa (por ejemplo husky, pug, labrador o pastor alemán) y de pelo corto:
+no se cobra aparte.
 
-## Desenredo de nudos
-Si el pelo tiene nudos o está apelmazado, se desenreda siempre que el pelo se
-pueda recuperar; si no se puede recuperar, se rapa. El desenredo tiene un
-recargo según el tamaño y lo enredado que esté el pelo.
+## Desenredo de nudos y motas
+Si el pelo tiene algunos nudos, se suma un recargo fijo de 2 o 3 dólares. Quitar
+motas (pelo muy enredado o apelmazado) se cobra más: la propietaria fija el
+valor al ver a su perrito. El desenredo se hace siempre que el pelo se pueda
+recuperar; si no se puede recuperar, se rapa.

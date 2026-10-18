@@ -69,6 +69,12 @@ class _MensajeroDemo(MensajeroMemoria):
         self.demo.agregar(destino, "bot", texto, msg_id)
         return msg_id
 
+    def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
+        msg_id = MensajeroMemoria.enviar(self, destino, f"📷 {texto}")
+        imagen = "data:image/jpeg;base64," + base64.b64encode(datos).decode()
+        self.demo.agregar(destino, "bot", texto, msg_id, imagen=imagen)
+        return msg_id
+
 
 class Demo:
     def __init__(self):

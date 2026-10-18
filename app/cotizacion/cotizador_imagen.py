@@ -67,8 +67,8 @@ def procesar_foto(datos: bytes, clasificador, cotizador: Cotizador, intento: int
                   politica: dict | None = None) -> ResultadoFoto:
     """
     `intento` es el numero de foto de esta mascota (1 = primera).
-    `servicios`: servicios a cotizar. None = todo el catalogo (y el deslanado
-    si el perro es de doble capa), para que la clienta vea todas las opciones.
+    `servicios`: servicios a cotizar. None = todo el catalogo, para que la
+    clienta vea todas las opciones (el deslanado va dentro del Completo).
     `mascota_base`: lo ya declarado en la conversacion (nombre, raza, estado,
     comportamiento...); la foto solo completa lo que falta.
     """
@@ -111,8 +111,6 @@ def procesar_foto(datos: bytes, clasificador, cotizador: Cotizador, intento: int
 
     if servicios is None:
         servicios = list(cotizador.datos["servicios"])
-        if mascota.get("grupo") == "B_deslanado":
-            servicios.append("deslanado")
     cotizaciones = {s: cotizador.cotizar([{**mascota, "servicio": s}]) for s in servicios}
     traza["version_tarifario"] = next(iter(cotizaciones.values()))["version_tarifario"]
     mensaje = _redactar(atributos, cotizaciones, cotizador, revision_manual)

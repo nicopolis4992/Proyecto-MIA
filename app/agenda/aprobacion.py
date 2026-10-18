@@ -12,6 +12,11 @@ La propietaria rara vez responde "si"/"no" literal ("listo", "dale nomas",
 y obvias se resuelven con una lista cerrada; el resto lo interpreta Gemini
 con salida estructurada.
 
+Si la propietaria dice que ese dia u hora no puede, sin dar otra ("el lunes no
+puedo, el total seria 22"), la misma cita se reabre: se anota el precio que
+dio y al cliente se le ofrecen horarios de otro dia para que elija (prueba con
+la propietaria, 17-oct: antes se le volvia a proponer el mismo lunes).
+
 Una modificacion NO confirma la cita: el cambio se le PROPONE al cliente,
 porque el horario o el precio nuevos pueden no servirle. A la propietaria se
 le muestra lo que el sistema entendio, para que corrija si hace falta.
@@ -33,7 +38,7 @@ import logging
 import re
 import unicodedata
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from google.genai import types
 
@@ -50,7 +55,7 @@ _APROBAR = {"listo", "si", "ok", "okey", "dale", "dale nomas", "aprobado", "apro
             "listo dale", "👍", "si listo"}
 _RECHAZAR = {"no", "rechazado", "rechazada", "no puedo", "no se puede", "rechaza", "no dale"}
 # Al reabrir una reserva ya cotizada no se vuelve a preguntar por la mascota.
-_TODO_PREGUNTADO = ["tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento"]
+_TODO_PREGUNTADO = ["tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento", "salud"]
 # "cobré 22", "le cobramos 18.50", "cobrado $30". No "cóbrale 20": eso es una
 # modificacion del precio antes de aprobar.
 _COBRO = re.compile(r"\bcobr(?:e|ado|amos)\b\D{0,15}?(\d+(?:[.,]\d{1,2})?)")
@@ -58,6 +63,10 @@ _NUM_CITA = re.compile(r"#\s*(\d+)|\bcita\s+(?:n[°o.]?\s*)?(\d+)\b")
 _POR_COBRAR = {"por cobrar", "cobros pendientes", "pendientes de cobro"}
 # Plan de contingencia: la propietaria apaga el bot y atiende ella.
 _PAUSAR = {"pausar bot", "pausa bot", "pausar el bot", "apagar bot", "apagar el bot", "detener bot"}
+# "el lunes no puedo", "ese dia estoy llena": no hay espacio y no propone otra hora.
+_SIN_ESPACIO = re.compile(r"\bno (puedo|alcanzo|me alcanza|tengo (espacio|tiempo|cupo))|\bno hay (espacio|cupo)|"
+                          r"\bestoy (llena|full|copada)|\bocupad")
+_TODO_EL_DIA = re.compile(r"\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|ese dia|todo el dia|hoy|manana)\b")
 _ACTIVAR = {"activar bot", "activar el bot", "reanudar bot", "encender bot", "prender bot", "prender el bot"}
 
 
@@ -237,6 +246,9 @@ class ProcesadorAprobacion:
                                    {"texto": texto, "decision": decision.tipo, "origen": decision.origen})
         logger.info("Cita #%s: decision=%s (%s)", cita["id"], decision.tipo, decision.origen)
 
+        if decision.tipo in ("rechazar", "modificar") and decision.nueva_fecha_hora is None \
+                and _SIN_ESPACIO.search(_sin_tildes(texto)):
+            return self._pedir_otro_horario(cita, decision, texto, ahora or reloj())
         if decision.tipo == "aprobar":
             return self._aprobar(cita)
         if decision.tipo == "rechazar":
@@ -361,6 +373,40 @@ class ProcesadorAprobacion:
         self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
         ofrecidos = ", ".join(mensajes.fecha_legible(a) for a in alternativas) or "ninguno (le pedí otro horario)"
         return f"❌ Cita #{cita['id']} rechazada. Le ofrecí al cliente: {ofrecidos}."
+
+    def _pedir_otro_horario(self, cita: dict, d: Decision, texto: str, ahora: datetime) -> str:
+        """No puede en ese horario: la misma cita se reabre y el cliente elige otro."""
+        from app.agenda.disponibilidad import ocupado_combinado
+
+        inicio = datetime.fromisoformat(cita["fecha_hora"])
+        todo_el_dia = bool(_TODO_EL_DIA.search(_sin_tildes(texto)))
+        desde = (inicio + timedelta(days=1)).replace(hour=0, minute=0) if todo_el_dia else inicio
+        cambios: dict = {"estado": "en_reprogramacion", "ciclo_aprobacion": cita.get("ciclo_aprobacion", 1) + 1}
+        if d.nuevo_total is not None:
+            cambios["total_acordado"] = float(d.nuevo_total)
+        self.repo.actualizar_cita(cita["id"], **cambios)
+        self.repo.registrar_evento(cita["id"], "propietaria_pide_otro_horario",
+                                   {"todo_el_dia": todo_el_dia, "nuevo_total": d.nuevo_total, "motivo": d.motivo})
+        actualizada = self.repo.obtener_cita(cita["id"])
+        duracion = (cita.get("cotizacion") or {}).get("duracion_agenda_min", 60)
+        alternativas = proponer_alternativas(desde, duracion, cita["modalidad"], self.cotizador, self.cfg,
+                                             ocupado_combinado(self.repo, self.calendario), ahora)
+        self.mensajero.enviar(cita["cliente_telefono"],
+                              mensajes.otro_horario_cliente(actualizada, alternativas, todo_el_dia))
+        # El cliente sigue en el flujo de agenda con la misma cita: solo elige el horario.
+        sesion = self.repo.obtener_sesion(cita["cliente_telefono"])
+        sesion.update(
+            flujo="agendando", cita_en_aprobacion=None, propuesta_cita=None, reprogramar_cita_id=cita["id"],
+            preguntado=_TODO_PREGUNTADO, alternativas=[a.isoformat() for a in alternativas],
+            reserva={"mascotas": cita["mascotas"], "fecha_hora": None, "modalidad": cita["modalidad"],
+                     "sector": cita.get("sector"), "cliente_nombre": cita.get("cliente_nombre"),
+                     "pedido_especial": cita.get("pedido_especial")},
+        )
+        self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
+        precio = f" con el total de {mensajes.texto_total(actualizada)}" if d.nuevo_total is not None else ""
+        ofrecidos = ", ".join(mensajes.fecha_legible(a) for a in alternativas) or "ninguno (le pedí otro día)"
+        return (f"📨 Le pedí al cliente otro horario para la cita #{cita['id']}{precio}. Le ofrecí: {ofrecidos}. "
+                "Cuando elija, te la mando para aprobar.")
 
     def _modificar(self, cita: dict, d: Decision) -> str | None:
         cambios: dict = {}

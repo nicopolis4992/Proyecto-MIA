@@ -37,20 +37,22 @@ Los botones de respuesta rápida debajo de cada chat traen varios de estos texto
 ### 2. Cotizar con una foto (1 min)
 
 **Clienta:** 📷 → enviar la foto del perro.
-El asistente estima el tamaño y el tipo de pelo y da un **rango** de precio.
+A la clienta le dice que se la pasa a la propietaria. A ella (derecha) le llega la **foto con lo que estimó el
+sistema** (tamaño y tipo de pelo). **Propietaria:** responder `es mediano, 18$` → le llega a la clienta.
 
-> **Para decirle:** "Con la foto da un rango; el precio exacto depende de lo que tú veas al recibirlo. Por eso todo pasa por ti."
+> **Para decirle:** "Tú ves la foto primero y decides el tamaño. El sistema solo te sugiere."
 
 ### 3. Agendar una cita completa (3 min)
 
 | Clienta escribe | Qué mostrarle |
 |---|---|
 | `Quiero agendar un baño completo para mi perrita Luna, es mestiza` | Pregunta **primero el tamaño**, como lo haría ella |
-| `Es mediana, pesa como 12 kilos` | Pregunta el tipo de pelo |
+| `Es mediana, pesa como 12 kilos` | (Respondió a "¿me envía una foto?") Pregunta el tipo de pelo |
 | `Su pelo le crece y hay que cortárselo` | Pregunta por nudos y comportamiento |
-| `Tiene algunos nudos pero es tranquila` | Pregunta cómo la lleva |
+| `Tiene algunos nudos pero es tranquila` | Pregunta por vacunas y desparasitación |
+| `Sí, tiene sus vacunas y está desparasitada` | Pregunta cómo la lleva |
 | `Que la recojan en mi casa por favor, vivo en el Condado` | Suma el costo del traslado de esa zona |
-| `El jueves a las 5 de la tarde` | **Pico y placa:** el jueves de 16:00 a 20:00 el vehículo no circula, así que ofrece otros horarios |
+| `El jueves a las 4 de la tarde` | **Pico y placa:** el jueves de 16:00 a 20:00 el vehículo no circula, así que ofrece otros turnos |
 | `1` | Elige la primera opción. Le dice que la propietaria confirma |
 
 A la derecha le llega el **resumen de la cita**: mascota, servicio, horario, precio, traslado y lo que falta confirmar.
@@ -62,6 +64,7 @@ A la derecha le llega el **resumen de la cita**: mascota, servicio, horario, pre
 > **Para decirle:** "Ninguna cita se confirma sin ti. Puedes decir 'listo', 'no' o cambiar algo: 'a las 12 está bien', 'cóbrale 20'. Si cambias algo, se lo propone a la clienta antes de confirmar."
 
 Si hay tiempo, mostrar el cambio: otra clienta pide cita, y la propietaria responde `a las 12 estaría mejor` → la clienta recibe la propuesta y responde `sí, perfecto`.
+O si ese día no puede: `el lunes no puedo, el total sería 22` → a la clienta le ofrece turnos de otros días con el precio nuevo.
 
 ### 5. Después del servicio y contingencia (1 min)
 

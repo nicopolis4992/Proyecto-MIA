@@ -276,6 +276,18 @@ class Repositorio:
             "AND id != ?", (self.proteccion.seudonimo(telefono), excepto or -1)).fetchone()
         return fila["n"]
 
+    def mascotas_previas(self, telefono: str) -> dict[str, dict]:
+        """Ultimos datos de cada mascota del cliente en citas confirmadas (memoria de clientes)."""
+        filas = self._ejecutar(
+            "SELECT mascotas FROM citas WHERE cliente_clave = ? AND estado = 'confirmada' ORDER BY fecha_hora",
+            (self.proteccion.seudonimo(telefono),)).fetchall()
+        previas: dict[str, dict] = {}
+        for f in filas:
+            for m in json.loads(f["mascotas"] or "[]"):
+                if m.get("nombre"):
+                    previas[m["nombre"].strip().lower()] = m
+        return previas
+
     def vaciar(self) -> None:
         """Borra todos los datos (solo para la base de la demo)."""
         with self._lock:

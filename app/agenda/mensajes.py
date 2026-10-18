@@ -156,6 +156,9 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     lineas.append(estilo or f"Total: {texto_total(cita)}")
     if cita.get("pedido_especial"):
         lineas.append(f"⚠️ Pedido especial del cliente: {cita['pedido_especial']} → define el precio")
+    salud = next((m["salud"] for m in cita["mascotas"] if m.get("salud")), None)
+    if salud:
+        lineas.append(f"🩺 Vacunas y desparasitación: {salud}")
     if c.get("preguntas_pendientes"):
         lineas.append("Falta confirmar: " + ", ".join(ETIQUETA_PREGUNTA.get(p, p) for p in c["preguntas_pendientes"]))
     avisos = [a for m in c.get("mascotas", []) for a in m.get("avisos", [])] + \
@@ -198,6 +201,20 @@ def propuesta_cliente(cita: dict) -> str:
     return (f"La propietaria revisó su cita y le propone este ajuste para {_nombres(cita)}:\n"
             f"📅 {fecha_legible(cita['fecha_hora'])}\n💵 Total: {texto_total(cita)}\n"
             "¿Le parece bien? Respóndame \"sí\" para confirmar, o dígame qué horario le queda mejor.")
+
+
+def otro_horario_cliente(cita: dict, alternativas: list[datetime], todo_el_dia: bool) -> str:
+    """La propietaria no puede ese dia (u hora) y no propuso otro: el cliente elige."""
+    f = datetime.fromisoformat(cita["fecha_hora"])
+    cuando = f"el {DIAS[f.weekday()]} {f.day} de {MESES[f.month - 1]}" if todo_el_dia else f"el {fecha_legible(f)}"
+    texto = f"La propietaria revisó su cita: {cuando} no tiene espacio 🙏"
+    if cita.get("total_acordado") is not None:
+        texto += f" El total para {_nombres(cita)} sería {texto_total(cita)}."
+    if not alternativas:
+        return texto + " ¿Qué otro día y hora le quedaría bien?"
+    opciones = "\n".join(f"{i}. {fecha_legible(a)}" for i, a in enumerate(alternativas, 1))
+    return (f"{texto} Le puedo ofrecer estos horarios:\n{opciones}\n"
+            "Respóndame con el número de la opción o indíqueme otro horario.")
 
 
 def reprogramacion_cliente(cita: dict, alternativas: list[datetime], motivo: str | None = None) -> str:

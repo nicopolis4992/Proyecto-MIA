@@ -174,3 +174,21 @@ def send_audio_message(to: str, datos: bytes, mime: str = "audio/ogg") -> str | 
 
     media_id = _con_reintentos(_subir, f"Subida de audio para {to}")
     return _enviar_payload(to, {"type": "audio", "audio": {"id": media_id}}, f"Audio a {to}")
+
+
+def send_image_message(to: str, datos: bytes, caption: str = "", mime: str = "image/jpeg") -> str | None:
+    """Envia una foto (p. ej. la del perro, a la propietaria): se sube a /media y se envia con su id."""
+    access_token, phone_number_id = _credenciales()
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    def _subir():
+        with httpx.Client(timeout=30) as client:
+            r = client.post(f"https://graph.facebook.com/{GRAPH_API_VERSION}/{phone_number_id}/media",
+                            headers=headers, data={"messaging_product": "whatsapp", "type": mime},
+                            files={"file": ("foto.jpg", datos, mime)})
+            r.raise_for_status()
+            return r.json()["id"]
+
+    media_id = _con_reintentos(_subir, f"Subida de foto para {to}")
+    return _enviar_payload(to, {"type": "image", "image": {"id": media_id, "caption": caption[:1024]}},
+                           f"Foto a {to}")

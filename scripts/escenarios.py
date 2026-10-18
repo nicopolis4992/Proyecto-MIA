@@ -32,8 +32,9 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
         ("cliente", "Es mediana, pesa como 12 kilos"),
         ("cliente", "Su pelo le crece y hay que cortárselo"),
         ("cliente", "Tiene algunos nudos pero es tranquila"),
+        ("cliente", "Sí, tiene sus vacunas y está desparasitada"),
         ("cliente", "Que la recojan en mi casa por favor, vivo en el Condado"),
-        ("cliente", "El jueves a las 5 de la tarde"),
+        ("cliente", "El jueves a las 4 de la tarde"),
         ("cliente", "1"),
         ("propietaria", "listo"),
     ],
@@ -43,13 +44,15 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
     "reprogramacion": [
         ("cliente", "Hola, quiero agendar un baño premium para mi perrita Fara, es mediana y de doble capa, "
                     "no tiene nudos y es tranquila"),
+        ("cliente", "no tengo foto a la mano"),
+        ("cliente", "si, tiene todas sus vacunas y esta desparasitada"),
         ("cliente", "lo llevo yo al salon"),
         ("cliente", "el lunes esta bien? a que hora tiene disponible?"),
         ("cliente", "y el martes 13 de octubre? que horarios tiene?"),
         ("cliente", "tienen parqueadero?"),
         ("propietaria", "si, hay parqueadero frente al local"),
         ("cliente", "2"),
-        ("propietaria", "cambialo a las 11am y confirma el precio a USD 22"),
+        ("propietaria", "cambialo a las 2 de la tarde y confirma el precio a USD 22"),
         ("cliente", "si perfecto"),
         ("cliente", "gracias!"),
         ("cliente", "disculpa a esa hora ya no puedo"),
@@ -64,14 +67,31 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
         ("cliente", "no a esa hora no puedo, puedes en la tarde? porque solo me dijiste hasta las 11am"),
         ("cliente", "y despues de las 3?"),
         ("cliente", "la 1"),
+        ("cliente", "si, esta vacunado y desparasitado"),
     ],
     # Captura del 06-oct: servicio personalizado, sin mencionar precio.
     "pedido_especial": [
         ("cliente", "quiero agendar un baño premium para mi perrita Fara, es mediana y de doble capa, "
                     "no tiene nudos y es tranquila"),
         ("cliente", "puedes hacerle este baño pero sin el baño medicado y sin el accesorio?"),
+        ("cliente", "si, vacunas al dia y desparasitada"),
         ("cliente", "y cuanto me saldria asi?"),
         ("cliente", "la llevo yo al salon el miercoles a las 12"),
+    ],
+    # Prueba con la propietaria (16/17-oct): preguntar los horarios, la foto que
+    # le llega a ella, "el martes no puedo, el total seria 22" y la clienta que
+    # elige otro dia.
+    "prueba_propietaria_17oct": [
+        ("cliente", "Quiero un baño completo para mi perrita Fara, es mediana de doble capa"),
+        ("cliente", "ahorita no tengo foto"),
+        ("cliente", "no tiene nudos y es tranquila"),
+        ("cliente", "si, vacunas al dia y desparasitada"),
+        ("cliente", "La llevo al salón"),
+        ("cliente", "Cuales son sus horarios?"),
+        ("cliente", "1"),
+        ("propietaria", "el martes no puedo, el total del cobro seria $22"),
+        ("cliente", "2"),
+        ("propietaria", "listo"),
     ],
 }
 

@@ -114,6 +114,30 @@ def test_sin_servicio_elegido_muestra_todo_el_catalogo():
     assert "Deslanado" not in r.mensaje and "¿Cuál le interesa?" in r.mensaje
 
 
-def test_doble_capa_agrega_el_deslanado():
+def test_doble_capa_no_ofrece_el_deslanado_aparte():
+    """Propietaria, 17-oct: el deslanado es parte del Baño Completo."""
     r = procesar_foto(_foto(), ClasificadorFalso(grupo="B_deslanado"), COT, 1, None, politica=POLITICA)
-    assert "deslanado" in r.cotizaciones and "Deslanado" in r.mensaje
+    assert "deslanado" not in r.cotizaciones and "Deslanado" not in r.mensaje
+
+
+def test_la_foto_llega_primero_a_la_propietaria_y_su_respuesta_vuelve_al_cliente():
+    """Reunion 17-oct: la propietaria quiere ver la foto para decidir el tamaño."""
+    from conftest import ClienteFalso
+
+    from app.agents.orchestrator_graph import crear_dependencias, procesar_mensaje, construir_grafo
+    from app.mensajeria import MensajeroMemoria
+    from app.persistencia.repositorio import Repositorio
+
+    prop, cli = "593900000001", "593900000099"
+    msj = MensajeroMemoria()
+    d = crear_dependencias(client=ClienteFalso(), repo=Repositorio(":memory:"), mensajero=msj, propietaria=prop,
+                           agente_rag=lambda m: None, clasificador=ClasificadorFalso(tamano="mediano"),
+                           calendario=False)
+    grafo = construir_grafo(d)
+    r = procesar_mensaje(cli, "", imagen=_foto(), grafo=grafo)
+    assert "Se la paso a la propietaria" in r and "USD" not in r
+    [foto] = msj.a(prop)
+    assert foto.startswith("📷") and "mediano" in foto and cli in foto
+    respuesta = procesar_mensaje(prop, "es mediano, 18$", id_citado=msj.enviados[-1][2], grafo=grafo)
+    assert "Se lo envié al cliente" in respuesta
+    assert msj.a(cli)[-1] == "💬 Respuesta de la propietaria: es mediano, 18$"

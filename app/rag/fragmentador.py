@@ -133,14 +133,12 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
         )
         frags.append(Fragmento(f"tarifario#servicio_{codigo}", fuente, s["nombre"], texto))
 
-    desl = t["servicios_especiales"]["deslanado"]
-    precios = "; ".join(f"{etiqueta[tam]} " + (_usd(desl[tam]["precio"][0]) if desl[tam]["precio"][0] == desl[tam]["precio"][1]
-                        else f"de {_usd(desl[tam]['precio'][0])} a {_usd(desl[tam]['precio'][1])}") for tam in kg)
+    # 17-oct: la propietaria aclara que el deslanado va dentro del Baño Completo.
     frags.append(Fragmento(
         "tarifario#servicio_deslanado", fuente, "Deslanado",
-        f"Precio del deslanado (retiro del subpelo): {precios}. Solo aplica a perros de doble capa "
-        "como husky, pug, labrador o pastor alemán; a perros de pelo que se corta con máquina "
-        "(shih tzu, schnauzer, poodle) no se les hace deslanado.",
+        f"El deslanado (retiro del subpelo) es parte del {t['servicios']['completo']['nombre']} para "
+        "perros de doble capa (husky, pug, labrador, pastor alemán) y de pelo corto: no se cobra aparte. "
+        "El precio es el del Baño Completo según el tamaño y el tipo de pelo.",
     ))
 
     frags.append(Fragmento(
@@ -150,14 +148,19 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
         + ". Los perros mestizos se cotizan igual, según su tamaño y cómo es su pelo.",
     ))
 
-    rec = t["recargo_estado_manto"]
+    nudos = sorted({tuple(v["monto"]) for k, v in t["recargo_estado_manto"]["moderado"].items()
+                    if not k.startswith("_") and "monto" in v})
+    if len(nudos) == 1:
+        lo, hi = nudos[0]
+        recargo_nudos = f"un recargo fijo de {_usd(lo)}" + (f" a {_usd(hi)}" if hi != lo else "")
+    else:
+        recargo_nudos = "un recargo según el tamaño"
     frags.append(Fragmento(
         "tarifario#recargos", fuente, "Recargo por nudos y comportamiento",
-        "Si el pelo tiene nudos se cobra un recargo por desenredo según el tamaño: "
-        + "; ".join(f"{etiqueta[tam]} +{round(rec['moderado'][tam]['pct'] * 100)} % con algunos nudos y "
-                    f"+{round(rec['severo'][tam]['pct'] * 100)} % si está muy enredado" for tam in kg)
-        + ". El desenredo se hace siempre que el pelo se pueda recuperar; si no, se rapa. "
-        "Los perros nerviosos o miedosos pueden tener un pequeño recargo.",
+        f"Si el pelo tiene algunos nudos se suma {recargo_nudos}. Quitar motas (pelo muy enredado o "
+        "apelmazado) se cobra más y la propietaria fija el valor al ver al perro. El desenredo se hace "
+        "siempre que el pelo se pueda recuperar; si no, se rapa. Los perros nerviosos o miedosos no "
+        "pagan recargo, salvo casos especiales que decide la propietaria.",
     ))
 
     frags.append(Fragmento(
@@ -228,7 +231,9 @@ def fragmentos_desde_agenda(ruta: Path | None = None) -> list[Fragmento]:
     return [Fragmento(
         "agenda#horario_de_atencion", ruta.name, "Horario de atención",
         "Horario de atención de Lina's Pet Salón: " + "; ".join(partes) + ". Las citas se agendan "
-        "dentro de este horario y con al menos " + str(cfg["antelacion_minima_horas"]) + " horas de anticipación.",
+        "dentro de este horario" + (" en turnos de 2 horas, a las " + ", ".join(cfg["turnos"][:-1]) + " y "
+                                    + cfg["turnos"][-1] if cfg.get("turnos") else "")
+        + ", con al menos " + str(cfg["antelacion_minima_horas"]) + " horas de anticipación.",
         metadatos={"categoria": "horarios", "fuente": meta_cfg.get("fuente_horario", ruta.name),
                    "vigente_desde": meta_cfg.get("vigente_desde", ""),
                    "validado_por_propietaria": meta_cfg.get("validado_por_propietaria", "no")},

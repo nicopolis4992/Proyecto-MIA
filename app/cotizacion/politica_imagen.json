@@ -13,13 +13,26 @@
     "nitidez_min": 40
   },
   "umbrales_confianza": {
-    "cnn_onnx": {"tamano": 0.70, "grupo": 0.60, "estado": 0.70},
-    "gemini_zero_shot": {"tamano": 0.80, "grupo": 0.75, "estado": 0.80}
+    "cnn_onnx": {
+      "tamano": 0.7,
+      "grupo": 0.6,
+      "estado": 0.7
+    },
+    "gemini_zero_shot": {
+      "tamano": 0.8,
+      "grupo": 0.75,
+      "estado": 0.8
+    }
   },
   "max_fotos_por_mascota": 2,
   "comportamiento": {
     "dimension_bajo_umbral": "Se descarta SOLO esa dimension (queda None). El motor de cotizacion ensancha la banda y pide el dato al cliente, en vez de cotizar con una prediccion dudosa.",
     "tamano_y_grupo_bajo_umbral": "Se pide otra foto mientras no se supere max_fotos_por_mascota.",
     "intentos_agotados": "Se cotiza con el rango amplio y la cita se marca requiere_revision_manual para que la propietaria estime el valor al aprobar."
+  },
+  "foto_a_la_propietaria": {
+    "activo": true,
+    "rango_al_cliente": false,
+    "comentario": "Reunion 17-oct-2026: la propietaria quiere ver la foto primero para decidir el tamaño. La foto se le reenvia con lo que estimo el sistema; al cliente no se le da el rango por foto (rango_al_cliente=false) y ella confirma tamaño y precio. La estimacion se sigue guardando en la traza para evaluar el clasificador (SCRUM-105)."
   }
 }

@@ -28,8 +28,8 @@ from typing import Protocol
 from app import config
 from app.notificaciones import correo
 from app.persistencia.repositorio import Repositorio
-from app.whatsapp_client import (FUERA_DE_VENTANA, ErrorWhatsApp, send_audio_message, send_template_message,
-                                 send_text_message)
+from app.whatsapp_client import (FUERA_DE_VENTANA, ErrorWhatsApp, send_audio_message, send_image_message,
+                                 send_template_message, send_text_message)
 
 logger = logging.getLogger("mensajeria")
 
@@ -42,6 +42,9 @@ class Mensajero(Protocol):
 
     def enviar_audio(self, destino: str, datos: bytes, mime: str) -> str | None:
         """Reenvia una nota de voz. None si no se pudo (no se encola)."""
+
+    def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
+        """Envia una foto con un texto al pie."""
 
 
 class MensajeroWhatsApp:
@@ -84,6 +87,14 @@ class MensajeroWhatsApp:
         except ErrorWhatsApp as exc:
             logger.error("No se pudo reenviar la nota de voz a %s: %s", destino, exc.explicacion or exc)
             return None
+
+    def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
+        try:
+            return send_image_message(destino, datos, texto)
+        except ErrorWhatsApp as exc:
+            # Sin la foto, al menos le llega el texto (y queda en cola si falla).
+            logger.error("No se pudo enviar la foto a %s: %s", destino, exc.explicacion or exc)
+            return self.enviar(destino, texto + "\n(No pude adjuntar la foto: pídesela al cliente.)")
 
     def _avisar_con_plantilla(self, destino: str, texto: str) -> str | None:
         """
@@ -169,6 +180,9 @@ class MensajeroMemoria:
         msg_id = f"wamid.sim.{next(self._ids)}"
         self.enviados.append((destino, f"[audio {len(datos)} bytes]", msg_id))
         return msg_id
+
+    def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
+        return self.enviar(destino, f"📷 {texto}")
 
     def a(self, destino: str) -> list[str]:
         return [t for d, t, _ in self.enviados if d == destino]

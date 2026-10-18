@@ -92,6 +92,26 @@ def test_modificar_hora_se_propone_al_cliente_sin_confirmar():
     assert repo.obtener_sesion(CLI)["propuesta_cita"] == cid
 
 
+def test_el_lunes_no_puedo_con_otro_precio_pide_otro_dia_al_cliente():
+    """Prueba con la propietaria (17-oct): "el lunes no puedo, el total del cobro seria $22"
+    le volvia a proponer el MISMO lunes. Ahora la cita se reabre y se ofrecen otros dias."""
+    llm = json.dumps({"tipo": "modificar", "nueva_fecha_hora": None, "nuevo_total": 22,
+                      "nuevo_costo_transporte": None, "motivo": "no puede el lunes"})
+    p, repo, msj = _procesador(ClienteFalso(llm))
+    cid = _cita(repo, modalidad="salon", fecha=datetime(2026, 10, 19, 12, 0, tzinfo=ZONA_HORARIA))
+    resp = p.procesar("el lunes no puedo, el total del cobro seria $22", id_citado=f"wamid.cita{cid}",
+                      ahora=datetime(2026, 10, 16, 20, 0, tzinfo=ZONA_HORARIA))
+    assert "Le pedí al cliente otro horario" in resp and "22.00$" in resp
+    cita = repo.obtener_cita(cid)
+    assert cita["estado"] == "en_reprogramacion" and cita["total_acordado"] == 22
+    [aviso] = msj.a(CLI)
+    assert "lunes 19 de octubre no tiene espacio" in aviso and "22.00$" in aviso
+    opciones = [l for l in aviso.splitlines() if l[:2] in ("1.", "2.", "3.")]
+    assert opciones and not any("lunes 19" in o for o in opciones)
+    sesion = repo.obtener_sesion(CLI)
+    assert sesion["reprogramar_cita_id"] == cid and len(sesion["alternativas"]) == len(opciones)
+
+
 def test_respuesta_de_la_propietaria_a_una_consulta_se_reenvia_al_cliente():
     p, repo, msj = _procesador()
     p.registrar_consulta("wamid.consulta1", CLI, "¿qué horarios tiene el martes?")
@@ -121,12 +141,20 @@ def test_varias_pendientes_sin_cita_referenciada_pide_aclarar():
 
 
 def test_pico_y_placa_bloquea_puerta_a_puerta_pero_no_salon():
-    jueves_17 = JUEVES_10.replace(hour=17)
-    ok, motivo = validar_horario(jueves_17, 60, "puerta_a_puerta", MOTOR, CFG)
+    jueves_16 = JUEVES_10.replace(hour=16)
+    ok, motivo = validar_horario(jueves_16, 60, "puerta_a_puerta", MOTOR, CFG)
     assert not ok and "restricción" in motivo
-    assert validar_horario(jueves_17, 60, "salon", MOTOR, CFG)[0]
-    alternativas = proponer_alternativas(jueves_17, 60, "puerta_a_puerta", MOTOR, CFG)
-    assert alternativas and all(a.hour < 16 or a.date() != jueves_17.date() for a in alternativas)
+    assert validar_horario(jueves_16, 60, "salon", MOTOR, CFG)[0]
+    alternativas = proponer_alternativas(jueves_16, 60, "puerta_a_puerta", MOTOR, CFG)
+    assert alternativas and all(a.hour < 16 or a.date() != jueves_16.date() for a in alternativas)
+
+
+def test_solo_se_agenda_en_turnos_de_dos_horas():
+    """Propietaria, 17-oct: 'agenda a 2 horas desde las 8 hasta las 4'."""
+    ok, motivo = validar_horario(JUEVES_10.replace(hour=11), 60, "salon", MOTOR, CFG)
+    assert not ok and "08:00, 10:00, 12:00, 14:00 y 16:00" in motivo
+    alternativas = proponer_alternativas(JUEVES_10.replace(hour=11), 60, "salon", MOTOR, CFG)
+    assert alternativas and all(a.hour in (8, 10, 12, 14, 16) and a.minute == 0 for a in alternativas)
 
 
 def test_confirmacion_incluye_total_y_traslado():
