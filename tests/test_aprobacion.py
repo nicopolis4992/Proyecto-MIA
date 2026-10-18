@@ -152,7 +152,10 @@ def test_pico_y_placa_bloquea_puerta_a_puerta_pero_no_salon():
 def test_solo_se_agenda_en_turnos_de_dos_horas():
     """Propietaria, 17-oct: 'agenda a 2 horas desde las 8 hasta las 4'."""
     ok, motivo = validar_horario(JUEVES_10.replace(hour=11), 60, "salon", MOTOR, CFG)
-    assert not ok and "08:00, 10:00, 12:00, 14:00 y 16:00" in motivo
+    assert not ok and "08:00, 10:00, 12:00, 14:00 y 16:00" in motivo           # jueves abre a las 8
+    lunes_10 = datetime(2026, 10, 5, 10, 0, tzinfo=ZONA_HORARIA)
+    ok, motivo = validar_horario(lunes_10, 60, "salon", MOTOR, CFG)
+    assert not ok and "12:00, 14:00 y 16:00" in motivo
     alternativas = proponer_alternativas(JUEVES_10.replace(hour=11), 60, "salon", MOTOR, CFG)
     assert alternativas and all(a.hour in (8, 10, 12, 14, 16) and a.minute == 0 for a in alternativas)
 

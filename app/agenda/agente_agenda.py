@@ -57,7 +57,7 @@ from google.genai import types
 
 from app.agenda import mensajes
 from app.agenda.calendario import quitar_del_calendario, registrar_en_calendario
-from app.agenda.disponibilidad import (DIAS, ocupado_combinado, proponer_alternativas, texto_turnos,
+from app.agenda.disponibilidad import (DIAS, ocupado_combinado, proponer_alternativas, texto_turnos_por_dia,
                                        validar_horario)
 from app.config import MODELO_LLM, ZONA_HORARIA
 from app.cotizacion.cotizador import Cotizador
@@ -370,7 +370,7 @@ class AgenteAgenda:
         dias = [d for d in DIAS if self.cfg["horario_laboral"].get(d)]
         cuando = "todos los días" if len(dias) == 7 else ", ".join(dias)
         if self.cfg.get("turnos"):
-            return f"Atendemos con cita {cuando}, en turnos a las {texto_turnos(self.cfg)}."
+            return f"Atendemos con cita {cuando}, en turnos de 2 horas: {texto_turnos_por_dia(self.cfg)}."
         return f"Atendemos con cita {cuando}."
 
     def _responder_horario_de_atencion(self, telefono: str, sesion: dict, ahora: datetime) -> str:

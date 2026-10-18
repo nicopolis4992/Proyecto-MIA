@@ -27,11 +27,15 @@ pasárselas a Claude para actualizar el sistema.
 | Memoria de clientes | Que recuerde a los clientes | Reconoce a la mascota por su nombre y reusa raza, tamaño y pelo de citas anteriores |
 | Tamaños | Miniatura, pequeño, mediano, grande y extragrande | El cliente puede decirlos; **falta** que ella dé precios propios para miniatura y extragrande (hoy se cotizan como pequeño y grande) |
 | Asistente virtual | Preguntó si sería mejor que no se sepa | Recomendación del equipo: decirlo (transparencia y LOPDP). Se acortó el aviso de bienvenida |
+| Baño medicado (18-oct) | Está dentro del Premium | Sin cambios: ya se agendaba como Premium |
+| Días y horario (18-oct) | Todos los días. Lunes, miércoles y viernes de 11h a 18h; martes, jueves, sábado y domingo de 8h a 18h; la última cita a las 16h | Lunes, miércoles y viernes: turnos de 12:00, 14:00 y 16:00. Los demás días: 08:00, 10:00, 12:00, 14:00 y 16:00 |
+| Dos perros a la vez (18-oct) | Solo si son de la misma casa | Van en una sola cita; perros de casas distintas no se cruzan. La duración de los perros se suma |
 
 **Pendiente de aclarar con ella:**
-- "Si piden un baño premium pero es solo baño medicado, es un baño completo y el precio no cambia": ¿el baño medicado se hace dentro del Completo al mismo precio?
+- Lunes, miércoles y viernes: ¿el primer turno es a las 11:00 (11, 13, 15) o a las 12:00 (12, 14, 16)? Hoy está a las 12:00, para que la última cita sea a las 16:00.
+- Dos perros de la misma casa: ¿son 2 horas por perro o 2 horas en total? Hoy se suman, así que ocupan dos turnos.
 - Precios de miniatura y extragrande, y sus rangos de peso.
-- Qué días atiende (hoy el sistema ofrece todos los días).
+- Precios del Excel: ¿el pequinés con baño completo es 12 $ (el bot dice 15 $)? ¿El pastor inglés es 25 $ (el bot dice 45 $)? ¿Cuánto cuesta el "solo baño" según el tamaño?
 
 ---
 

@@ -1,1 +1,1 @@
-{"text": "{\n  \"tipo\": \"modificar\",\n  \"nueva_fecha_hora\": null,\n  \"nuevo_total\": 22.0,\n  \"nuevo_costo_transporte\": null,\n  \"motivo\": \"el martes no puedo\"\n}"}
+{"text": "{\n  \"tipo\": \"modificar\",\n  \"nueva_fecha_hora\": null,\n  \"nuevo_total\": 22,\n  \"nuevo_costo_transporte\": null,\n  \"motivo\": \"el martes no puedo\"\n}"}

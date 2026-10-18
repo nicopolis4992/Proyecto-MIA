@@ -173,7 +173,8 @@ def test_cuales_son_sus_horarios_responde_turnos_y_opciones_sin_repetir_la_pregu
                        ya_preguntado=FOTO_Y_SALUD)
     assert ag.atender(TEL, "La llevo al salón", AHORA) == "¿Qué día y a qué hora le gustaría la cita?"
     r = ag.atender(TEL, "Cuales son sus horarios?", AHORA)
-    assert "turnos a las 08:00, 10:00, 12:00, 14:00 y 16:00" in r
+    assert ("lunes, miércoles y viernes a las 12:00, 14:00 y 16:00; martes, jueves, sábado y domingo "
+            "a las 08:00, 10:00, 12:00, 14:00 y 16:00") in r
     assert "1." in r and "¿Qué día y a qué hora" not in r
 
 
@@ -216,9 +217,15 @@ def test_opciones_repartidas_en_el_dia_y_respetan_la_tarde():
     Con los turnos de 2 horas (17-oct) se reparten entre 08:00 y 16:00."""
     m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
          "comportamiento": "tranquilo"}
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-08"))
+    r = ag.atender(TEL, "¿qué horarios tiene el jueves 8?", AHORA)
+    assert "08:00" in r and "12:00" in r and "16:00" in r and "10:00" not in r   # repartidas en el día
+
+    # Lunes, miércoles y viernes abre a las 11: turnos de 12:00, 14:00 y 16:00 (propietaria, 18-oct).
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"))
     r = ag.atender(TEL, "¿qué horarios tiene el miércoles 7?", AHORA)
-    assert "08:00" in r and "12:00" in r and "16:00" in r and "10:00" not in r   # repartidas en el día
+    horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
+    assert horas == ["12:00", "14:00", "16:00"], r
 
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"))
     r = ag.atender(TEL, "¿puede el miércoles en la tarde?", AHORA)

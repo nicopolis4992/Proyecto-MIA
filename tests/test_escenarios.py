@@ -95,7 +95,7 @@ def test_escenario_pedido_especial_sin_precio():
 def test_escenario_prueba_propietaria_17oct():
     demo = _correr("prueba_propietaria_17oct")
     cliente = _textos(demo, "cliente")
-    assert any("turnos a las 08:00, 10:00, 12:00, 14:00 y 16:00" in t for t in cliente)
+    assert any("lunes, miércoles y viernes a las 12:00, 14:00 y 16:00" in t for t in cliente)
     assert sum("¿Qué día y a qué hora" in t for t in cliente) <= 1               # no repite la pregunta
     assert any("no tiene espacio" in t and "22.00$" in t for t in cliente)       # pide otro dia con el precio
     assert not any("USD 15.50" in t for t in cliente[cliente.index(next(t for t in cliente if "no tiene espacio" in t)):])

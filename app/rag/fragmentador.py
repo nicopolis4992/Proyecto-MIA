@@ -217,6 +217,8 @@ def fragmentos_desde_agenda(ruta: Path | None = None) -> list[Fragmento]:
     Es el mismo horario con el que el agente de agenda ofrece citas: el RAG no
     puede contestar un horario distinto del que se agenda.
     """
+    from app.agenda.disponibilidad import texto_turnos_por_dia
+
     ruta = Path(ruta) if ruta else Path(__file__).resolve().parents[1] / "agenda" / "config_agenda.json"
     cfg = json.loads(ruta.read_text(encoding="utf-8"))
     grupos: dict[str, list[str]] = {}
@@ -231,8 +233,7 @@ def fragmentos_desde_agenda(ruta: Path | None = None) -> list[Fragmento]:
     return [Fragmento(
         "agenda#horario_de_atencion", ruta.name, "Horario de atención",
         "Horario de atención de Lina's Pet Salón: " + "; ".join(partes) + ". Las citas se agendan "
-        "dentro de este horario" + (" en turnos de 2 horas, a las " + ", ".join(cfg["turnos"][:-1]) + " y "
-                                    + cfg["turnos"][-1] if cfg.get("turnos") else "")
+        "dentro de este horario" + (", en turnos de 2 horas: " + texto_turnos_por_dia(cfg) if cfg.get("turnos") else "")
         + ", con al menos " + str(cfg["antelacion_minima_horas"]) + " horas de anticipación.",
         metadatos={"categoria": "horarios", "fuente": meta_cfg.get("fuente_horario", ruta.name),
                    "vigente_desde": meta_cfg.get("vigente_desde", ""),

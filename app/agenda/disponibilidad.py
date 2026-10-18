@@ -26,14 +26,43 @@ def cargar_config(ruta: Path = RUTA_CONFIG) -> dict:
     return json.loads(Path(ruta).read_text(encoding="utf-8"))
 
 
-def turnos(cfg: dict) -> list[time]:
-    """Horas en que puede empezar una cita (vacio = cualquier hora del horario)."""
-    return [time.fromisoformat(t) for t in cfg.get("turnos") or []]
+def turnos(cfg: dict, dia: str | None = None) -> list[time]:
+    """Horas en que puede empezar una cita (vacio = cualquier hora del horario).
+    Con `dia`, solo los turnos que caen dentro del horario de ese dia."""
+    todos = [time.fromisoformat(t) for t in cfg.get("turnos") or []]
+    if dia is None:
+        return todos
+    franja = cfg["horario_laboral"].get(dia)
+    if not franja:
+        return []
+    abre, cierra = time.fromisoformat(franja[0]), time.fromisoformat(franja[1])
+    return [t for t in todos if abre <= t < cierra]
 
 
-def texto_turnos(cfg: dict) -> str:
-    horas = [t.strftime("%H:%M") for t in turnos(cfg)]
-    return ", ".join(horas[:-1]) + " y " + horas[-1] if len(horas) > 1 else "".join(horas)
+def _lista(cosas: list[str], y: str = "y") -> str:
+    return ", ".join(cosas[:-1]) + f" {y} " + cosas[-1] if len(cosas) > 1 else "".join(cosas)
+
+
+def texto_turnos(cfg: dict, dia: str | None = None) -> str:
+    return _lista([t.strftime("%H:%M") for t in turnos(cfg, dia)])
+
+
+NOMBRE_DIA = {"lunes": "lunes", "martes": "martes", "miercoles": "miércoles", "jueves": "jueves",
+              "viernes": "viernes", "sabado": "sábado", "domingo": "domingo"}
+
+
+def texto_turnos_por_dia(cfg: dict) -> str:
+    """"lunes, miércoles y viernes a las 12:00, 14:00 y 16:00; martes, ... a las 08:00, ..." """
+    grupos: dict[str, list[str]] = {}
+    for dia in DIAS:
+        horas = texto_turnos(cfg, dia)
+        if horas:
+            grupos.setdefault(horas, []).append(NOMBRE_DIA[dia])
+    if len(grupos) == 1:
+        [(horas, dias)] = grupos.items()
+        cuando = "todos los días" if len(dias) == 7 else _lista(dias)
+        return f"{cuando} a las {horas}"
+    return "; ".join(f"{_lista(dias)} a las {horas}" for horas, dias in grupos.items())
 
 
 def _dentro_de_horario(inicio: datetime, duracion_min: int, cfg: dict) -> bool:
@@ -56,10 +85,11 @@ def validar_horario(inicio: datetime, duracion_min: int, modalidad: str, cotizad
     if modalidad == "puerta_a_puerta" and cotizador.restringido(inicio):
         return False, ("a esa hora el vehículo tiene restricción de circulación para el retiro "
                        "a domicilio; si prefiere traerlo al salón, puedo revisar ese horario")
+    del_dia = turnos(cfg, DIAS[inicio.weekday()])
+    if turnos(cfg) and del_dia and inicio.time().replace(second=0, microsecond=0) not in del_dia:
+        return False, f"ese día las citas son a las {texto_turnos(cfg, DIAS[inicio.weekday()])}"
     if not _dentro_de_horario(inicio, duracion_min, cfg):
         return False, "está fuera del horario de atención"
-    if turnos(cfg) and inicio.time().replace(second=0, microsecond=0) not in turnos(cfg):
-        return False, f"trabajamos con turnos a las {texto_turnos(cfg)}"
     if ocupado and ocupado(inicio, duracion_min):
         return False, "ese horario ya está ocupado"
     return True, None

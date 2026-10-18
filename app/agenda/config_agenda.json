@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "estado": "Turnos y horario dichos por la propietaria en la reunion del 17-oct-2026. La disponibilidad real (citas ya tomadas) viene de Google Calendar (SCRUM-72).",
-    "fuente_horario": "propietaria, reunion del 17-oct-2026: 'agenda a 2 horas desde las 8 hasta las 4'",
-    "vigente_desde": "2026-10-17",
-    "validado_por_propietaria": "si (turnos); dias de atencion por confirmar"
+    "estado": "Horario y turnos confirmados por la propietaria (17 y 18-oct-2026). La disponibilidad real (citas ya tomadas) viene de Google Calendar (SCRUM-72).",
+    "fuente_horario": "propietaria, 18-oct-2026: lunes, miercoles y viernes de 11h a 18h; martes, jueves, sabado y domingo de 8h a 18h; la ultima cita se agenda a las 16h; turnos de 2 horas",
+    "vigente_desde": "2026-10-18",
+    "validado_por_propietaria": "si"
   },
   "horario_laboral": {
     "lunes": [
-      "08:00",
+      "11:00",
       "18:00"
     ],
     "martes": [
@@ -15,7 +15,7 @@
       "18:00"
     ],
     "miercoles": [
-      "08:00",
+      "11:00",
       "18:00"
     ],
     "jueves": [
@@ -23,7 +23,7 @@
       "18:00"
     ],
     "viernes": [
-      "08:00",
+      "11:00",
       "18:00"
     ],
     "sabado": [
@@ -42,7 +42,7 @@
     "14:00",
     "16:00"
   ],
-  "comentario_turnos": "Las citas empiezan solo en estos turnos de 2 horas (el ultimo a las 16:00). El cierre de horario_laboral limita servicios largos en el ultimo turno.",
+  "comentario_turnos": "Las citas empiezan solo en estos turnos de 2 horas y dentro del horario de cada dia: lunes, miercoles y viernes quedan 12:00, 14:00 y 16:00 (abre a las 11). La ultima cita es a las 16:00. Dos perros a la vez solo si son de la misma casa (una sola cita); su duracion se suma (pendiente: confirmar si son 2 h por perro o 2 h en conjunto).",
   "paso_alternativas_min": 60,
   "num_alternativas": 3,
   "antelacion_minima_horas": 2,
