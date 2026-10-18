@@ -169,7 +169,9 @@
         "caniche toy",
         "poodle pequeno",
         "poodle mini",
-        "caniche mini"
+        "caniche mini",
+        "mini poodle",
+        "toy poodle mini"
       ]
     },
     "schnauzer": {
@@ -212,6 +214,19 @@
         "dachshund",
         "teckel",
         "perro salchicha"
+      ]
+    },
+    "pinscher": {
+      "grupo": "D_corto",
+      "tamano": "pequeno",
+      "fuente": "SUPUESTO (equipo): aparece en el Excel de cuentas como 'pincher dóberman'",
+      "alias": [
+        "pincher",
+        "pinscher miniatura",
+        "mini pinscher",
+        "pincher doberman",
+        "pincher dóberman",
+        "pinscher doberman"
       ]
     },
     "pug": {
@@ -276,7 +291,8 @@
       "alias": [
         "caniche",
         "french poodle",
-        "poodle estandar"
+        "poodle estandar",
+        "toy poodle"
       ],
       "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
     },
@@ -380,7 +396,10 @@
       "alias": [
         "bulldog francés",
         "frenchie",
-        "bulldog"
+        "bulldog",
+        "french",
+        "frances",
+        "bulldog frances mini"
       ],
       "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
     },

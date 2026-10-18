@@ -249,3 +249,13 @@ def test_valor_desconocido_no_rompe_el_motor():
 
 def test_agresivo_declarado_con_sinonimo_se_rechaza():
     assert cotizar_mascota(T, {"servicio": "basico", "comportamiento": "bravo"})["rechazada"]
+
+
+def test_razas_con_descripciones_como_las_escribe_la_propietaria():
+    """Excel de cuentas (oct-2026): 'french pequeño', 'pekines 18 años', 'mestizo schnauzer'..."""
+    for texto, esperada in [("french pequeño", "bulldog frances"), ("pekines 18 años", "pequines"),
+                            ("pastor inglés cachorra", "pastor ingles"), ("pincher dóberman", "pinscher"),
+                            ("mini poodle", "caniche pequeno"), ("mestizo schnauzer", "schnauzer"),
+                            ("mestizo de rottweiler", "rottweiler"), ("mestizo negro", "mestizo")]:
+        razas, _ = T.resolver_razas(texto)
+        assert [c for c, _ in razas] == [esperada], texto

@@ -1,0 +1,164 @@
+{
+  "fuente": "registro de cuentas de la propietaria (Excel), servicios con raza y código de catálogo",
+  "version_tarifario": "2.1.0",
+  "registros_leidos": 708,
+  "excluidos": {
+    "sin_codigo": 311,
+    "con_extras": 39,
+    "sin_raza": 33,
+    "bano_especial": 7,
+    "raza_no_reconocida": 19
+  },
+  "en_salon": {
+    "n": 247,
+    "dentro_del_rango_pct": 68.4,
+    "cobrado_menos_motor_sin_nudos": {
+      "n": 247,
+      "media": -9.27,
+      "mediana": -11.75,
+      "media_abs": 9.68
+    }
+  },
+  "en_salon_raza_determinada": {
+    "n": 71,
+    "dentro_del_rango_pct": 45.1,
+    "cobrado_menos_motor_sin_nudos": {
+      "n": 71,
+      "media": -3.6,
+      "mediana": -1.0,
+      "media_abs": 4.29
+    }
+  },
+  "en_salon_por_servicio": {
+    "completo": {
+      "n": 219,
+      "dentro_del_rango_pct": 69.9,
+      "cobrado_menos_motor_sin_nudos": {
+        "n": 219,
+        "media": -9.83,
+        "mediana": -12.5,
+        "media_abs": 10.02
+      }
+    },
+    "express": {
+      "n": 28,
+      "dentro_del_rango_pct": 57.1,
+      "cobrado_menos_motor_sin_nudos": {
+        "n": 28,
+        "media": -4.91,
+        "mediana": -5.25,
+        "media_abs": 7.0
+      }
+    }
+  },
+  "en_salon_por_anio": {
+    "2024": {
+      "n": 26,
+      "dentro_del_rango_pct": 73.1,
+      "cobrado_menos_motor_sin_nudos": {
+        "n": 26,
+        "media": -8.93,
+        "mediana": -12.12,
+        "media_abs": 9.49
+      }
+    },
+    "2025": {
+      "n": 168,
+      "dentro_del_rango_pct": 64.3,
+      "cobrado_menos_motor_sin_nudos": {
+        "n": 168,
+        "media": -9.47,
+        "mediana": -11.75,
+        "media_abs": 9.92
+      }
+    },
+    "2026": {
+      "n": 53,
+      "dentro_del_rango_pct": 79.2,
+      "cobrado_menos_motor_sin_nudos": {
+        "n": 53,
+        "media": -8.81,
+        "mediana": -11.5,
+        "media_abs": 9.0
+      }
+    }
+  },
+  "con_puerta_a_puerta": {
+    "n": 52,
+    "dentro_del_rango_pct": 90.4,
+    "cobrado_menos_motor_sin_nudos": {
+      "n": 52,
+      "media": -5.54,
+      "mediana": -3.5,
+      "media_abs": 7.54
+    }
+  },
+  "completo_por_raza": [
+    {
+      "raza": "shih tzu",
+      "n": 26,
+      "cobrado_mediana": 14.0,
+      "cobrado_min": 6.0,
+      "cobrado_max": 15.0,
+      "motor_sin_nudos": 15.0,
+      "motor_rango": [
+        15.0,
+        20.0
+      ],
+      "dentro_del_rango_pct": 46.2
+    },
+    {
+      "raza": "pequines",
+      "n": 12,
+      "cobrado_mediana": 12.0,
+      "cobrado_min": 10.0,
+      "cobrado_max": 20.0,
+      "motor_sin_nudos": 15.0,
+      "motor_rango": [
+        15.0,
+        20.0
+      ],
+      "dentro_del_rango_pct": 33.3
+    },
+    {
+      "raza": "yorkie",
+      "n": 7,
+      "cobrado_mediana": 15.0,
+      "cobrado_min": 6.3,
+      "cobrado_max": 15.0,
+      "motor_sin_nudos": 15.0,
+      "motor_rango": [
+        15.0,
+        20.0
+      ],
+      "dentro_del_rango_pct": 57.1
+    },
+    {
+      "raza": "pastor ingles",
+      "n": 5,
+      "cobrado_mediana": 25.0,
+      "cobrado_min": 12.0,
+      "cobrado_max": 45.0,
+      "motor_sin_nudos": 45.0,
+      "motor_rango": [
+        45.0,
+        70.0
+      ],
+      "dentro_del_rango_pct": 20.0
+    },
+    {
+      "raza": "golden",
+      "n": 5,
+      "cobrado_mediana": 25.0,
+      "cobrado_min": 25.0,
+      "cobrado_max": 25.0,
+      "motor_sin_nudos": 25.0,
+      "motor_rango": [
+        25.0,
+        39.0
+      ],
+      "dentro_del_rango_pct": 100.0
+    }
+  ],
+  "lectura": "dentro_del_rango: lo cobrado cae en el rango que el bot daria sabiendo raza y servicio (sin saber nudos). cobrado_menos_motor_sin_nudos > 0: ella cobra mas que el precio sin nudos del motor (puede ser por nudos, que el Excel no registra)."
+}

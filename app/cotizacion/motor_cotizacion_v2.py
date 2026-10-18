@@ -110,6 +110,17 @@ class Tarifario:
             return clave, self.datos["razas"][clave], "aproximado"
         return None
 
+    # Lo que se escribe junto a la raza y no es raza (Excel de cuentas y chats):
+    # color, edad, tamaño o notas ("french pequeño", "pastor inglés cachorra",
+    # "pekines 18 años", "mestizo negro"). El tamaño lo extrae el NLU aparte.
+    _DESCRIPTORES = re.compile(
+        r"\b(negr[oa]|blanc[oa]|gris|cafe|caf[eé]cit[oa]|cachorr[oa]|viej[oa]|cieg[oa]|gordit[oa]|"
+        r"peque(no|na|nit[oa])?|median[oa]|grande|mini|toy|\d+\s*(anos|meses)|\d+\s*era vacuna|vacuna)\b")
+
+    def _sin_descriptores(self, texto: str) -> str:
+        limpio = re.sub(r"\s+", " ", self._DESCRIPTORES.sub(" ", texto)).strip()
+        return limpio or texto
+
     def resolver_razas(self, raza: str | list | None) -> tuple[list[tuple[str | None, dict]], list[str]]:
         """Interpreta la raza declarada, incluyendo cruces y mestizos.
 
@@ -125,9 +136,11 @@ class Tarifario:
             partes = [str(r) for r in raza]
         else:
             texto = _normalizar(str(raza))
-            predominante = re.match(r"^(mestiz[oa]|cruce|cruzad[oa]|mezcla)\s+(de|con)\s+(.+)$", texto)
-            if predominante:
-                texto = predominante.group(3)
+            if self.resolver_raza(texto) is None:
+                texto = self._sin_descriptores(texto)
+            predominante = re.match(r"^(mestiz[oa]|cruce|cruzad[oa]|mezcla)\s+(?:(?:de|con)\s+)?(.+)$", texto)
+            if predominante and self.resolver_raza(predominante.group(2)):
+                texto = predominante.group(2)
                 avisos.append(f"'{raza}': se cotiza con la raza predominante; confirmar en recepción.")
             partes = [x for x in re.split(r"\s+(?:con|x|y|e)\s+|/|,|\+", texto) if x.strip()]
         resueltas: list[tuple[str | None, dict]] = []
