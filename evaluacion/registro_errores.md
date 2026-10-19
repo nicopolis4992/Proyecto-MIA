@@ -2,11 +2,12 @@
 
 Errores encontrados durante el desarrollo y las pruebas del prototipo, con su
 causa, la corrección aplicada y la prueba que evita que vuelva a aparecer.
-Insumo para el capítulo de resultados y limitaciones (SCRUM-90). Versión 1.0 ·
-11-oct-2026.
+Insumo para el capítulo de resultados y limitaciones (SCRUM-90). Versión 1.1 ·
+19-oct-2026.
 
 **Cómo se detectaron:**
 - **Manual:** conversaciones de prueba del equipo (capturas del 30-sep al 06-oct).
+- **Pruebas internas:** el equipo simulando a la clienta y a la propietaria en la demo y por WhatsApp (16 al 19-oct), con las reglas que dio la propietaria el 17 y 18-oct.
 - **Evaluación:** conjunto ciego de 222 mensajes (SCRUM-64).
 - **Grabación:** errores que aparecieron al grabar los escenarios repetibles (`scripts/escenarios.py`).
 
@@ -67,19 +68,40 @@ Detalle de los 9 errores del conjunto ciego: `evaluacion/nlu/resultados/nlu_v2_e
 | E-26 | Si WhatsApp no le llega a la propietaria, la solicitud se pierde | Análisis | Un solo canal | Respaldo por correo (SCRUM-86) · `c6a9208` | Corregido |
 | E-27 | Un escenario grabado ocultaba errores detrás del mensaje de "error técnico" | Grabación | La prueba solo revisaba que hubiera respuesta | Las pruebas fallan si aparece el mensaje de error técnico · `a604a2f` | Corregido |
 
-## 6. Resumen
+## 6. Pruebas internas del 16 al 19 de octubre
+
+| ID | Caso | Detección | Causa | Corrección | Estado |
+|---|---|---|---|---|---|
+| E-28 | Ante una propuesta para el lunes, "martes a las 8 está bien" confirmaba el lunes | Pruebas internas | El "está bien" se tomaba como aceptación aunque traía otro horario | Un horario distinto al propuesto es una reprogramación · `64946d1` | Corregido |
+| E-29 | "El lunes no puedo, el total sería 22" volvía a proponer el lunes | Pruebas internas | Sin hora nueva, el cambio solo aplicaba el precio | Se anota el precio y se ofrecen turnos de otros días · `64946d1` | Corregido |
+| E-30 | "¿Cuáles son sus horarios?" recibía tres veces "¿Qué día y a qué hora…?" | Pruebas internas | La pregunta no aportaba fecha y se repetía la misma pregunta | Responde los turnos y ofrece los libres; no repite la pregunta · `64946d1` | Corregido |
+| E-31 | "Quiero un baño completo para Fara" no iniciaba la reserva | Grabación | El NLU lo clasificaba como *consultar* y respondía el RAG | Un pedido de servicio sin pregunta va a la agenda · `938e776` | Corregido |
+| E-32 | Tras elegir otro día con el precio fijado por la propietaria, se le decía al cliente el precio anterior | Grabación | El mensaje de cierre usaba la cotización y no el total acordado | Se informa el total acordado · `938e776` | Corregido |
+| E-33 | "¿Hay cita a las 10?" se tomaba como la elección del horario | Pruebas internas | El LLM extraía la hora aunque era una pregunta | Se responde si está libre y se espera el "sí" · `4dc3c88` | Corregido |
+| E-34 | "No puedo enviarla ahora" (la foto) cancelaba la reserva | Grabación | El LLM marcaba "cancelar" con cualquier "no puedo" | Solo se cancela si el cliente lo dice claramente · `4dc3c88` | Corregido |
+| E-35 | "¿Qué días tienen disponibles?" en medio de los datos se ignoraba | Grabación | La regla de disponibilidad no reconocía "disponibles" | "Primero necesito unas preguntas" y luego se muestran los horarios · `4dc3c88` | Corregido |
+| E-36 | Una pregunta o un pedido en medio de los datos hacía saltar la pregunta pendiente (se perdían las vacunas) | Grabación | La pregunta se marcaba como hecha aunque no se respondió | Se repite la pregunta pendiente · `4dc3c88` | Corregido |
+| E-37 | "Quiero saber más información" se le pasaba a la propietaria | Pruebas internas | Pregunta demasiado general para el RAG | Respuesta fija con la presentación del salón · `efcbb96` | Corregido |
+| E-38 | El cambio de la propietaria ("cámbialo a las 2pm, a 20") se le reenvió al cliente tal cual | Pruebas internas | Citaba la consulta de otro cliente y se trató como relevo | Si el texto es una decisión y hay una cita por aprobar, se aplica a la cita · `95b2979` | Corregido |
+| E-39 | Con la cita en revisión, cualquier pregunta del cliente recibía "Estamos revisando su cita" | Pruebas internas | La agenda respondía el estado de la cita | La pregunta la responde la base de conocimiento · `95b2979` | Corregido |
+| E-40 | El número con el que el cliente eligió un horario quedó como respuesta de vacunas | Pruebas internas | Se anotaba cualquier respuesta tras la pregunta de vacunas | No se anotan números ni elecciones · `95b2979` | Corregido |
+| E-41 | "Es ciego" se respondía pero no le llegaba a la propietaria | Pruebas internas | Solo se extraía lo que cambia el precio | Campo de observaciones por mascota en el resumen · `a10ba52` | Corregido |
+| E-42 | Gemini estimó un tamaño menos en las dos fotos probadas (mediano → pequeño, grande → mediano) | Pruebas internas | La foto no tiene escala; posible sesgo sistemático | La propietaria corrige al aprobar ("es grande"); el panel mide el acierto · `8e0fb4a` | Abierto |
+
+## 7. Resumen
 
 | Componente | Corregidos | Mitigados | Abiertos |
 |---|---|---|---|
-| NLU | 2 | 2 | 1 |
-| Agenda y aprobación | 8 | 0 | 0 |
-| Cotización | 4 | 0 | 1 |
+| NLU y orquestación | 4 | 2 | 1 |
+| Agenda y aprobación | 20 | 0 | 0 |
+| Cotización | 4 | 0 | 2 |
 | RAG | 2 | 0 | 1 |
 | WhatsApp e infraestructura | 5 | 1 | 0 |
-| **Total** | **21** | **3** | **3** |
+| **Total** | **35** | **3** | **4** |
 
 **Limitaciones abiertas que conviene declarar en el informe:**
 - La confianza que declara el LLM no sirve como umbral (E-05).
 - Hay pocos ejemplos de las clases raras de imagen (E-18).
 - El umbral del RAG no se ha evaluado con un set formal (E-21).
+- El tamaño estimado por foto puede quedar por debajo del real (E-42): lo corrige la propietaria al aprobar.
 - Para producción hacen falta plantillas de Meta para los mensajes que inicia el bot (E-24).
