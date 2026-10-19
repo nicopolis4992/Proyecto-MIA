@@ -501,3 +501,21 @@ def test_ubicacion_del_local_se_envia_como_pin(monkeypatch):
                               propietaria=PROP, agente_rag=lambda m: None, clasificador=object(), calendario=False)
     r = og.procesar_mensaje(TEL, "¿dónde quedan?", grafo=og.construir_grafo(d))
     assert "ubicación" in r and "maps.google.com/?q=-0.1,-78.5" in msj.a(TEL)[0]
+
+
+def test_pregunta_con_la_cita_en_revision_la_responde_el_rag():
+    """Prueba del 18-oct: con la cita enviada a aprobar, una pregunta recibia 'Estamos revisando su cita'."""
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import construir_grafo, crear_dependencias, procesar_mensaje
+
+    msj, repo = MensajeroMemoria(), Repositorio(":memory:")
+    rag = lambda m: SimpleNamespace(texto="El pago es por transferencia al terminar.", fundamentada=True)
+    d = crear_dependencias(client=ClienteFalso(_extraccion_accion("ninguna")), repo=repo, mensajero=msj,
+                           propietaria=PROP, agente_rag=rag, clasificador=object(), calendario=False)
+    m = {"nombre": "Fara", "servicio": "completo", "tamano": "mediano", "grupo": "B_deslanado"}
+    cid = repo.crear_cita(cliente_telefono=TEL, mascotas=[m], modalidad="salon", cotizacion=COT.cotizar([m]),
+                          fecha_hora=datetime(2099, 1, 5, 10, 0, tzinfo=ZONA_HORARIA))   # futura con el reloj real
+    repo.guardar_sesion(TEL, {"cita_en_aprobacion": cid})
+    r = procesar_mensaje(TEL, "¿el lunes cómo es el pago?", grafo=construir_grafo(d))   # va directo a la agenda
+    assert r == "El pago es por transferencia al terminar."

@@ -317,3 +317,26 @@ def test_error_del_calendario_se_explica():
     assert "compartido" in explicar_error(error(404, "Not Found"))
     assert "no está habilitada" in explicar_error(error(403, "Google Calendar API has not been used in project"))
     assert "Hacer cambios en los eventos" in explicar_error(error(403, "Forbidden"))
+
+
+def test_cambio_de_hora_y_precio_citando_una_consulta_se_aplica_a_la_cita():
+    """Prueba del 18-oct: la ultima notificacion era una consulta del cliente; la propietaria
+    escribio el cambio de la cita y se le reenvio tal cual al cliente."""
+    llm = json.dumps({"tipo": "modificar", "nueva_fecha_hora": "2026-10-01T14:00", "nuevo_total": 20,
+                      "nuevo_costo_transporte": None, "motivo": None})
+    p, repo, msj = _procesador(ClienteFalso(llm))
+    cid = _cita(repo, modalidad="salon")
+    p.registrar_consulta("wamid.consulta9", CLI, "me puedes dar la direccion?")
+    resp = p.procesar("el jueves a las 12 no puedo, cambialo para las 2pm. el precio cambialo a 20",
+                      id_citado="wamid.consulta9")
+    cita = repo.obtener_cita(cid)
+    assert "Le propuse el cambio" in resp and cita["total_acordado"] == 20
+    assert cita["fecha_hora"].startswith("2026-10-01T14:00")
+    assert not any("cambialo" in t for t in msj.a(CLI))       # no se reenvia el texto de la propietaria
+
+
+def test_respuesta_a_una_consulta_sin_cita_pendiente_se_reenvia():
+    p, repo, msj = _procesador()
+    p.registrar_consulta("wamid.c2", CLI, "¿aceptan tarjeta?")
+    p.procesar("sí, aceptamos tarjeta", id_citado="wamid.c2")
+    assert msj.a(CLI) == ["sí, aceptamos tarjeta"]

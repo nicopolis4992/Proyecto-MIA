@@ -306,6 +306,10 @@ def nodo_pausado(estado: EstadoConversacion, d: Dependencias) -> EstadoConversac
 
 def nodo_agenda(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["respuesta"] = d.agenda.atender(estado["remitente"], estado["mensaje"], ahora())
+    if estado["respuesta"] is None:
+        # Pregunta suelta con la cita ya enviada a aprobar: la responde la base de conocimiento.
+        logger.info("Agenda sin respuesta: pregunta para el RAG")
+        return nodo_rag(estado, d)
     logger.info("Enrutado a agente_agenda")
     return estado
 

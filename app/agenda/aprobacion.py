@@ -71,6 +71,12 @@ _TODO_EL_DIA = re.compile(r"\b(lunes|martes|miercoles|jueves|viernes|sabado|domi
 _TAMANO_CORREGIDO = re.compile(r"\b(?:es|son)\s+(miniatura|pequen[oa]s?|median[oa]s?|grandes?|extragrandes?|"
                                r"extra grandes?)\b")
 _TAMANO_MOTOR = {"mini": "pequeno", "peq": "pequeno", "med": "mediano", "gra": "grande", "ext": "grande"}
+# Lo que dice la propietaria sobre una cita (hora, precio, aprobar). Si responde
+# citando una consulta pero el texto es esto y hay una cita por aprobar, es para
+# la cita (prueba del 18-oct: "cambialo para las 2pm, el precio a 20" se le
+# reenvio al cliente que habia preguntado la direccion).
+_DECISION_CITA = re.compile(r"\b(listo|aprobad[oa]|apruebo|rechaz|no puedo|cambi|a las \d|\d{1,2}\s*(am|pm)\b|"
+                            r"precio|cobr|total|es (grande|median|pequen|miniatura|extragrande))")
 _ACTIVAR = {"activar bot", "activar el bot", "reanudar bot", "encender bot", "prender bot", "prender el bot"}
 
 
@@ -287,6 +293,9 @@ class ProcesadorAprobacion:
                 and _normalizar(texto) not in _APROBAR | _RECHAZAR):
             msg_id = sesion["ultima_consulta"]
         if msg_id is None:
+            return None
+        if _DECISION_CITA.search(_sin_tildes(texto)) and (self.repo.citas_por_estado("pendiente_aprobacion")
+                                                          or self.repo.citas_por_estado("propuesta_cliente")):
             return None
         consulta = consultas.pop(msg_id)
         if sesion.get("ultima_consulta") == msg_id:

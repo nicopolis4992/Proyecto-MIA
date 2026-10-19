@@ -281,7 +281,9 @@ class AgenteAgenda:
 
     # -- turno de conversacion ----------------------------------------------
 
-    def atender(self, telefono: str, mensaje: str, ahora: datetime) -> str:
+    def atender(self, telefono: str, mensaje: str, ahora: datetime) -> str | None:
+        """Respuesta al cliente. None = no es de la agenda (una pregunta suelta con la cita ya
+        hecha): la responde el orquestador con la base de conocimiento."""
         sesion = self.repo.obtener_sesion(telefono)
         sesion.setdefault("reserva", reserva_vacia())
         alternativas = sesion.get("alternativas") or []
@@ -317,6 +319,10 @@ class AgenteAgenda:
             self._iniciar_reprogramacion(sesion, cita)
         elif cita and accion == "ninguna" and not sesion.get("reprogramar_cita_id") \
                 and not _trae_datos_de_reserva(datos):
+            if _es_pregunta(mensaje):
+                # Prueba del 18-oct: "¿me da la direccion?" con la cita en revision recibia
+                # "Estamos revisando su cita". La pregunta la responde el orquestador (RAG).
+                return None
             # "gracias", "ok" tras confirmar: no se abre una reserva nueva.
             return self._estado_de_cita(cita)
 
@@ -331,7 +337,8 @@ class AgenteAgenda:
             # se conserva el original y no se vuelve a anunciar.
             datos["pedido_especial"] = None
         if sesion.get("ultima_pregunta") == PREGUNTA_SALUD and mensaje.strip() and not _es_pregunta(mensaje) \
-                and not datos.get("pedido_especial"):
+                and not datos.get("pedido_especial") and not datos.get("eligio_alternativa") \
+                and not mensaje.strip().isdigit():
             # La respuesta se anota tal cual para la propietaria: no cambia el precio.
             sesion["reserva"]["salud"] = mensaje.strip()[:200]
         reserva = self._fusionar(sesion["reserva"], datos)
