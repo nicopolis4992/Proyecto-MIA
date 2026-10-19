@@ -69,9 +69,10 @@
   },
   "ubicacion_local": {
     "nombre": "Lina's Pet Salón",
-    "direccion": "",
+    "direccion": "C. Yanacona N74, 170134 Quito",
     "latitud": -0.100138,
     "longitud": -78.507148,
-    "comentario": "Se envia como ubicacion de WhatsApp (pin de mapa) cuando preguntan donde queda el local. Mientras latitud/longitud esten vacias, la pregunta se le pasa a la propietaria. Coordenadas: en Google Maps, clic derecho sobre el local -> copiar las coordenadas."
+    "comentario": "Se envia como ubicacion de WhatsApp (pin de mapa con nombre y direccion) cuando preguntan donde queda el local. enlace_maps: el enlace de la ficha del negocio en Google Maps (Compartir -> Copiar enlace); si esta, se envia tambien, para que abra la ficha con fotos y opiniones y no solo un punto. Sin latitud/longitud, la pregunta se le pasa a la propietaria.",
+    "enlace_maps": ""
   }
 }

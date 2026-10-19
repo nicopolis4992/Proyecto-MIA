@@ -125,12 +125,25 @@ class MensajeroWhatsApp:
             return None
 
 
+def enlace_maps(ubicacion: dict) -> str:
+    """La ficha del negocio si se configuro; si no, una busqueda por nombre y direccion
+    (Google la abre en la ficha si existe) en vez de un punto suelto."""
+    if ubicacion.get("enlace_maps"):
+        return ubicacion["enlace_maps"]
+    from urllib.parse import quote_plus
+
+    consulta = ", ".join(x for x in (ubicacion.get("nombre"), ubicacion.get("direccion")) if x)
+    if consulta:
+        return f"https://www.google.com/maps/search/?api=1&query={quote_plus(consulta)}"
+    return f"https://maps.google.com/?q={ubicacion['latitud']},{ubicacion['longitud']}"
+
+
 def texto_ubicacion(ubicacion: dict) -> str:
     """La ubicacion como texto con enlace de Google Maps (demo y respaldo)."""
     lineas = [f"📍 {ubicacion.get('nombre') or 'Ubicación'}"]
     if ubicacion.get("direccion"):
         lineas.append(ubicacion["direccion"])
-    lineas.append(f"https://maps.google.com/?q={ubicacion['latitud']},{ubicacion['longitud']}")
+    lineas.append(enlace_maps(ubicacion))
     return "\n".join(lineas)
 
 

@@ -500,7 +500,8 @@ def test_ubicacion_del_local_se_envia_como_pin(monkeypatch):
     d = og.crear_dependencias(client=ClienteFalso(), repo=Repositorio(":memory:"), mensajero=msj,
                               propietaria=PROP, agente_rag=lambda m: None, clasificador=object(), calendario=False)
     r = og.procesar_mensaje(TEL, "¿dónde quedan?", grafo=og.construir_grafo(d))
-    assert "ubicación" in r and "maps.google.com/?q=-0.1,-78.5" in msj.a(TEL)[0]
+    assert "ubicación" in r and "El Condado" in msj.a(TEL)[0]
+    assert "google.com/maps/search/?api=1&query=Lina%27s+Pet+Sal%C3%B3n%2C+El+Condado" in msj.a(TEL)[0]
 
 
 def test_pregunta_con_la_cita_en_revision_la_responde_el_rag():

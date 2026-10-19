@@ -280,6 +280,8 @@ def nodo_respuesta_fija(estado: EstadoConversacion, d: Dependencias) -> EstadoCo
         return estado
     d.mensajero.enviar_ubicacion(estado["remitente"], ubicacion)
     texto = "Aquí le comparto nuestra ubicación 📍"
+    if ubicacion.get("enlace_maps"):
+        texto += f"\nEn Google Maps: {ubicacion['enlace_maps']}"
     sesion = d.repo.obtener_sesion(estado["remitente"])
     if en_flujo_agenda(estado["remitente"], d) and sesion.get("ultima_pregunta"):
         texto += f"\n\n{sesion['ultima_pregunta']}"  # sigue la reserva donde iba
