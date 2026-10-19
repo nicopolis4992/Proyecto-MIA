@@ -33,6 +33,6 @@
   "foto_a_la_propietaria": {
     "activo": true,
     "rango_al_cliente": false,
-    "comentario": "Reunion 17-oct-2026: la propietaria quiere ver la foto primero para decidir el tamaño. La foto se le reenvia con lo que estimo el sistema; al cliente no se le da el rango por foto (rango_al_cliente=false) y ella confirma tamaño y precio. La estimacion se sigue guardando en la traza para evaluar el clasificador (SCRUM-105)."
+    "comentario": "Propietaria, 17 y 18-oct: la foto y lo que el sistema vio en ella (tamano, pelo, nudos, con su confianza) le llegan JUNTO con la solicitud de la cita, con el precio propuesto, para que apruebe o corrija ('es grande', 'cobrale 20'). Al cliente no se le da el rango por foto (rango_al_cliente=false). La estimacion se guarda en la traza para evaluar el clasificador (SCRUM-105)."
   }
 }

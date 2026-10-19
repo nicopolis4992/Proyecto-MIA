@@ -36,5 +36,6 @@ ese caso se le explica el motivo antes de cobrar.
 
 ## Pedidos especiales
 Si desea un cambio a lo que incluye un servicio (por ejemplo, sin perfume o sin
-accesorios), díganoslo al agendar: lo anotamos en su cita y la propietaria le
-confirma el precio con ese cambio.
+accesorios), díganoslo al agendar: lo anotamos en su cita. Quitar algo del
+servicio no cambia el precio. Si pide un Baño Premium sin el baño medicado, le
+corresponde el Baño Completo.

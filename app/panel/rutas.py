@@ -180,6 +180,22 @@ def probar_correo(request: Request):
             "No se pudo enviar: revisa usuario, contraseña de aplicación y los registros del servidor"}
 
 
+@router.post("/api/probar-calendario")
+def probar_calendario(request: Request):
+    """Crea y borra un evento de prueba en Google Calendar y explica el error si falla."""
+    _autorizar(request)
+    from app.agenda.calendario import crear_calendario, explicar_error
+
+    cal = crear_calendario()
+    if cal is None:
+        return {"ok": False, "detalle": "Faltan GOOGLE_CALENDAR_ID o GOOGLE_SERVICE_ACCOUNT_JSON, o el JSON no es "
+                                        "válido (pégalo completo, con las llaves { })"}
+    try:
+        return {"ok": True, "detalle": cal.probar()}
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "detalle": explicar_error(exc, cal)}
+
+
 @router.get("/api/salud")
 def salud(request: Request):
     """Diagnostico de configuracion (sin valores secretos), sobre la base real."""

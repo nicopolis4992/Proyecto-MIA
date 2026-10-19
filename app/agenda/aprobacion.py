@@ -67,6 +67,10 @@ _PAUSAR = {"pausar bot", "pausa bot", "pausar el bot", "apagar bot", "apagar el 
 _SIN_ESPACIO = re.compile(r"\bno (puedo|alcanzo|me alcanza|tengo (espacio|tiempo|cupo))|\bno hay (espacio|cupo)|"
                           r"\bestoy (llena|full|copada)|\bocupad")
 _TODO_EL_DIA = re.compile(r"\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo|ese dia|todo el dia|hoy|manana)\b")
+# Correccion del tamano tras ver la foto: "es grande", "es mediana".
+_TAMANO_CORREGIDO = re.compile(r"\b(?:es|son)\s+(miniatura|pequen[oa]s?|median[oa]s?|grandes?|extragrandes?|"
+                               r"extra grandes?)\b")
+_TAMANO_MOTOR = {"mini": "pequeno", "peq": "pequeno", "med": "mediano", "gra": "grande", "ext": "grande"}
 _ACTIVAR = {"activar bot", "activar el bot", "reanudar bot", "encender bot", "prender bot", "prender el bot"}
 
 
@@ -241,6 +245,15 @@ class ProcesadorAprobacion:
         if cita is None:
             return aviso
 
+        correccion = _TAMANO_CORREGIDO.search(_sin_tildes(texto))
+        if correccion:
+            # "es grande" tras ver la foto: se recotiza con ese tamaño (sin LLM).
+            cita = self._corregir_tamano(cita, correccion.group(1))
+            resto = (_sin_tildes(texto)[:correccion.start()] + _sin_tildes(texto)[correccion.end():]).strip(" ,.;")
+            if not resto:
+                return (f"📐 Cita #{cita['id']}: tamaño corregido. El precio queda en {mensajes.texto_total(cita)}. "
+                        "Responde \"listo\" para aprobar o dime el precio.")
+            texto = resto
         decision = interpretar_respuesta(texto, cita, self.client)
         self.repo.registrar_evento(cita["id"], "respuesta_propietaria",
                                    {"texto": texto, "decision": decision.tipo, "origen": decision.origen})
@@ -279,7 +292,8 @@ class ProcesadorAprobacion:
         if sesion.get("ultima_consulta") == msg_id:
             sesion["ultima_consulta"] = None
         self.repo.guardar_sesion(self.propietaria, sesion)
-        self.mensajero.enviar(consulta["cliente"], f"💬 Respuesta de la propietaria: {texto}")
+        # Sale tal cual, en nombre del salon (propietaria, 18-oct: sin "la propietaria dice").
+        self.mensajero.enviar(consulta["cliente"], texto)
         return f"📨 Se lo envié al cliente {consulta['cliente']} (preguntó: \"{consulta['pregunta']}\")."
 
     def _listar_pendientes(self) -> str:
@@ -373,6 +387,17 @@ class ProcesadorAprobacion:
         self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
         ofrecidos = ", ".join(mensajes.fecha_legible(a) for a in alternativas) or "ninguno (le pedí otro horario)"
         return f"❌ Cita #{cita['id']} rechazada. Le ofrecí al cliente: {ofrecidos}."
+
+    def _corregir_tamano(self, cita: dict, palabra: str) -> dict:
+        tamano = _TAMANO_MOTOR[palabra[:3]]
+        mascotas = [{**m, "tamano": tamano} for m in cita["mascotas"]]
+        motor = [{k: m[k] for k in ("nombre", "servicio", "raza", "tamano", "grupo", "estado", "comportamiento")
+                  if m.get(k) is not None} for m in mascotas]
+        cotizacion = self.cotizador.cotizar(motor, cita["modalidad"], cita.get("sector"))
+        self.repo.actualizar_cita(cita["id"], mascotas=mascotas, cotizacion=cotizacion)
+        self.repo.registrar_evento(cita["id"], "tamano_corregido", {"tamano": tamano, "palabra": palabra,
+                                                                    "total": cotizacion.get("total")})
+        return self.repo.obtener_cita(cita["id"])
 
     def _pedir_otro_horario(self, cita: dict, d: Decision, texto: str, ahora: datetime) -> str:
         """No puede en ese horario: la misma cita se reabre y el cliente elige otro."""

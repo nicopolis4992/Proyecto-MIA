@@ -32,8 +32,8 @@ UMBRAL_SIMILITUD = float(os.getenv("RAG_UMBRAL", "0.66"))
 
 MARCA_SIN_CONTEXTO = "SIN_CONTEXTO"
 RESPUESTA_SIN_CONTEXTO = (
-    "No tengo esa información a la mano. Le comento a la propietaria para "
-    "que le responda directamente lo antes posible."
+    "No tengo esa información a la mano en este momento. Lo consulto y le "
+    "respondo por aquí lo antes posible 🙏"
 )
 
 PROMPT_SISTEMA = """Eres el asistente de WhatsApp de Lina's Pet Salón, un negocio

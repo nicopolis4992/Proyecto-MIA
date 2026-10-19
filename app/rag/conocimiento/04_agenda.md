@@ -16,10 +16,10 @@ servicio puerta a puerta. Puede enviar una foto para la cotización. Si no sabe
 qué horario hay libre, pregúntenos por un día y le ofrecemos los horarios
 disponibles.
 
-## La propietaria aprueba cada cita
-Toda cita es revisada y aprobada por la propietaria antes de confirmarse.
+## Revisamos cada cita
+Toda cita la revisamos y aprobamos personalmente antes de confirmarla.
 Después de agendar le llega un mensaje de confirmación con los datos
-definitivos. Si la propietaria necesita cambiar la hora o el precio, se lo
+definitivos. Si necesitamos cambiar la hora o el precio, se lo
 proponemos y usted decide si le parece bien.
 
 ## Cambiar o cancelar una cita

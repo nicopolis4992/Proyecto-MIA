@@ -42,6 +42,6 @@ no se cobra aparte.
 
 ## Desenredo de nudos y motas
 Si el pelo tiene algunos nudos, se suma un recargo fijo de 2 o 3 dólares. Quitar
-motas (pelo muy enredado o apelmazado) se cobra más: la propietaria fija el
+motas (pelo muy enredado o apelmazado) se cobra más: fijamos el
 valor al ver a su perrito. El desenredo se hace siempre que el pelo se pueda
 recuperar; si no se puede recuperar, se rapa.

@@ -155,7 +155,12 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     estilo = _estilo_propietaria(cita)
     lineas.append(estilo or f"Total: {texto_total(cita)}")
     if cita.get("pedido_especial"):
-        lineas.append(f"⚠️ Pedido especial del cliente: {cita['pedido_especial']} → define el precio")
+        lineas.append(f"📝 Pedido del cliente: {cita['pedido_especial']} (no cambia el precio)")
+    foto = _lo_que_vio_la_foto(cita.get("foto"))
+    if foto:
+        lineas.append(foto)
+    elif cita.get("sin_foto"):
+        lineas.append("⚠️ El cliente no envió foto: confirma el tamaño al recibirlo.")
     salud = next((m["salud"] for m in cita["mascotas"] if m.get("salud")), None)
     if salud:
         lineas.append(f"🩺 Vacunas y desparasitación: {salud}")
@@ -168,8 +173,25 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     if cita.get("requiere_revision_manual"):
         lineas.append("⚠️ La foto no permitió estimar bien: revisa el precio.")
     lineas.append("\nResponde a ESTE mensaje: \"listo\" para aprobar, \"no\" para rechazar, "
-                  "o dime el cambio (ej. \"a las 12 está bien\", \"cóbrale 20\").")
+                  "o dime el cambio (ej. \"es grande\", \"cóbrale 20\", \"a las 12 está bien\").")
     return "\n".join(lineas)
+
+
+ETIQUETA_ESTADO = {"sin_motas": "sin nudos", "moderado": "algunos nudos", "severo": "muy enredado"}
+BACKEND = {"cnn_onnx": "CNN", "gemini_zero_shot": "Gemini"}
+
+
+def _lo_que_vio_la_foto(traza: dict | None) -> str | None:
+    """"📷 En la foto (CNN): mediano 92 %, doble capa 81 %, sin nudos 70 %" para que ella apruebe o corrija."""
+    c = (traza or {}).get("clasificacion")
+    if not c or not c.get("es_perro"):
+        return None
+    partes = [f"{etiqueta[c[campo]]} {round(100 * c.get('confianza_' + campo, 0))} %"
+              for campo, etiqueta in (("tamano", ETIQUETA_TAMANO), ("grupo", ETIQUETA_GRUPO),
+                                      ("estado", ETIQUETA_ESTADO)) if c.get(campo) in etiqueta]
+    if not partes:
+        return None
+    return f"📷 En la foto ({BACKEND.get(c.get('backend'), c.get('backend'))}): " + ", ".join(partes)
 
 
 def confirmacion_cliente(cita: dict) -> str:
@@ -198,7 +220,7 @@ def confirmacion_cliente(cita: dict) -> str:
 
 def propuesta_cliente(cita: dict) -> str:
     """La propietaria ajusto hora o precio: se le pregunta al cliente antes de confirmar."""
-    return (f"La propietaria revisó su cita y le propone este ajuste para {_nombres(cita)}:\n"
+    return (f"Revisamos su cita y le proponemos este ajuste para {_nombres(cita)}:\n"
             f"📅 {fecha_legible(cita['fecha_hora'])}\n💵 Total: {texto_total(cita)}\n"
             "¿Le parece bien? Respóndame \"sí\" para confirmar, o dígame qué horario le queda mejor.")
 
@@ -207,7 +229,7 @@ def otro_horario_cliente(cita: dict, alternativas: list[datetime], todo_el_dia: 
     """La propietaria no puede ese dia (u hora) y no propuso otro: el cliente elige."""
     f = datetime.fromisoformat(cita["fecha_hora"])
     cuando = f"el {DIAS[f.weekday()]} {f.day} de {MESES[f.month - 1]}" if todo_el_dia else f"el {fecha_legible(f)}"
-    texto = f"La propietaria revisó su cita: {cuando} no tiene espacio 🙏"
+    texto = f"Revisamos su cita: {cuando} ya no tenemos espacio 🙏"
     if cita.get("total_acordado") is not None:
         texto += f" El total para {_nombres(cita)} sería {texto_total(cita)}."
     if not alternativas:

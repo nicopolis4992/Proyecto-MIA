@@ -26,6 +26,7 @@ Requiere: pip install langgraph google-genai
 
 from __future__ import annotations
 
+import base64
 import logging
 import re
 from dataclasses import dataclass
@@ -48,7 +49,7 @@ from app.agenda.agente_agenda import AgenteAgenda, reserva_vacia
 from app.agenda.aprobacion import ProcesadorAprobacion
 from app.agenda.disponibilidad import cargar_config
 from app.config import MODELO_LLM, PROPIETARIA_WHATSAPP, RUTA_TARIFARIO, ahora
-from app.cotizacion.cotizador_imagen import ETIQUETA_GRUPO, ETIQUETA_TAMANO, cargar_politica, procesar_foto
+from app.cotizacion.cotizador_imagen import cargar_politica, procesar_foto
 from app.cotizacion.cotizador import Cotizador
 
 logging.basicConfig(level=logging.INFO)
@@ -317,10 +318,14 @@ def nodo_cotizacion_imagen(estado: EstadoConversacion, d: Dependencias) -> Estad
 
     mensaje = r.mensaje
     politica = cargar_politica().get("foto_a_la_propietaria", {})
-    if politica.get("activo") and d.propietaria:
-        _foto_a_la_propietaria(estado, d, m, r.atributos)
+    if politica.get("activo"):
+        # Propietaria, 18-oct: la foto le llega JUNTO con la solicitud de la cita
+        # (agente_agenda._cerrar_reserva), con lo que vio el sistema y el precio.
+        fotos = sesion.setdefault("fotos", [])
+        fotos.append(base64.b64encode(estado["imagen"]).decode())
+        sesion["fotos"] = fotos[-2:]
         if not politica.get("rango_al_cliente", True):
-            mensaje = "¡Gracias por la foto! 🐾 Se la paso a la propietaria para que confirme el tamaño y el precio."
+            mensaje = "¡Gracias por la foto! 🐾"
 
     if ya_agendando:
         cierre = d.agenda.continuar(tel, sesion, ahora())
@@ -330,19 +335,6 @@ def nodo_cotizacion_imagen(estado: EstadoConversacion, d: Dependencias) -> Estad
     estado["respuesta"] = f"{mensaje}\n\n{cierre}"
     logger.info("Enrutado a cotizacion_imagen (%s)", r.traza.get("decision"))
     return estado
-
-
-def _foto_a_la_propietaria(estado: EstadoConversacion, d: Dependencias, mascota: dict, atributos: dict) -> None:
-    """Reunion 17-oct: la propietaria ve la foto primero y decide el tamano. Su respuesta
-    citando la foto le llega al cliente por el relevo de consultas."""
-    estimado = [ETIQUETA_TAMANO.get(atributos.get("tamano")), ETIQUETA_GRUPO.get(atributos.get("grupo"))]
-    estimado = ", ".join(e for e in estimado if e) or "no pude estimarlo"
-    nombre = mascota.get("nombre") or "su perrito"
-    texto = (f"Foto de {nombre} (cliente {estado['remitente']}). El sistema estima: {estimado}.\n"
-             "¿Qué tamaño es? Respóndeme citando esta foto (ej. \"es mediano, 18$\") y se lo paso al cliente. "
-             "También podrás ajustar el precio al aprobar la cita.")
-    msg_id = d.mensajero.enviar_imagen(d.propietaria, estado["imagen"], texto)
-    d.aprobacion.registrar_consulta(msg_id, estado["remitente"], f"foto de {nombre}")
 
 
 def construir_grafo(d: Dependencias):

@@ -12,7 +12,7 @@ agresivos ni perros de más de 45 kg.
 
 ## Perros nerviosos o miedosos
 Atendemos a perros nerviosos o miedosos con paciencia y sin costo adicional.
-Solo en casos especiales, que la propietaria le explica antes, puede haber un
+Solo en casos especiales, que le explicamos antes, puede haber un
 recargo.
 
 ## Vacunas y desparasitación

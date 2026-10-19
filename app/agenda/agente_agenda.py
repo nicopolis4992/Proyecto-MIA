@@ -6,17 +6,26 @@ cotiza con el tarifario v2, valida el horario y registra la cita en estado
 pendiente_aprobacion enviando el resumen a la propietaria. NUNCA confirma la
 cita: eso solo ocurre en aprobacion.py cuando ella aprueba.
 
-Que se pregunta y en que orden (reunion con la propietaria, 17-oct):
+Que se pregunta y en que orden (propietaria, 17 y 18-oct):
 1. Servicio y nombre de la mascota (siempre).
-2. Una foto de cuerpo entero (o el tamano), una vez: la foto le llega a la
-   propietaria, que decide el tamano. No se pide si la mascota ya vino antes.
-3. Los demas datos que mueven el precio, en el orden de impacto en USD que
-   calcula el motor. Cada pregunta se hace UNA vez y en lenguaje de la
-   clienta (tarifario_v2.json > preguntas_cliente). Si no sabe o no responde,
-   se sigue con el rango: la propietaria ajusta al aprobar. Nudos y
-   comportamiento (tranquilo, nervioso o agresivo) se preguntan juntos.
-4. Vacunas y desparasitacion (no cambia el precio; se anota para ella).
-5. Modalidad, sector (si es puerta a puerta) y fecha/hora.
+2. Los datos del perro que mueven el precio, en el orden de impacto en USD
+   que calcula el motor (menos el tamano: lo da la foto). Cada pregunta se
+   hace UNA vez y en lenguaje de la clienta (tarifario_v2.json >
+   preguntas_cliente). Nudos y comportamiento (tranquilo, nervioso o
+   agresivo) se preguntan juntos.
+3. Vacunas y desparasitacion (no cambia el precio; se anota para ella).
+4. Una foto actual del perro: se pide hasta 2 veces. La foto y lo que el
+   sistema vio en ella le llegan a la propietaria JUNTO con la solicitud,
+   para que apruebe o corrija el tamano y el precio.
+5. Fecha/hora. El puerta a puerta no se ofrece: solo si el cliente lo pide
+   (entonces se pregunta el sector). Si pregunta por la disponibilidad antes
+   de terminar los datos, se le dice que primero hacen falta unas preguntas
+   y el dia que pidio se le muestra al llegar a la fecha.
+Si pregunta por una hora concreta ("¿hay cita a las 10?"), se le responde si
+esta libre y se espera su "si" antes de enviar la solicitud.
+
+El bot habla en nombre del salon ("le confirmamos"), sin nombrar a "la
+propietaria"; solo el aviso de bienvenida dice que es un asistente virtual.
 
 Memoria de clientes: si el cliente ya tuvo citas confirmadas, la mascota se
 reconoce por su nombre y se reusan su raza, tamano y tipo de pelo.
@@ -46,6 +55,7 @@ mensajes.resumen_para_propietaria -> SCRUM-75, envio con correo -> SCRUM-76/86.
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import re
@@ -178,12 +188,29 @@ _ACEPTAR = {"si", "sí", "si dale", "dale", "ok", "listo", "perfecto", "de una",
 _ATRIBUTOS = ("tamano", "raza_o_grupo_manto", "estado_manto", "comportamiento", "salud")
 PREGUNTA_FECHA = "¿Qué día y a qué hora le gustaría la cita?"
 PREGUNTA_SALUD = "¿Tiene sus vacunas y la desparasitación al día?"
+MAX_PEDIDOS_FOTO = 2
+# "¿hay cita a las 10?", "¿tiene a las 3?": pregunta por un horario, no lo elige.
+_INICIO_PREGUNTA = ("hay ", "tiene ", "tienen ", "tendra", "habra", "puede ", "se puede", "estara", "esta libre",
+                    "queda ")
+
+
+def _es_pregunta(texto: str) -> bool:
+    t = texto.strip().lower()
+    return "?" in t or "¿" in t or t.startswith(_INICIO_PREGUNTA)
+
+
+# Un Premium sin el baño medicado es un Baño Completo (propietaria, 18-oct).
+_SIN_MEDICADO = re.compile(r"medicad|antipulga")
 _DATOS_QUE_SE_RECUERDAN = ("raza", "tamano", "grupo", "peso_kg")
 # "¿cuales son sus horarios?", "¿a que hora atienden?": horario de atencion,
 # no un dia concreto (eso lo extrae el LLM como dia_consultado).
 _PIDE_HORARIOS = re.compile(
     r"horarios?\b(?! de las)|a qu[eé] hora (abren|atienden|trabajan|cierran)|hasta qu[eé] hora|"
-    r"qu[eé] d[ií]as (atienden|trabajan|abren)")
+    r"qu[eé] d[ií]as (atienden|trabajan|abren|tienen|hay)|disponib|cu[aá]ndo (tienen|hay) (espacio|cupo|turno)")
+# El LLM a veces marca "cancelar" con un "no puedo" que responde a otra cosa
+# ("no puedo enviar la foto ahora"): solo se cancela si lo dice claramente.
+_CANCELA = re.compile(r"cancel|ya no (quiero|deseo|voy|necesito)|no quiero (agendar|la cita|nada)|"
+                      r"mejor no|dej[eé]moslo|olv[ií]dalo|olv[ií]delo|no gracias")
 
 
 def _normalizar(texto: str) -> str:
@@ -264,9 +291,12 @@ class AgenteAgenda:
         if cita and cita["estado"] == "propuesta_cliente" and _normalizar(mensaje) in _ACEPTAR:
             return self._aceptar_propuesta(telefono, cita)
 
-        if sesion.get("ultima_pregunta") == PREGUNTA_SALUD and mensaje.strip() and "?" not in mensaje:
-            # La respuesta se anota tal cual para la propietaria: no cambia el precio.
-            sesion["reserva"]["salud"] = mensaje.strip()[:200]
+        ofrecido = sesion.pop("horario_ofrecido", None)
+        if ofrecido and _normalizar(mensaje) in _ACEPTAR | {"si porfa", "si por favor", "reservelo", "si reservelo"}:
+            # "¿Hay cita a las 10?" -> "Sí, está libre, ¿se lo reservo?" -> "sí".
+            sesion["reserva"]["fecha_hora"] = ofrecido
+            return self.continuar(telefono, sesion, ahora)
+
         if "previas" not in sesion:
             sesion["previas"] = self.repo.mascotas_previas(telefono)
 
@@ -290,7 +320,7 @@ class AgenteAgenda:
             # "gracias", "ok" tras confirmar: no se abre una reserva nueva.
             return self._estado_de_cita(cita)
 
-        if datos.get("cancelar") and not sesion.get("reprogramar_cita_id"):
+        if datos.get("cancelar") and not sesion.get("reprogramar_cita_id") and _CANCELA.search(_normalizar(mensaje)):
             self._terminar(telefono, sesion)
             return "Entendido, no agendo nada por ahora. Cuando guste me escribe 🐾"
 
@@ -300,39 +330,108 @@ class AgenteAgenda:
             # El LLM repite el pedido ya anotado (a veces con una letra distinta):
             # se conserva el original y no se vuelve a anunciar.
             datos["pedido_especial"] = None
+        if sesion.get("ultima_pregunta") == PREGUNTA_SALUD and mensaje.strip() and not _es_pregunta(mensaje) \
+                and not datos.get("pedido_especial"):
+            # La respuesta se anota tal cual para la propietaria: no cambia el precio.
+            sesion["reserva"]["salud"] = mensaje.strip()[:200]
         reserva = self._fusionar(sesion["reserva"], datos)
         self._recordar_mascotas(sesion, reserva)
         n = datos.get("eligio_alternativa")
         if n and 1 <= n <= len(alternativas):
             reserva["fecha_hora"] = alternativas[n - 1]
+        consulta_hora = None
+        if datos.get("fecha_hora") and not n and _es_pregunta(mensaje):
+            # Pregunta por un horario: se responde, no se toma como eleccion.
+            consulta_hora, reserva["fecha_hora"] = reserva["fecha_hora"], sesion["reserva"].get("fecha_hora")
         sesion["reserva"] = reserva
 
-        pedido_nuevo = bool(datos.get("pedido_especial"))
-        if pedido_nuevo:
-            # El pedido se anota y la propietaria define el precio al aprobar.
-            # El precio solo se menciona si el cliente lo pregunta.
-            nota = f"Anoto su pedido: {datos['pedido_especial']}. La propietaria lo revisa con su cita"
-            nota += " y le confirma el precio con ese cambio." if datos.get("pregunta_precio") else "."
-            return f"{nota}\n\n{self.continuar(telefono, sesion, ahora)}"
+        if datos.get("pedido_especial"):
+            return f"{self._anotar_pedido(reserva, datos['pedido_especial'])}\n\n{self._repetir_o_seguir(telefono, sesion, ahora)}"
         if datos.get("pregunta_precio") and reserva.get("pedido_especial"):
-            return ("El precio con su pedido especial lo valida la propietaria; se lo confirmo al revisar "
-                    "su cita. " + self.continuar(telefono, sesion, ahora))
+            precio = ""
+            if reserva["mascotas"] and all(m.get("servicio") for m in reserva["mascotas"]):
+                cot = self.cotizador.cotizar(para_motor(reserva["mascotas"]), reserva.get("modalidad") or "salon",
+                                             reserva.get("sector"))
+                precio = f" {cot['mensaje_cliente']}"
+            return (f"Quitar algo del servicio no cambia el precio 🙂{precio}\n\n"
+                    f"{self._repetir_o_seguir(telefono, sesion, ahora)}")
 
         # La preferencia ("en la tarde", "despues de las 3") se recuerda para
         # todas las opciones que se ofrezcan en esta conversacion.
         for clave in ("franja_preferida", "hora_minima", "dia_consultado"):
             if datos.get(clave):
                 sesion[clave] = datos[clave]
+        if consulta_hora:
+            sesion["horario_consultado"] = consulta_hora
         pide_opciones = datos.get("dia_consultado") or datos.get("franja_preferida") or datos.get("hora_minima")
+        pide_disponibilidad = bool(pide_opciones or consulta_hora or _PIDE_HORARIOS.search(mensaje.lower()))
+        if accion in ("reprogramar", "rechazar_propuesta") and not reserva.get("fecha_hora") and not pide_opciones:
+            return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora, cita)
+        if pide_disponibilidad and not reserva.get("fecha_hora") and self._faltan_datos(sesion):
+            # Prueba del 18-oct: preguntaba por la disponibilidad y el bot seguia
+            # con los datos del perro como si no la hubiera oido.
+            nombre = (reserva["mascotas"][0].get("nombre") if reserva["mascotas"] else None) or "su perrito"
+            # Al llegar a la fecha se le muestran los horarios libres sin volver a preguntar.
+            sesion["pidio_disponibilidad"] = True
+            # Su mensaje no respondio la pregunta anterior: se repite (no se salta).
+            pendiente = sesion.get("ultima_pregunta")
+            if pendiente:
+                self.repo.guardar_sesion(telefono, sesion)
+            siguiente = pendiente or self.continuar(telefono, sesion, ahora)
+            return (f"Con gusto le reviso la disponibilidad 🗓️ Primero necesito hacerle unas preguntas sobre "
+                    f"{nombre}.\n\n{siguiente}")
+        if consulta_hora:
+            return self._responder_horario_consultado(telefono, sesion, ahora, cita)
         if pide_opciones and not reserva.get("fecha_hora"):
             # "¿y en la tarde?" sin dia se refiere al dia que se estaba mirando.
             dia = datos.get("dia_consultado") or sesion.get("dia_consultado")
             return self._ofrecer_horarios_del_dia(telefono, sesion, dia, ahora, cita)
-        if accion in ("reprogramar", "rechazar_propuesta") and not reserva.get("fecha_hora"):
-            return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora, cita)
         if not reserva.get("fecha_hora") and _PIDE_HORARIOS.search(mensaje.lower()):
             return self._responder_horario_de_atencion(telefono, sesion, ahora)
         return self.continuar(telefono, sesion, ahora)
+
+    def _repetir_o_seguir(self, telefono: str, sesion: dict, ahora: datetime) -> str:
+        """Si el mensaje no respondio la ultima pregunta (un pedido, una consulta), se repite."""
+        pendiente = sesion.get("ultima_pregunta")
+        if pendiente and pendiente != PREGUNTA_FECHA:
+            self.repo.guardar_sesion(telefono, sesion)
+            return pendiente
+        return self.continuar(telefono, sesion, ahora)
+
+    def _faltan_datos(self, sesion: dict) -> bool:
+        """Todavia hay preguntas del perro (o la foto) antes de llegar a la fecha."""
+        import copy
+
+        pregunta = self.siguiente_pregunta(copy.deepcopy(sesion))
+        return pregunta is not None and pregunta != PREGUNTA_FECHA and not pregunta.startswith("¿En qué sector")
+
+    def _anotar_pedido(self, reserva: dict, pedido: str) -> str:
+        """Quitar algo de un servicio no cambia el precio; un Premium sin medicado es un Completo."""
+        for m in reserva["mascotas"]:
+            if m.get("servicio") == "premium" and _SIN_MEDICADO.search(_normalizar(pedido)):
+                m.update(servicio="completo", servicio_ajustado=True)
+                return ("Un Baño Premium sin el baño medicado es prácticamente nuestro Baño Completo, así que se "
+                        f"lo agendo como Baño Completo 🐾 Anoto también su pedido: {pedido}.")
+        return f"Anoto su pedido: {pedido}. El precio del servicio se mantiene 🙂"
+
+    def _responder_horario_consultado(self, telefono: str, sesion: dict, ahora: datetime,
+                                      cita: dict | None = None) -> str:
+        """"¿Hay cita a las 10?": dice si esta libre y espera el "si" del cliente."""
+        consulta = sesion.pop("horario_consultado")
+        inicio = datetime.fromisoformat(consulta)
+        inicio = inicio if inicio.tzinfo else inicio.replace(tzinfo=ZONA_HORARIA)
+        r = sesion["reserva"]
+        cot = self.cotizador.cotizar(para_motor(r["mascotas"]), r.get("modalidad") or "salon", r.get("sector")) \
+            if r["mascotas"] and all(m.get("servicio") for m in r["mascotas"]) else None
+        duracion = cot["duracion_agenda_min"] if cot else 60
+        ok, motivo = validar_horario(inicio, duracion, r.get("modalidad") or "salon", self.cotizador, self.cfg,
+                                     ocupado_combinado(self.repo, self.calendario), ahora)
+        if ok:
+            sesion["horario_ofrecido"] = inicio.isoformat()
+            self.repo.guardar_sesion(telefono, sesion)
+            return f"Sí, el {mensajes.fecha_legible(inicio)} está libre ✅ ¿Se lo reservo?"
+        otros = self._ofrecer_horarios_del_dia(telefono, sesion, inicio.date().isoformat(), ahora, cita)
+        return f"Ese horario no está disponible ({motivo}).\n{otros}"
 
     @staticmethod
     def _recordar_mascotas(sesion: dict, reserva: dict) -> None:
@@ -447,14 +546,15 @@ class AgenteAgenda:
             desde = ahora
         ocupado = ocupado_combinado(self.repo, self.calendario)
         alternativas = proponer_alternativas(desde, duracion, r.get("modalidad") or "salon", self.cotizador,
-                                             self.cfg, ocupado, ahora, **self._preferencia(sesion))
+                                             self.cfg, ocupado, ahora, max_dias=1 if dia else None,
+                                             **self._preferencia(sesion))
         sesion["alternativas"] = [a.isoformat() for a in alternativas]
         self.repo.guardar_sesion(telefono, sesion)
         if not alternativas:
             return "No encuentro horarios libres en esos días 😕 ¿Qué otro día le queda bien?"
         opciones = "\n".join(f"{i}. {mensajes.fecha_legible(a)}" for i, a in enumerate(alternativas, 1))
         if dia is None and cita:
-            inicio = "Sin problema, busquemos otro horario. Le puedo ofrecer:"
+            inicio = "Sin problema, busquemos otro horario. Tengo libre:"
         elif dia is None:
             inicio = "Estos son los horarios más cercanos que tengo:"
         elif all(a.date().isoformat() == dia for a in alternativas):
@@ -482,10 +582,10 @@ class AgenteAgenda:
 
     def _estado_de_cita(self, cita: dict) -> str:
         if cita["estado"] == "propuesta_cliente":
-            return (f"La propietaria le propuso el {mensajes.fecha_legible(cita['fecha_hora'])} "
+            return (f"Le propusimos el {mensajes.fecha_legible(cita['fecha_hora'])} "
                     f"({mensajes.texto_total(cita)}). ¿Le parece bien? Respóndame \"sí\" o dígame otro horario.")
         if cita["estado"] == "pendiente_aprobacion":
-            return "Su cita está en revisión; le confirmo apenas la propietaria la apruebe 🙌"
+            return "Estamos revisando su cita; le confirmo en cuanto quede lista 🙌"
         return (f"¡Con gusto! Su cita sigue para el {mensajes.fecha_legible(cita['fecha_hora'])}. "
                 "Si necesita cambiarla o cancelarla, solo dígamelo 🐾")
 
@@ -496,6 +596,13 @@ class AgenteAgenda:
     def continuar(self, telefono: str, sesion: dict, ahora: datetime) -> str:
         """Decide el siguiente paso con la reserva actual (tambien tras una foto)."""
         pregunta = self.siguiente_pregunta(sesion)
+        if pregunta == PREGUNTA_FECHA and sesion.get("horario_consultado"):
+            return self._responder_horario_consultado(telefono, sesion, ahora)
+        if pregunta == PREGUNTA_FECHA and sesion.get("dia_consultado"):
+            # Pregunto por un dia antes de terminar los datos: se le muestra ahora.
+            return self._ofrecer_horarios_del_dia(telefono, sesion, sesion["dia_consultado"], ahora)
+        if pregunta == PREGUNTA_FECHA and sesion.pop("pidio_disponibilidad", None):
+            return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora)
         if pregunta == PREGUNTA_FECHA and sesion.get("ultima_pregunta") == PREGUNTA_FECHA:
             # No responde con un dia y hora: en vez de repetir la pregunta, opciones concretas.
             sesion["ultima_pregunta"] = None
@@ -515,7 +622,10 @@ class AgenteAgenda:
         mascotas = []
         for i, m in enumerate(nuevo.get("mascotas") or []):
             base = dict(previas[i]) if i < len(previas) else {}
+            fijo = base.get("servicio") if base.get("servicio_ajustado") else None
             base.update({k: v for k, v in m.items() if v is not None})
+            if fijo:
+                base["servicio"] = fijo  # el Completo que se recomendo no vuelve a ser Premium
             mascotas.append(base)
         # Si el LLM devuelve menos mascotas que antes, no se pierden datos.
         mascotas.extend(previas[len(mascotas):])
@@ -556,16 +666,9 @@ class AgenteAgenda:
 
         preguntado = sesion.setdefault("preguntado", [])
         nombre = mascotas[0].get("nombre")
-        if "tamano" not in preguntado and not sesion.get("traza_foto") and not sesion.get("fotos_intentos"):
-            # Reunion 17-oct: siempre se pide la foto; la propietaria decide el tamano con ella.
-            preguntado.append("tamano")
-            texto = self.cotizador.pregunta("tamano")
-            return texto if len(mascotas) > 1 or not nombre else f"Sobre {nombre}: {texto}"
         for atributo in previa["preguntas_pendientes"]:
-            if atributo in preguntado:
-                continue
-            if atributo == "tamano" and (sesion.get("revision_manual") or sesion.get("fotos_intentos")):
-                continue
+            if atributo in preguntado or atributo == "tamano":
+                continue  # el tamano lo da la foto (y lo confirma la propietaria)
             if atributo in ("estado_manto", "comportamiento"):
                 preguntado += ["estado_manto", "comportamiento"]
                 return f"{self.cotizador.pregunta('estado_manto')} {self.cotizador.pregunta('comportamiento')}"
@@ -575,10 +678,17 @@ class AgenteAgenda:
         if "salud" not in preguntado:
             preguntado.append("salud")
             return PREGUNTA_SALUD
+        pedidos_foto = sesion.get("pedidos_foto", 0)
+        if not sesion.get("traza_foto") and not sesion.get("reprogramar_cita_id") and pedidos_foto < MAX_PEDIDOS_FOTO:
+            # Propietaria, 18-oct: la foto actual es necesaria para aprobar el tamano y el precio.
+            sesion["pedidos_foto"] = pedidos_foto + 1
+            quien = nombre or "su perrito"
+            if pedidos_foto == 0:
+                return (f"Para terminar, ¿me envía una foto actual de {quien}, de cuerpo entero? 📸 "
+                        "Así confirmamos su tamaño y el estado de su pelo.")
+            return f"La foto de {quien} nos ayuda a darle el precio correcto 🙏 ¿Me la puede enviar por aquí?"
 
-        if not r.get("modalidad"):
-            return "¿Lo trae usted al salón o prefiere el servicio puerta a puerta (lo retiramos y entregamos)?"
-        if r["modalidad"] == "puerta_a_puerta" and not r.get("sector"):
+        if r.get("modalidad") == "puerta_a_puerta" and not r.get("sector"):
             return "¿En qué sector de Quito lo retiramos?"
         if not r.get("fecha_hora"):
             return PREGUNTA_FECHA
@@ -595,6 +705,7 @@ class AgenteAgenda:
             return f"Lo siento mucho 🙏 {motivo} Gracias por escribirnos."
 
         r = sesion["reserva"]
+        r["modalidad"] = r.get("modalidad") or "salon"  # el puerta a puerta solo si lo pidio
         cotizacion = self.cotizador.cotizar(para_motor(r["mascotas"]), r["modalidad"], r.get("sector"))
         inicio = datetime.fromisoformat(r["fecha_hora"])
         duracion = cotizacion["duracion_agenda_min"]
@@ -634,8 +745,15 @@ class AgenteAgenda:
             self.repo.registrar_evento(cita_id, "cotizacion_por_foto", sesion["traza_foto"])
         cita = self.repo.obtener_cita(cita_id)
         cita["citas_previas"] = self.repo.citas_previas(telefono, excepto=cita_id)
+        cita["foto"] = sesion.get("traza_foto")
+        cita["sin_foto"] = not sesion.get("traza_foto") and not reprogramada
         if self.propietaria:
             encabezado = f"🔁 Cita #{cita_id}: el cliente eligió otro horario, aprobar" if reprogramada else None
+            for i, foto in enumerate(sesion.get("fotos") or []):
+                # La foto va junto con la solicitud: ella aprueba o corrige tamano y precio.
+                nombres = ", ".join(m.get("nombre") or "la mascota" for m in r["mascotas"])
+                self.mensajero.enviar_imagen(self.propietaria, base64.b64decode(foto),
+                                             f"Foto de {nombres} (cita #{cita_id})")
             msg_id = self.mensajero.enviar(self.propietaria, mensajes.resumen_para_propietaria(cita, encabezado))
             self.repo.actualizar_cita(cita_id, msg_aprobacion_id=msg_id)
             self.repo.registrar_evento(cita_id, "enviada_a_propietaria", {"wa_id": msg_id})
@@ -646,9 +764,9 @@ class AgenteAgenda:
                                             **({"cliente": sesion["cliente"]} if sesion.get("cliente") else {})})
         valor = cotizacion["mensaje_cliente"]
         if r.get("pedido_especial") and not self._mencionar_precio_pedido():
-            valor = "El precio con su pedido especial se lo confirma la propietaria."
+            valor = "El precio con su pedido especial se lo confirmamos al revisar su cita."
         if cita.get("total_acordado") is not None:
             # La propietaria ya fijo el precio (p. ej. "el martes no puedo, seria 22").
             valor = f"El total acordado es {mensajes.texto_total(cita)}."
         return (f"¡Perfecto! Tengo todo para el {mensajes.fecha_legible(inicio)}. "
-                f"{valor} Le confirmo en un momento, apenas se revise la agenda 🙌")
+                f"{valor} Le confirmo en un momento, apenas revisemos la agenda 🙌")

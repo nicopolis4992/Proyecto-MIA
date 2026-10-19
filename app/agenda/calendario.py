@@ -75,10 +75,48 @@ class CalendarioGoogle:
         r.raise_for_status()
         return bool(r.json()["calendars"][self.calendar_id]["busy"])
 
+    @property
+    def correo_bot(self) -> str:
+        return getattr(self.sesion.credentials, "service_account_email", "la cuenta de servicio")
+
+    def probar(self) -> str:
+        """Crea y borra un evento de prueba. Devuelve un texto; lanza la excepcion si falla."""
+        inicio = datetime.now().astimezone() + timedelta(days=1)
+        evento = {"summary": "Prueba del asistente (se borra sola)",
+                  "start": {"dateTime": inicio.isoformat()},
+                  "end": {"dateTime": (inicio + timedelta(minutes=15)).isoformat()}}
+        r = self.sesion.post(f"{API}/calendars/{self.calendar_id}/events", json=evento, timeout=15)
+        r.raise_for_status()
+        self.eliminar_evento(r.json()["id"])
+        return "El bot puede escribir en el calendario ✔"
+
     def eliminar_evento(self, evento_id: str) -> None:
         r = self.sesion.delete(f"{API}/calendars/{self.calendar_id}/events/{evento_id}", timeout=15)
         if r.status_code not in (200, 204, 404, 410):  # ya borrado = ok
             r.raise_for_status()
+
+
+def explicar_error(exc: Exception, calendario=None) -> str:
+    """Causa probable en palabras simples (la cita igual queda confirmada)."""
+    respuesta = getattr(exc, "response", None)
+    codigo = getattr(respuesta, "status_code", None)
+    detalle = ""
+    try:
+        detalle = respuesta.json()["error"]["message"]
+    except Exception:  # noqa: BLE001
+        detalle = str(exc)[:200]
+    correo = calendario.correo_bot if calendario is not None else "la cuenta de servicio"
+    if codigo == 404:
+        return (f"no encuentro el calendario (404): revisa GOOGLE_CALENDAR_ID y que el calendario esté compartido "
+                f"con {correo} con permiso \"Hacer cambios en los eventos\"")
+    if codigo == 403:
+        if "has not been used" in detalle or "disabled" in detalle:
+            return "la API de Google Calendar no está habilitada en el proyecto de Google Cloud (403)"
+        return (f"sin permiso (403): comparte el calendario con {correo} con permiso "
+                f"\"Hacer cambios en los eventos\" (no solo \"Ver\")")
+    if codigo == 401 or "invalid_grant" in detalle:
+        return "la clave JSON de la cuenta de servicio no es válida o fue eliminada (401)"
+    return f"error de Google Calendar ({codigo or 'sin conexión'}): {detalle}"
 
 
 def registrar_en_calendario(repo, calendario, cita: dict) -> str:
@@ -90,9 +128,10 @@ def registrar_en_calendario(repo, calendario, cita: dict) -> str:
         repo.registrar_evento(cita["id"], "registrada_en_calendario", {"evento_id": evento_id})
         return " Quedó en el calendario 📅"
     except Exception as exc:  # noqa: BLE001 - la cita ya esta confirmada
-        logger.exception("No se pudo registrar la cita #%s en Google Calendar", cita["id"])
-        repo.registrar_evento(cita["id"], "error_calendario", {"error": str(exc)})
-        return " ⚠️ No pude agregarla al calendario: agrégala a mano."
+        motivo = explicar_error(exc, calendario)
+        logger.exception("No se pudo registrar la cita #%s en Google Calendar: %s", cita["id"], motivo)
+        repo.registrar_evento(cita["id"], "error_calendario", {"error": str(exc), "motivo": motivo})
+        return f" ⚠️ No pude agregarla al calendario ({motivo}): agrégala a mano."
 
 
 def quitar_del_calendario(repo, calendario, cita_id: int) -> None:

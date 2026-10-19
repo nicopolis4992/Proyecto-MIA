@@ -42,9 +42,8 @@ El Baño Premium, que incluye el baño medicado y antipulgas además de todo lo
 del Baño Completo.
 
 ## ¿Puedo pedir que no le pongan perfume o accesorios?
-Sí. Díganoslo al agendar: lo anotamos en su cita y la propietaria le confirma
-el precio con ese cambio.
+Sí. Díganoslo al agendar: lo anotamos en su cita y el precio se mantiene.
 
 ## ¿Puedo cambiar la hora de mi cita?
 Sí, escríbanos por WhatsApp y le ofrecemos otros horarios disponibles. La
-nueva hora también la confirma la propietaria.
+nueva hora se la confirmamos.

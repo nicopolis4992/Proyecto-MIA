@@ -212,6 +212,7 @@ dialog::backdrop { background: rgba(0,0,0,.35); }
         <p class="desc">Configuración del servidor (sin mostrar claves).</p>
         <div id="tabla-salud"></div>
         <p style="margin:10px 0 0"><button class="btn" id="probar-correo">Enviar correo de prueba</button> <span id="res-correo" class="desc"></span></p>
+        <p style="margin:10px 0 0"><button class="btn" id="probar-calendario">Probar el calendario</button> <span id="res-calendario" class="desc"></span></p>
       </div>
     </div>
   </section>
@@ -503,6 +504,11 @@ $("#probar-correo").onclick = async () => {
   $("#res-correo").textContent = "Enviando…";
   try { const r = await api("/panel/api/probar-correo", { method: "POST" }); $("#res-correo").textContent = (r.ok ? "✓ " : "✕ ") + r.detalle; }
   catch (e) { $("#res-correo").textContent = "✕ Error al llamar al servidor"; }
+};
+$("#probar-calendario").onclick = async () => {
+  $("#res-calendario").textContent = "Probando…";
+  try { const r = await api("/panel/api/probar-calendario", { method: "POST" }); $("#res-calendario").textContent = (r.ok ? "✓ " : "✕ ") + r.detalle; }
+  catch (e) { $("#res-calendario").textContent = "✕ Error al llamar al servidor"; }
 };
 async function refrescar() {
   datos = await api(`/panel/api/dashboard?fuente=${fuente()}`);

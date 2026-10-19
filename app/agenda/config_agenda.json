@@ -44,11 +44,13 @@
   ],
   "comentario_turnos": "Las citas empiezan solo en estos turnos de 2 horas y dentro del horario de cada dia: lunes, miercoles y viernes quedan 12:00, 14:00 y 16:00 (abre a las 11). La ultima cita es a las 16:00. Dos perros a la vez solo si son de la misma casa (una sola cita); su duracion se suma (pendiente: confirmar si son 2 h por perro o 2 h en conjunto).",
   "paso_alternativas_min": 60,
-  "num_alternativas": 3,
+  "num_alternativas": 10,
+  "dias_alternativas": 2,
+  "comentario_alternativas": "Prueba del 18-oct: se ofrecen TODOS los turnos libres (no solo 3). Si el cliente pregunta por un dia, solo ese dia; si no, los de los 2 proximos dias con espacio. Lo que no aparece, esta ocupado.",
   "antelacion_minima_horas": 2,
   "pedidos_especiales": {
-    "mencionar_precio_al_cliente": false,
-    "comentario": "Pedidos fuera del catalogo (ej. 'sin baño medicado ni accesorio'). Se anotan en la cita y la propietaria define el precio al aprobar. Mientras mencionar_precio_al_cliente sea false, el bot no da precio salvo que el cliente lo pregunte, y en ese caso dice que lo valida la propietaria. Decision provisional hasta validarlo con ella."
+    "mencionar_precio_al_cliente": true,
+    "comentario": "Propietaria, 18-oct: quitar algo de un servicio no cambia el precio. Un Premium sin baño medicado es un Baño Completo: el bot lo recomienda. El pedido se anota en la cita."
   },
   "seguimiento_aprobacion": {
     "recordatorio_min": 45,
@@ -62,7 +64,7 @@
   },
   "aviso_privacidad": {
     "activo": true,
-    "texto": "Hola 👋 Soy el asistente virtual de Lina's Pet Salón. Le ayudo con precios y citas, y la propietaria revisa cada cita antes de confirmarla. Sus datos y los de su mascota se usan solo para atenderle (Ley de Protección de Datos Personales); si desea consultarlos o borrarlos, escríbalo aquí.",
-    "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). 17-oct: version corta; se mantiene que es un asistente virtual (transparencia, LOPDP)."
+    "texto": "Hola 👋 Le atiende el asistente virtual de Lina's Pet Salón. Le ayudo con precios y citas, y cada cita la revisamos personalmente antes de confirmarla. Sus datos y los de su mascota se usan solo para atenderle (Ley de Protección de Datos Personales); si desea consultarlos o borrarlos, escríbalo aquí.",
+    "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). 18-oct: la propietaria prefiere que no se note el bot; el equipo mantiene esta unica mencion de 'asistente virtual' (transparencia, LOPDP) y el resto de mensajes habla en nombre del salon."
   }
 }

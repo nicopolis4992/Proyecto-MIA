@@ -14,13 +14,13 @@ realiza por WhatsApp.
 
 ## Cómo nos contactan y cómo atendemos
 Las consultas, cotizaciones y citas se atienden por WhatsApp. Un asistente
-responde las preguntas frecuentes, cotiza y propone horarios; la propietaria
-revisa y aprueba cada cita antes de confirmarla.
+responde las preguntas frecuentes, cotiza y propone horarios; cada cita la
+revisamos personalmente antes de confirmarla.
 
 ## Otros servicios del negocio
 Además del grooming, el negocio ofrece hospedaje canino y venta de snacks.
-Esas consultas las atiende directamente la propietaria: el asistente se las
-pasa para que ella responda.
+Esas consultas las atendemos directamente: escríbanos y le respondemos por
+aquí.
 
 ## Privacidad de sus datos
 Sus datos y las fotos de su mascota se usan solo para cotizar y agendar su

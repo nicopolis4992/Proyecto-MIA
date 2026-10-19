@@ -66,8 +66,8 @@ def test_escenario_reprogramacion():
     demo = _correr("reprogramacion")
     cliente = _textos(demo, "cliente")
     assert any("Para ese día tengo libre" in t for t in cliente)                 # horarios reales
-    assert any("💬 Respuesta de la propietaria" in t for t in cliente)          # relevo de consulta
-    assert any("le propone este ajuste" in t for t in cliente)                  # propuesta al cliente
+    assert any("parqueadero" in t.lower() for t in cliente)                     # relevo de consulta
+    assert any("le proponemos este ajuste" in t for t in cliente)               # propuesta al cliente
     assert any("busquemos otro horario" in t for t in cliente)                  # reprogramacion
     [cita] = demo.repo.todas_las_citas()
     assert cita["estado"] == "confirmada" and cita["total_acordado"] == 22
@@ -84,21 +84,24 @@ def test_escenario_preferencia_tarde():
 def test_escenario_pedido_especial_sin_precio():
     demo = _correr("pedido_especial")
     respuestas = _textos(demo, "cliente")
-    assert sum("Anoto su pedido" in t for t in respuestas) == 1                    # se anuncia una vez
-    assert any("le confirma el precio con ese cambio" in t or "lo valida la propietaria" in t for t in respuestas)
-    assert not any("USD" in t for t in respuestas[1:])                           # sin precio tras el pedido
+    assert sum("se lo agendo como Baño Completo" in t for t in respuestas) == 1    # se recomienda una vez
+    assert any("no cambia el precio" in t for t in respuestas)
     [cita] = demo.repo.todas_las_citas()
-    assert cita["pedido_especial"]
-    assert any("Pedido especial" in t for t in _textos(demo, "propietaria"))
+    assert cita["pedido_especial"] and cita["mascotas"][0]["servicio"] == "completo"
+    assert any("Pedido del cliente" in t for t in _textos(demo, "propietaria"))
 
 
 def test_escenario_prueba_propietaria_17oct():
     demo = _correr("prueba_propietaria_17oct")
     cliente = _textos(demo, "cliente")
-    assert any("lunes, miércoles y viernes a las 12:00, 14:00 y 16:00" in t for t in cliente)
+    assert any("Estos son los horarios más cercanos" in t for t in cliente)     # los da sin volver a preguntar
     assert sum("¿Qué día y a qué hora" in t for t in cliente) <= 1               # no repite la pregunta
-    assert any("no tiene espacio" in t and "22.00$" in t for t in cliente)       # pide otro dia con el precio
-    assert not any("USD 15.50" in t for t in cliente[cliente.index(next(t for t in cliente if "no tiene espacio" in t)):])
+    assert any("Primero necesito hacerle unas preguntas" in t for t in cliente)   # disponibilidad antes de datos
+    assert any("está libre ✅ ¿Se lo reservo?" in t for t in cliente)          # "¿tienen a las 2?" no confirma
+    assert any("ya no tenemos espacio" in t and "22.00$" in t for t in cliente)  # pide otro dia con el precio
+    desde = cliente.index(next(t for t in cliente if "ya no tenemos espacio" in t))
+    assert not any("USD 15.50" in t for t in cliente[desde:])
+    assert not any("propietaria" in t.lower() for t in cliente[1:])              # habla en nombre del salón
     [cita] = demo.repo.todas_las_citas()
     assert cita["estado"] == "confirmada" and cita["total_acordado"] == 22
     assert not cita["fecha_hora"].startswith("2026-10-06")                      # no el martes que no podia

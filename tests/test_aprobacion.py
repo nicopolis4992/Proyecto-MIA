@@ -105,8 +105,9 @@ def test_el_lunes_no_puedo_con_otro_precio_pide_otro_dia_al_cliente():
     cita = repo.obtener_cita(cid)
     assert cita["estado"] == "en_reprogramacion" and cita["total_acordado"] == 22
     [aviso] = msj.a(CLI)
-    assert "lunes 19 de octubre no tiene espacio" in aviso and "22.00$" in aviso
-    opciones = [l for l in aviso.splitlines() if l[:2] in ("1.", "2.", "3.")]
+    assert "lunes 19 de octubre ya no tenemos espacio" in aviso and "22.00$" in aviso
+    assert "propietaria" not in aviso
+    opciones = [l for l in aviso.splitlines() if l.split(".")[0].isdigit()]
     assert opciones and not any("lunes 19" in o for o in opciones)
     sesion = repo.obtener_sesion(CLI)
     assert sesion["reprogramar_cita_id"] == cid and len(sesion["alternativas"]) == len(opciones)
@@ -117,7 +118,7 @@ def test_respuesta_de_la_propietaria_a_una_consulta_se_reenvia_al_cliente():
     p.registrar_consulta("wamid.consulta1", CLI, "¿qué horarios tiene el martes?")
     resp = p.procesar("desde las 10:30 en adelante", id_citado="wamid.consulta1")
     assert "Se lo envié" in resp
-    assert msj.a(CLI) == ["💬 Respuesta de la propietaria: desde las 10:30 en adelante"]
+    assert msj.a(CLI) == ["desde las 10:30 en adelante"]   # 18-oct: tal cual, en nombre del salón
 
 
 def test_modificar_transporte_recalcula_total():
@@ -256,7 +257,7 @@ def test_pausar_bot_reenvia_a_la_propietaria_y_su_respuesta_vuelve_al_cliente():
     assert "hola, quiero agendar" in aviso and CLI in aviso
     id_aviso = msj.enviados[-1][2]
     p.procesar("Hola! Sí claro, ¿para cuándo?", id_citado=id_aviso)  # responde citando
-    assert msj.a(CLI) == ["💬 Respuesta de la propietaria: Hola! Sí claro, ¿para cuándo?"]
+    assert msj.a(CLI) == ["Hola! Sí claro, ¿para cuándo?"]
     assert cliente.llamadas == []                                    # sin Gemini
 
     assert "activo" in p.procesar("activar bot")
@@ -281,3 +282,38 @@ def test_indicadores_de_supervision_humana_en_el_panel():
     assert k["decisiones_propietaria"] == 2
     assert k["pct_aprobadas_sin_cambios"] == 50 and k["pct_modificadas"] == 50
     assert k["tiempo_decision_mediana_min"] is not None
+
+
+def test_es_grande_tras_ver_la_foto_recotiza_y_luego_listo_aprueba():
+    p, repo, msj = _procesador()
+    cid = _cita(repo, modalidad="salon")
+    antes = repo.obtener_cita(cid)["cotizacion"]["total"]
+    resp = p.procesar("es grande", id_citado=f"wamid.cita{cid}")              # sin LLM
+    cita = repo.obtener_cita(cid)
+    assert "tamaño corregido" in resp and cita["mascotas"][0]["tamano"] == "grande"
+    assert cita["estado"] == "pendiente_aprobacion" and msj.a(CLI) == []
+    assert cita["cotizacion"]["total"] == MOTOR.cotizar([{**cita["mascotas"][0]}], "salon")["total"]
+    p.procesar("listo", id_citado=f"wamid.cita{cid}")
+    assert repo.obtener_cita(cid)["estado"] == "confirmada" and antes is not None
+
+
+def test_es_mediana_listo_corrige_y_aprueba_en_un_mensaje():
+    p, repo, msj = _procesador()
+    cid = _cita(repo, modalidad="salon")
+    p.procesar("es mediana, listo", id_citado=f"wamid.cita{cid}")
+    cita = repo.obtener_cita(cid)
+    assert cita["estado"] == "confirmada" and cita["mascotas"][0]["tamano"] == "mediano"
+
+
+def test_error_del_calendario_se_explica():
+    from types import SimpleNamespace
+
+    from app.agenda.calendario import explicar_error
+
+    def error(codigo, mensaje):
+        r = SimpleNamespace(status_code=codigo, json=lambda: {"error": {"message": mensaje}})
+        return SimpleNamespace(response=r)
+
+    assert "compartido" in explicar_error(error(404, "Not Found"))
+    assert "no está habilitada" in explicar_error(error(403, "Google Calendar API has not been used in project"))
+    assert "Hacer cambios en los eventos" in explicar_error(error(403, "Forbidden"))

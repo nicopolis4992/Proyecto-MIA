@@ -111,14 +111,18 @@ def _repartir(horarios: list[datetime], n: int) -> list[datetime]:
 def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, cotizador,
                           cfg: dict, ocupado: Callable[[datetime, int], bool] | None = None,
                           ahora: datetime | None = None, dias_busqueda: int = 7,
-                          franja: str | None = None, hora_minima: time | None = None) -> list[datetime]:
+                          franja: str | None = None, hora_minima: time | None = None,
+                          max_dias: int | None = None) -> list[datetime]:
     """
-    N horarios validos a partir del dia de `desde`, priorizando ese mismo dia.
+    Horarios validos a partir del dia de `desde`, priorizando ese mismo dia.
 
-    Dentro de un dia se ofrecen horarios repartidos (manana, mediodia, tarde)
-    para que el cliente vea todo el rango disponible. `franja` ("manana" o
-    "tarde") y `hora_minima` ("despues de las 3") respetan lo que pidio.
+    Con turnos se ofrecen todos los libres del dia (hasta num_alternativas),
+    de los primeros `max_dias` dias que tengan espacio (por defecto
+    dias_alternativas de la configuracion). `franja` ("manana" o "tarde") y
+    `hora_minima` ("despues de las 3") respetan lo que pidio.
     """
+    max_dias = max_dias or cfg.get("dias_alternativas")
+    dias_con_espacio = 0
     paso = timedelta(minutes=cfg["paso_alternativas_min"])
     n = cfg["num_alternativas"]
     desde_franja, hasta_franja = FRANJAS.get(franja, (time(0, 0), time(23, 59)))
@@ -143,7 +147,8 @@ def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, co
                                                                ocupado, ahora)[0]:
                     del_dia.append(t)
             elegidos += _repartir(del_dia, n - len(elegidos))
-            if len(elegidos) >= n:
+            dias_con_espacio += bool(del_dia)
+            if len(elegidos) >= n or (max_dias and dias_con_espacio >= max_dias):
                 return elegidos
         dia += timedelta(days=1)
     return elegidos

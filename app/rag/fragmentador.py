@@ -158,9 +158,9 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
     frags.append(Fragmento(
         "tarifario#recargos", fuente, "Recargo por nudos y comportamiento",
         f"Si el pelo tiene algunos nudos se suma {recargo_nudos}. Quitar motas (pelo muy enredado o "
-        "apelmazado) se cobra más y la propietaria fija el valor al ver al perro. El desenredo se hace "
+        "apelmazado) se cobra más y fijamos el valor al ver al perro. El desenredo se hace "
         "siempre que el pelo se pueda recuperar; si no, se rapa. Los perros nerviosos o miedosos no "
-        "pagan recargo, salvo casos especiales que decide la propietaria.",
+        "pagan recargo, salvo casos especiales que le explicamos antes.",
     ))
 
     frags.append(Fragmento(
@@ -177,7 +177,7 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
     frags.append(Fragmento(
         "tarifario#puerta_a_puerta", fuente, "Precio del servicio puerta a puerta",
         "Costo del servicio puerta a puerta (retiro y entrega a domicilio): " + "; ".join(detalle)
-        + ". Para otros sectores el costo lo confirma la propietaria.",
+        + ". Para otros sectores el costo se lo confirmamos.",
     ))
 
     multi = t["descuentos"]["multi_mascota"]

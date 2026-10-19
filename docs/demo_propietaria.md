@@ -34,39 +34,41 @@ Los botones de respuesta rápida debajo de cada chat traen varios de estos texto
 
 > **Para decirle:** "Cuando no sabe algo, te pregunta a ti y le pasa tu respuesta al cliente. No se inventa nada."
 
-### 2. Cotizar con una foto (1 min)
+### 2. Agendar una cita completa (4 min)
 
-**Clienta:** 📷 → enviar la foto del perro.
-A la clienta le dice que se la pasa a la propietaria. A ella (derecha) le llega la **foto con lo que estimó el
-sistema** (tamaño y tipo de pelo). **Propietaria:** responder `es mediano, 18$` → le llega a la clienta.
-
-> **Para decirle:** "Tú ves la foto primero y decides el tamaño. El sistema solo te sugiere."
-
-### 3. Agendar una cita completa (3 min)
+Primero los datos del perro, después la foto y al final el horario. A la clienta el bot le habla en
+nombre del salón ("le confirmamos"); solo el saludo inicial dice que es un asistente virtual.
 
 | Clienta escribe | Qué mostrarle |
 |---|---|
-| `Quiero agendar un baño completo para mi perrita Luna, es mestiza` | Pregunta **primero el tamaño**, como lo haría ella |
-| `Es mediana, pesa como 12 kilos` | (Respondió a "¿me envía una foto?") Pregunta el tipo de pelo |
-| `Su pelo le crece y hay que cortárselo` | Pregunta por nudos y comportamiento |
-| `Tiene algunos nudos pero es tranquila` | Pregunta por vacunas y desparasitación |
-| `Sí, tiene sus vacunas y está desparasitada` | Pregunta cómo la lleva |
-| `Que la recojan en mi casa por favor, vivo en el Condado` | Suma el costo del traslado de esa zona |
-| `El jueves a las 4 de la tarde` | **Pico y placa:** el jueves de 16:00 a 20:00 el vehículo no circula, así que ofrece otros turnos |
-| `1` | Elige la primera opción. Le dice que la propietaria confirma |
+| `Quiero agendar un baño completo para mi perrita Luna, es mestiza` | Pregunta por nudos y comportamiento (tranquilo, nervioso o agresivo) |
+| `¿qué días tienen disponibles?` | "Con gusto le reviso la disponibilidad. **Primero necesito hacerle unas preguntas**" y repite la pregunta |
+| `Tiene algunos nudos pero es tranquila` | Pregunta cómo es su pelo |
+| `Su pelo le crece y hay que cortárselo` | Pregunta por vacunas y desparasitación |
+| `Sí, tiene sus vacunas y está desparasitada` | **Pide una foto actual** de cuerpo entero |
+| 📷 enviar la foto del perro | "¡Gracias por la foto!" y muestra **todos** los turnos libres de los próximos días |
+| `¿tienen el jueves a las 10?` | Responde si está libre y pregunta **"¿Se lo reservo?"** (no lo da por confirmado) |
+| `sí` | Le dice que se lo confirman en un momento |
 
-A la derecha le llega el **resumen de la cita**: mascota, servicio, horario, precio, traslado y lo que falta confirmar.
+A la derecha le llega **la foto y el resumen de la cita**: mascota, servicio, horario, precio propuesto, vacunas y
+**lo que el sistema vio en la foto** (tamaño, pelo y nudos, con su porcentaje de confianza).
 
-### 4. Ella decide (2 min)
+> **Para decirle:** "Tú ves la foto y el precio que propone el sistema, y apruebas o corriges. Si el perro es más
+> grande, escribe `es grande` y el precio se recalcula."
+
+El puerta a puerta no se ofrece: solo si la clienta lo pide (`que la recojan en mi casa, vivo en el Condado`), y
+entonces suma el traslado. Si pide un **Premium sin el baño medicado**, el bot le recomienda el Baño Completo.
+
+### 3. Ella decide (2 min)
 
 **Propietaria:** `listo` → la clienta recibe la **confirmación** con fecha, servicio y total.
 
-> **Para decirle:** "Ninguna cita se confirma sin ti. Puedes decir 'listo', 'no' o cambiar algo: 'a las 12 está bien', 'cóbrale 20'. Si cambias algo, se lo propone a la clienta antes de confirmar."
+> **Para decirle:** "Ninguna cita se confirma sin ti. Puedes decir 'listo', 'no' o cambiar algo: 'es grande', 'cóbrale 20', 'a las 12 está bien'. Si cambias algo, se lo propone a la clienta antes de confirmar."
 
 Si hay tiempo, mostrar el cambio: otra clienta pide cita, y la propietaria responde `a las 12 estaría mejor` → la clienta recibe la propuesta y responde `sí, perfecto`.
 O si ese día no puede: `el lunes no puedo, el total sería 22` → a la clienta le ofrece turnos de otros días con el precio nuevo.
 
-### 5. Después del servicio y contingencia (1 min)
+### 4. Después del servicio y contingencia (1 min)
 
 | Propietaria escribe | Para qué |
 |---|---|
@@ -74,7 +76,7 @@ O si ese día no puede: `el lunes no puedo, el total sería 22` → a la clienta
 | `pausar bot` | Si algo falla o quiere atender ella: cada mensaje le llega directo |
 | `activar bot` | El asistente vuelve a atender |
 
-### 6. El panel (1 min)
+### 5. El panel (1 min)
 
 1. Botón **Cargar datos de ejemplo** (barra superior): crea citas simuladas para que se vea lleno.
 2. Pestaña **Panel de la dueña:** citas, ingresos, tiempo hasta confirmar, decisiones de la propietaria y la diferencia entre lo cotizado y lo cobrado.

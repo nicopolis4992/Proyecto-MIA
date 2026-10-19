@@ -120,24 +120,21 @@ def test_doble_capa_no_ofrece_el_deslanado_aparte():
     assert "deslanado" not in r.cotizaciones and "Deslanado" not in r.mensaje
 
 
-def test_la_foto_llega_primero_a_la_propietaria_y_su_respuesta_vuelve_al_cliente():
-    """Reunion 17-oct: la propietaria quiere ver la foto para decidir el tamaño."""
+def test_la_foto_se_guarda_para_la_solicitud_y_no_se_reenvia_al_llegar():
+    """18-oct: la foto le llega a la propietaria junto con la solicitud (no suelta)."""
     from conftest import ClienteFalso
 
-    from app.agents.orchestrator_graph import crear_dependencias, procesar_mensaje, construir_grafo
+    from app.agents.orchestrator_graph import construir_grafo, crear_dependencias, procesar_mensaje
     from app.mensajeria import MensajeroMemoria
     from app.persistencia.repositorio import Repositorio
 
     prop, cli = "593900000001", "593900000099"
-    msj = MensajeroMemoria()
-    d = crear_dependencias(client=ClienteFalso(), repo=Repositorio(":memory:"), mensajero=msj, propietaria=prop,
+    msj, repo = MensajeroMemoria(), Repositorio(":memory:")
+    d = crear_dependencias(client=ClienteFalso(), repo=repo, mensajero=msj, propietaria=prop,
                            agente_rag=lambda m: None, clasificador=ClasificadorFalso(tamano="mediano"),
                            calendario=False)
-    grafo = construir_grafo(d)
-    r = procesar_mensaje(cli, "", imagen=_foto(), grafo=grafo)
-    assert "Se la paso a la propietaria" in r and "USD" not in r
-    [foto] = msj.a(prop)
-    assert foto.startswith("📷") and "mediano" in foto and cli in foto
-    respuesta = procesar_mensaje(prop, "es mediano, 18$", id_citado=msj.enviados[-1][2], grafo=grafo)
-    assert "Se lo envié al cliente" in respuesta
-    assert msj.a(cli)[-1] == "💬 Respuesta de la propietaria: es mediano, 18$"
+    r = procesar_mensaje(cli, "", imagen=_foto(), grafo=construir_grafo(d))
+    assert r.startswith("¡Gracias por la foto!") and "USD" not in r and "propietaria" not in r
+    assert msj.a(prop) == []
+    sesion = repo.obtener_sesion(cli)
+    assert len(sesion["fotos"]) == 1 and sesion["traza_foto"]["clasificacion"]["tamano"] == "mediano"

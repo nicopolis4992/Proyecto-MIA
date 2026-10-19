@@ -238,7 +238,7 @@ def _nota_de_voz(entrante: dict, repo, mensajero) -> None:
     registrar_consulta(repo, propietaria, msg_id, sender, "[nota de voz]")
     mensajero.enviar(propietaria, f"🎤 Nota de voz de {sender} (arriba). Respóndele deslizando el audio: "
                                   "con texto o con otra nota de voz.")
-    mensajero.enviar(sender, "Recibí su nota de voz 🙏 Se la pasé a la propietaria, que le responde por aquí. "
+    mensajero.enviar(sender, "Recibí su nota de voz 🙏 En un momento le respondemos por aquí. "
                              "Si prefiere, también puede escribirme.")
 
 

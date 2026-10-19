@@ -35,22 +35,23 @@ def _agente(*respuestas, ya_preguntado=()):
     """`ya_preguntado`: preguntas que se dan por hechas (p. ej. la foto) para probar otra parte."""
     repo, msj = Repositorio(":memory:"), MensajeroMemoria()
     if ya_preguntado:
-        repo.guardar_sesion(TEL, {"preguntado": list(ya_preguntado)})
+        # "foto": ya se pidio la foto las veces que corresponde (el cliente no la envio).
+        repo.guardar_sesion(TEL, {"preguntado": [p for p in ya_preguntado if p != "foto"],
+                                  **({"pedidos_foto": 2} if "foto" in ya_preguntado else {})})
     return AgenteAgenda(ClienteFalso(*respuestas), repo, msj, COT, cargar_config(), PROP), repo, msj
 
 
-FOTO_Y_SALUD = ("tamano", "salud")
+FOTO_Y_SALUD = ("tamano", "salud", "foto")
 
 
-def test_mestizo_pregunta_primero_el_tamano_y_luego_el_pelo():
-    ag, _, _ = _agente(
-        _extraccion([{"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}]),
-        _extraccion([{"nombre": "Toby", "servicio": "completo", "raza": "mestizo", "tamano": "mediano"}]),
-    )
-    r1 = ag.atender(TEL, "quiero un baño completo para Toby, es mestizo", AHORA)
-    assert "foto" in r1 and "miniatura" in r1 and "extragrande" in r1
-    r2 = ag.atender(TEL, "es mediano", AHORA)
-    assert "pelo" in r2
+def test_mestizo_no_pregunta_el_tamaño_lo_da_la_foto():
+    """18-oct: primero los datos del perro; el tamaño lo da la foto, que se pide al final."""
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}
+    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]))
+    respuestas = [ag.atender(TEL, t, AHORA) for t in ("quiero un baño completo para Toby, es mestizo",
+                                                     "no tiene nudos", "le crece el pelo")]
+    assert not any("pesa" in r or "miniatura" in r for r in respuestas)
+    assert any("pelo" in r for r in respuestas)
 
 
 def test_cruce_conocido_ya_no_pregunta_el_pelo():
@@ -68,7 +69,7 @@ def test_nudos_y_comportamiento_se_preguntan_juntos_una_sola_vez():
     r1 = ag.atender(TEL, "baño completo para mi golden Luna", AHORA)
     assert "nudos" in r1 and "nervioso" in r1 and "agresivo" in r1
     r2 = ag.atender(TEL, "no sé", AHORA)  # no responde: no se insiste
-    assert "salón" in r2
+    assert "¿Qué día y a qué hora" in r2 and "puerta a puerta" not in r2   # 18-oct: no se ofrece
 
 
 def test_deslanado_se_agenda_como_baño_completo():
@@ -132,7 +133,7 @@ def test_a_esa_hora_no_puedo_reprograma_la_cita_existente():
     ag, repo, msj = _agente(_extraccion_accion("reprogramar"), _extraccion_accion("ninguna", eligio_alternativa=1))
     cid = _cita_confirmada(repo)
     r1 = ag.atender(TEL, "disculpa a esa hora no puedo", AHORA)
-    assert "busquemos otro horario. Le puedo ofrecer" in r1 and "1." in r1                      # ofrece horarios, no "¿qué servicio?"
+    assert "busquemos otro horario. Tengo libre" in r1 and "1." in r1                      # ofrece horarios, no "¿qué servicio?"
     assert repo.obtener_cita(cid)["estado"] == "en_reprogramacion"
     assert "pidió cambiar el horario" in msj.a(PROP)[0]
     r2 = ag.atender(TEL, "1", AHORA)
@@ -206,7 +207,8 @@ def test_gracias_tras_confirmar_no_abre_otra_reserva():
 def test_que_horarios_tiene_el_martes_ofrece_horarios_reales_sin_inventar_hora():
     m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
          "comportamiento": "tranquilo"}
-    ag, repo, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-06"))
+    ag, repo, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-06"),
+                          ya_preguntado=FOTO_Y_SALUD)
     r = ag.atender(TEL, "¿qué horarios tiene el martes 6?", AHORA)
     assert "Para ese día tengo libre" in r and "martes 6 de octubre a las 08:00" in r   # abre a las 08:00
     assert repo.obtener_sesion(TEL)["reserva"]["fecha_hora"] is None
@@ -217,17 +219,21 @@ def test_opciones_repartidas_en_el_dia_y_respetan_la_tarde():
     Con los turnos de 2 horas (17-oct) se reparten entre 08:00 y 16:00."""
     m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
          "comportamiento": "tranquilo"}
-    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-08"))
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-08"),
+                       ya_preguntado=FOTO_Y_SALUD)
     r = ag.atender(TEL, "¿qué horarios tiene el jueves 8?", AHORA)
-    assert "08:00" in r and "12:00" in r and "16:00" in r and "10:00" not in r   # repartidas en el día
+    horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
+    assert horas == ["08:00", "10:00", "12:00", "14:00", "16:00"], r   # 18-oct: todos los turnos libres
 
     # Lunes, miércoles y viernes abre a las 11: turnos de 12:00, 14:00 y 16:00 (propietaria, 18-oct).
-    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"))
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"),
+                       ya_preguntado=FOTO_Y_SALUD)
     r = ag.atender(TEL, "¿qué horarios tiene el miércoles 7?", AHORA)
     horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
     assert horas == ["12:00", "14:00", "16:00"], r
 
-    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"))
+    ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"),
+                       ya_preguntado=FOTO_Y_SALUD)
     r = ag.atender(TEL, "¿puede el miércoles en la tarde?", AHORA)
     horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
     assert horas and all(h >= "12:00" for h in horas), r
@@ -238,14 +244,14 @@ def test_reprogramar_pidiendo_la_tarde():
     _cita_confirmada(repo)
     r = ag.atender(TEL, "no a esa hora no puedo, ¿puede en la tarde?", AHORA)
     horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
-    assert len(horas) == 3 and all(h >= "12:00" for h in horas), r
+    assert len(horas) >= 3 and all(h >= "12:00" for h in horas), r
 
 
 def test_en_la_tarde_sin_dia_usa_el_dia_que_se_estaba_mirando():
     m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
          "comportamiento": "tranquilo"}
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"),
-                       _extraccion([m], modalidad="salon", franja_preferida="tarde"))
+                       _extraccion([m], modalidad="salon", franja_preferida="tarde"), ya_preguntado=FOTO_Y_SALUD)
     ag.atender(TEL, "¿qué horarios tiene el miércoles?", AHORA)
     r = ag.atender(TEL, "¿puede en la tarde?", AHORA)
     assert "miércoles 7 de octubre" in r and "lunes" not in r
@@ -253,7 +259,8 @@ def test_en_la_tarde_sin_dia_usa_el_dia_que_se_estaba_mirando():
 
 # --- Pedidos especiales (06-oct): se anotan, sin precio salvo que lo pregunte ----
 
-def test_pedido_especial_se_anota_sin_mencionar_precio():
+def test_premium_sin_baño_medicado_se_recomienda_el_completo_sin_cambiar_el_precio():
+    """Propietaria, 18-oct: un Premium sin baño medicado es un Baño Completo; quitar algo no cambia el precio."""
     m = {"nombre": "Fara", "servicio": "premium", "tamano": "mediano", "grupo": "B_deslanado",
          "estado": "sin_motas", "comportamiento": "tranquilo"}
     ag, repo, msj = _agente(
@@ -262,20 +269,20 @@ def test_pedido_especial_se_anota_sin_mencionar_precio():
         ya_preguntado=FOTO_Y_SALUD,
     )
     r1 = ag.atender(TEL, "¿puede hacerle el premium pero sin el baño medicado y sin el accesorio?", AHORA)
-    assert "Anoto su pedido: sin baño medicado y sin accesorio" in r1
-    assert "$" not in r1 and "USD" not in r1
-    r2 = ag.atender(TEL, "lo llevo yo, el miércoles a las 10", AHORA)
-    assert "USD" not in r2 and "lo confirma la propietaria" in r2
+    assert "se lo agendo como Baño Completo" in r1
+    r2 = ag.atender(TEL, "lo llevo yo, el miércoles a las 12", AHORA)
     [cita] = repo.citas_por_estado("pendiente_aprobacion")
-    assert cita["pedido_especial"] == "sin baño medicado y sin accesorio"
-    assert "⚠️ Pedido especial del cliente: sin baño medicado y sin accesorio" in msj.a(PROP)[0]
+    assert cita["mascotas"][0]["servicio"] == "completo"
+    assert cita["cotizacion"]["total"] == COT.cotizar([{**m, "servicio": "completo"}])["total"]
+    assert "USD" in r2 and "propietaria" not in r2
+    assert "📝 Pedido del cliente: sin baño medicado y sin accesorio (no cambia el precio)" in msj.a(PROP)[0]
 
 
-def test_si_pregunta_el_precio_del_pedido_se_dice_que_lo_valida_la_propietaria():
+def test_quitar_algo_del_servicio_no_cambia_el_precio():
     m = {"nombre": "Fara", "servicio": "premium"}
     ag, _, _ = _agente(_extraccion([m], pedido_especial="sin accesorio", pregunta_precio=True))
     r = ag.atender(TEL, "sin accesorio, ¿cuánto me sale así?", AHORA)
-    assert "le confirma el precio con ese cambio" in r and "USD" not in r
+    assert "El precio del servicio se mantiene" in r and "propietaria" not in r
 
 
 def test_sin_reserva_en_curso_pasa_por_el_clasificador():
@@ -322,18 +329,20 @@ def test_resumen_al_estilo_de_la_propietaria():
 
 # --- Reunion con la propietaria (17-oct) -------------------------------------
 
-def test_pide_la_foto_una_vez_aunque_la_raza_ya_diga_el_tamano():
-    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu"}
-    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]))
-    assert "foto de cuerpo entero" in ag.atender(TEL, "baño completo para Toby, es shih tzu", AHORA)
-    assert "foto" not in ag.atender(TEL, "ahorita no tengo foto", AHORA)
+def test_la_foto_se_pide_al_terminar_los_datos_y_hasta_dos_veces():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]), ya_preguntado=["salud"])
+    assert "foto actual de Toby" in ag.atender(TEL, "baño completo para Toby, es shih tzu", AHORA)
+    assert "La foto de Toby nos ayuda" in ag.atender(TEL, "ahorita no tengo foto", AHORA)
+    assert ag.atender(TEL, "no tengo", AHORA) == "¿Qué día y a qué hora le gustaría la cita?"
 
 
 def test_vacunas_y_desparasitacion_se_anotan_para_la_propietaria():
     m = {"nombre": "Luna", "servicio": "completo", "raza": "golden", "estado": "sin_motas",
          "comportamiento": "tranquilo"}
     ag, repo, msj = _agente(_extraccion([m]), _extraccion([m], modalidad="salon", fecha_hora="2026-10-06T10:00"),
-                            ya_preguntado=["tamano"])
+                            ya_preguntado=["foto"])
     assert ag.atender(TEL, "golden Luna, sin nudos y tranquila", AHORA) == "¿Tiene sus vacunas y la desparasitación al día?"
     ag.atender(TEL, "sí, vacunas al día; la desparasité hace 2 meses", AHORA)
     [cita] = repo.citas_por_estado("pendiente_aprobacion")
@@ -369,3 +378,95 @@ def test_quiero_un_baño_para_mi_perrita_va_a_la_agenda_aunque_el_nlu_diga_consu
     assert pide_servicio("quisiera agendar una cita para Toby")
     assert not pide_servicio("¿cuánto cuesta el baño completo?")
     assert not pide_servicio("quiero saber si aceptan tarjeta")
+
+
+# --- Cambios del 18-oct -------------------------------------------------------
+
+def test_pregunta_por_disponibilidad_antes_de_los_datos_dice_que_primero_hay_preguntas():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu"}
+    ag, repo, _ = _agente(_extraccion([m], dia_consultado="2026-10-08"))
+    r = ag.atender(TEL, "quiero un baño completo para Toby, ¿tiene el jueves?", AHORA)
+    assert r.startswith("Con gusto le reviso la disponibilidad") and "Primero necesito" in r
+    assert repo.obtener_sesion(TEL)["dia_consultado"] == "2026-10-08"
+
+
+def test_al_llegar_a_la_fecha_muestra_el_dia_que_pregunto_antes():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m]), ya_preguntado=FOTO_Y_SALUD)
+    sesion = repo.obtener_sesion(TEL)
+    repo.guardar_sesion(TEL, {**sesion, "dia_consultado": "2026-10-08"})
+    r = ag.atender(TEL, "no tiene nudos", AHORA)
+    assert "jueves 8 de octubre a las 08:00" in r and "jueves 8 de octubre a las 16:00" in r
+
+
+def test_hay_cita_a_las_10_responde_y_espera_el_si():
+    """18-oct: '¿hay cita a las 10?' se tomaba como confirmación de la cita."""
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, repo, msj = _agente(_extraccion([m], fecha_hora="2026-10-08T10:00"), ya_preguntado=FOTO_Y_SALUD)
+    r = ag.atender(TEL, "¿hay cita el jueves a las 10?", AHORA)
+    assert "jueves 8 de octubre a las 10:00 está libre" in r and "¿Se lo reservo?" in r
+    assert repo.citas_por_estado("pendiente_aprobacion") == [] and msj.a(PROP) == []
+    r = ag.atender(TEL, "sí", AHORA)                                   # sin LLM
+    [cita] = repo.citas_por_estado("pendiente_aprobacion")
+    assert cita["fecha_hora"].startswith("2026-10-08T10:00") and "Tengo todo" in r
+
+
+def test_hay_cita_a_una_hora_fuera_de_turno_ofrece_los_del_dia():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m], fecha_hora="2026-10-08T11:00"), ya_preguntado=FOTO_Y_SALUD)
+    r = ag.atender(TEL, "¿tiene a las 11 el jueves?", AHORA)
+    assert "no está disponible" in r and "jueves 8 de octubre a las 10:00" in r
+    assert repo.citas_por_estado("pendiente_aprobacion") == []
+
+
+def test_la_foto_y_lo_que_vio_el_sistema_llegan_con_la_solicitud():
+    """18-oct: la foto le llega a la propietaria junto con la solicitud y el precio propuesto."""
+    import base64
+
+    m = {"nombre": "Fara", "servicio": "completo", "tamano": "mediano", "grupo": "B_deslanado",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    ag, repo, msj = _agente(_extraccion([m], fecha_hora="2026-10-08T10:00"))
+    traza = {"clasificacion": {"es_perro": True, "tamano": "mediano", "confianza_tamano": 0.92,
+                               "grupo": "B_deslanado", "confianza_grupo": 0.81, "estado": "sin_motas",
+                               "confianza_estado": 0.7, "backend": "cnn_onnx"}}
+    repo.guardar_sesion(TEL, {"preguntado": ["salud"], "traza_foto": traza,
+                              "fotos": [base64.b64encode(b"jpg").decode()]})
+    ag.atender(TEL, "el jueves a las 10", AHORA)
+    foto, resumen = msj.a(PROP)
+    assert foto.startswith("📷 Foto de Fara (cita #1)")
+    assert "📷 En la foto (CNN): mediano 92 %, doble capa 81 %, sin nudos 70 %" in resumen
+    assert "USD" in resumen or "$" in resumen and "es grande" in resumen
+
+
+def test_sin_puerta_a_puerta_salvo_que_lo_pida():
+    m = {"nombre": "Fara", "servicio": "completo", "tamano": "mediano", "grupo": "B_deslanado",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m], fecha_hora="2026-10-08T10:00"), ya_preguntado=FOTO_Y_SALUD)
+    ag.atender(TEL, "el jueves a las 10", AHORA)
+    [cita] = repo.citas_por_estado("pendiente_aprobacion")
+    assert cita["modalidad"] == "salon"
+    ag, _, _ = _agente(_extraccion([m], modalidad="puerta_a_puerta"), ya_preguntado=FOTO_Y_SALUD)
+    assert "sector" in ag.atender(TEL, "que la retiren en mi casa", AHORA)
+
+
+def test_no_puedo_enviar_la_foto_no_cancela_la_reserva():
+    """Grabacion del 18-oct: 'no puedo enviarla ahora' (la foto) se tomaba como cancelar."""
+    m = {"nombre": "Fara", "servicio": "completo", "tamano": "mediano", "grupo": "B_deslanado",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m], cancelar=True), _extraccion([m], cancelar=True),
+                          ya_preguntado=["salud"])
+    ag.atender(TEL, "baño completo para Fara", AHORA)                 # pide la foto
+    r = ag.atender(TEL, "no puedo enviarla ahora", AHORA)
+    assert "no agendo nada" not in r and repo.obtener_sesion(TEL)["reserva"]["mascotas"]
+
+
+def test_que_dias_tienen_disponibles_en_medio_de_los_datos():
+    m = {"nombre": "Fara", "servicio": "completo"}
+    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]))
+    ag.atender(TEL, "baño completo para Fara", AHORA)
+    r = ag.atender(TEL, "que dias tienen disponibles?", AHORA)
+    assert "Primero necesito hacerle unas preguntas sobre Fara" in r
+    assert "nudos" in r      # repite la pregunta que no respondio, no la salta

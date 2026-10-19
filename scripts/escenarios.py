@@ -27,12 +27,14 @@ AHORA = "2026-10-06T09:00"  # martes
 
 ESCENARIOS: dict[str, list[tuple[str, str]]] = {
     # Flujo completo con mestiza, restricción vehicular y cambio de la propietaria.
+    # Desde el 18-oct: datos del perro, vacunas, foto (aquí no la envía) y al final la fecha.
     "mestiza_puerta_a_puerta": [
         ("cliente", "Quiero agendar un baño completo con corte para mi perrita Luna, es mestiza"),
-        ("cliente", "Es mediana, pesa como 12 kilos"),
-        ("cliente", "Su pelo le crece y hay que cortárselo"),
         ("cliente", "Tiene algunos nudos pero es tranquila"),
+        ("cliente", "Su pelo le crece y hay que cortárselo, es mediana de unos 12 kilos"),
         ("cliente", "Sí, tiene sus vacunas y está desparasitada"),
+        ("cliente", "No tengo una foto ahora"),
+        ("cliente", "Disculpe, no puedo tomarle foto ahorita"),
         ("cliente", "Que la recojan en mi casa por favor, vivo en el Condado"),
         ("cliente", "El jueves a las 4 de la tarde"),
         ("cliente", "1"),
@@ -44,9 +46,9 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
     "reprogramacion": [
         ("cliente", "Hola, quiero agendar un baño premium para mi perrita Fara, es mediana y de doble capa, "
                     "no tiene nudos y es tranquila"),
-        ("cliente", "no tengo foto a la mano"),
         ("cliente", "si, tiene todas sus vacunas y esta desparasitada"),
-        ("cliente", "lo llevo yo al salon"),
+        ("cliente", "no tengo foto a la mano"),
+        ("cliente", "no puedo enviarla ahora"),
         ("cliente", "el lunes esta bien? a que hora tiene disponible?"),
         ("cliente", "y el martes 13 de octubre? que horarios tiene?"),
         ("cliente", "tienen parqueadero?"),
@@ -63,13 +65,16 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
     "preferencia_tarde": [
         ("cliente", "quiero agendar un baño completo para Toby, es shih tzu, sin nudos y tranquilo, "
                     "lo llevo yo al salon"),
+        ("cliente", "si, esta vacunado y desparasitado"),
+        ("cliente", "no tengo foto"),
+        ("cliente", "no puedo ahora"),
         ("cliente", "que horarios tiene el miercoles?"),
         ("cliente", "no a esa hora no puedo, puedes en la tarde? porque solo me dijiste hasta las 11am"),
         ("cliente", "y despues de las 3?"),
         ("cliente", "la 1"),
-        ("cliente", "si, esta vacunado y desparasitado"),
     ],
-    # Captura del 06-oct: servicio personalizado, sin mencionar precio.
+    # Captura del 06-oct y propietaria 18-oct: un Premium sin baño medicado es un
+    # Completo; quitar algo no cambia el precio.
     "pedido_especial": [
         ("cliente", "quiero agendar un baño premium para mi perrita Fara, es mediana y de doble capa, "
                     "no tiene nudos y es tranquila"),
@@ -77,18 +82,21 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
         ("cliente", "si, vacunas al dia y desparasitada"),
         ("cliente", "y cuanto me saldria asi?"),
         ("cliente", "la llevo yo al salon el miercoles a las 12"),
+        ("cliente", "no tengo foto, disculpe"),
     ],
-    # Prueba con la propietaria (16/17-oct): preguntar los horarios, la foto que
-    # le llega a ella, "el martes no puedo, el total seria 22" y la clienta que
-    # elige otro dia.
+    # Pruebas con la propietaria (16 a 18-oct): pregunta por la disponibilidad
+    # antes de terminar los datos, "¿tienen el martes a las 2?" (se responde, no
+    # se toma como confirmación), "el martes no puedo, el total seria 22" y la
+    # clienta que elige otro dia.
     "prueba_propietaria_17oct": [
         ("cliente", "Quiero un baño completo para mi perrita Fara, es mediana de doble capa"),
-        ("cliente", "ahorita no tengo foto"),
+        ("cliente", "que dias tienen disponibles?"),
         ("cliente", "no tiene nudos y es tranquila"),
         ("cliente", "si, vacunas al dia y desparasitada"),
-        ("cliente", "La llevo al salón"),
-        ("cliente", "Cuales son sus horarios?"),
-        ("cliente", "1"),
+        ("cliente", "ahorita no tengo foto"),
+        ("cliente", "no puedo enviarla ahora"),
+        ("cliente", "tienen el martes a las 2 de la tarde?"),
+        ("cliente", "si"),
         ("propietaria", "el martes no puedo, el total del cobro seria $22"),
         ("cliente", "2"),
         ("propietaria", "listo"),

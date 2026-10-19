@@ -16,8 +16,8 @@ aunque retiremos a varias mascotas de la misma dirección. Al confirmar la cita
 le pedimos que alguien esté pendiente en casa a la hora del retiro.
 
 ## Sectores fuera de la cobertura habitual
-Si su sector no está entre los que atendemos habitualmente, la propietaria le
-confirma si es posible el retiro y su costo.
+Si su sector no está entre los que atendemos habitualmente, le confirmamos si
+es posible el retiro y su costo.
 
 ## Restricción de circulación vehicular
 Por la restricción de circulación vehicular de Quito, algunos días hay franjas

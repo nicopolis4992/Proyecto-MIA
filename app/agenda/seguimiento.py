@@ -80,7 +80,7 @@ def revisar(procesador, ahora: datetime) -> dict:
             conteo["recordatorios"] += 1
         elif not any(e["tipo"] == "cliente_avisado_demora" for e in desde_envio):
             mensajero.enviar(cita["cliente_telefono"],
-                             "Su solicitud sigue en revisión 🙏 La propietaria está ocupada en este momento; "
+                             "Su solicitud sigue en revisión 🙏 Estamos con mucho trabajo en este momento; "
                              "apenas la confirme le aviso por aquí.")
             repo.registrar_evento(cita["id"], "cliente_avisado_demora")
             conteo["clientes_avisados"] += 1

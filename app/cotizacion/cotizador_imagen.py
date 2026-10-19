@@ -120,7 +120,7 @@ def procesar_foto(datos: bytes, clasificador, cotizador: Cotizador, intento: int
 def _redactar(atributos: dict, cotizaciones: dict, cotizador: Cotizador, revision_manual: bool) -> str:
     partes = []
     if revision_manual:
-        partes.append("No logré estimar bien a su perrito por foto; la propietaria le confirmará el valor exacto.")
+        partes.append("No logré estimar bien a su perrito por foto; le confirmamos el valor exacto al revisar su cita.")
     else:
         rasgos = [f"tamaño {ETIQUETA_TAMANO[atributos['tamano']]}" if "tamano" in atributos else None,
                   ETIQUETA_GRUPO.get(atributos.get("grupo"))]
