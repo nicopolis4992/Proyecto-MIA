@@ -26,7 +26,8 @@ def _extraccion(mascotas, **reserva):
             "eligio_alternativa": None, "cancelar": False, "dia_consultado": None,
             "franja_preferida": None, "hora_minima": None, "pedido_especial": None,
             "pregunta_precio": False, "accion_cita": "ninguna"}
-    campos = ("nombre", "servicio", "raza", "tamano", "peso_kg", "grupo", "estado", "comportamiento")
+    campos = ("nombre", "servicio", "raza", "tamano", "peso_kg", "grupo", "estado", "comportamiento",
+              "observaciones")
     return json.dumps({**base, **reserva,
                        "mascotas": [{c: m.get(c) for c in campos} for m in mascotas]})
 
@@ -520,3 +521,27 @@ def test_pregunta_con_la_cita_en_revision_la_responde_el_rag():
     repo.guardar_sesion(TEL, {"cita_en_aprobacion": cid})
     r = procesar_mensaje(TEL, "¿el lunes cómo es el pago?", grafo=construir_grafo(d))   # va directo a la agenda
     assert r == "El pago es por transferencia al terminar."
+
+
+def test_observaciones_de_salud_llegan_a_la_propietaria():
+    """Prueba del 19-oct: 'es ciego' se respondia pero no le llegaba a la propietaria."""
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "shih tzu", "estado": "sin_motas",
+         "comportamiento": "tranquilo"}
+    ag, repo, msj = _agente(_extraccion([{**m, "observaciones": "es ciego"}]),
+                            _extraccion([{**m, "observaciones": "tiene 14 años"}]),
+                            _extraccion([m], fecha_hora="2026-10-08T10:00"), ya_preguntado=FOTO_Y_SALUD)
+    ag.atender(TEL, "baño completo para Toby, es ciego", AHORA)
+    ag.atender(TEL, "ah y tiene 14 años", AHORA)
+    ag.atender(TEL, "el jueves a las 10", AHORA)
+    [cita] = repo.citas_por_estado("pendiente_aprobacion")
+    assert cita["mascotas"][0]["observaciones"] == "es ciego; tiene 14 años"
+    assert "⚠️ Ojo: es ciego; tiene 14 años" in msj.a(PROP)[0]
+
+
+def test_juntar_observaciones_sin_repetir_ni_vacunas():
+    from app.agenda.agente_agenda import _juntar_observaciones
+
+    assert _juntar_observaciones(None, "es ciega, vacunas al dia y desparasitada") == "es ciega"
+    assert _juntar_observaciones("es ciega", "es ciega, tiene 14 años") == "es ciega, tiene 14 años"
+    assert _juntar_observaciones("es ciega", "tiene 14 años") == "es ciega; tiene 14 años"
+    assert _juntar_observaciones("es ciega", "vacunas al dia") == "es ciega"

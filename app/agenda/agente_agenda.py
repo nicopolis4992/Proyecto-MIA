@@ -109,6 +109,13 @@ estado: "sin_motas" (sin nudos), "moderado" (algunos nudos), "severo" (muy
 enredado o apelmazado), solo si lo dice.
 comportamiento: "tranquilo", "dificil" (nervioso, miedoso, inquieto),
 "agresivo_declarado" (si dice que muerde o es agresivo).
+observaciones: cualquier condicion de la mascota que la peluquera debe saber
+aunque no cambie el precio: salud, discapacidad, edad, alergias, cirugias,
+embarazo, cuidados especiales (ej. "es ciega", "tiene 14 años", "alergica al
+perfume", "la operaron hace poco"). Frase corta SOLO con lo nuevo de ESTE
+mensaje (no repitas lo que ya esta en la reserva). NO incluyas vacunas ni
+desparasitacion (se preguntan aparte), ni nudos ni comportamiento. Null si no
+menciona nada de eso.
 Si menciona varias mascotas, una entrada por mascota.
 
 fecha_hora: ISO 8601 "YYYY-MM-DDTHH:MM" resolviendo expresiones relativas
@@ -156,8 +163,9 @@ def construir_esquema(cotizador: Cotizador) -> types.Schema:
             "grupo": S(type=T.STRING, enum=GRUPOS, nullable=True),
             "estado": S(type=T.STRING, enum=["sin_motas", "moderado", "severo", "no_recuperable"], nullable=True),
             "comportamiento": S(type=T.STRING, enum=["tranquilo", "dificil", "agresivo_declarado"], nullable=True),
+            "observaciones": S(type=T.STRING, nullable=True),
         },
-        required=list(CAMPOS_MOTOR),
+        required=[*CAMPOS_MOTOR, "observaciones"],
     )
     return S(
         type=T.OBJECT,
@@ -230,6 +238,24 @@ def _trae_datos_de_reserva(datos: dict) -> bool:
     if datos.get("fecha_hora") or datos.get("dia_consultado") or datos.get("eligio_alternativa"):
         return True
     return any(m.get("servicio") or m.get("nombre") for m in datos.get("mascotas") or [])
+
+
+# Vacunas y desparasitacion van en su propia linea del resumen, no en las observaciones.
+_NO_ES_OBSERVACION = re.compile(r"vacun|desparasit")
+
+
+def _juntar_observaciones(previa: str | None, nueva: str | None) -> str | None:
+    """Agrega lo nuevo sin repetir lo que ya estaba (el LLM a veces devuelve todo junto)."""
+    if nueva:
+        partes = [p.strip(" .") for p in re.split(r"[;,]| y (?=\w)", nueva)]
+        nueva = ", ".join(p for p in partes if p and not _NO_ES_OBSERVACION.search(_normalizar(p))) or None
+    if not nueva:
+        return previa
+    if not previa or _normalizar(previa) in _normalizar(nueva):
+        return nueva
+    if _normalizar(nueva) in _normalizar(previa) or _mismo_texto(previa, nueva):
+        return previa
+    return f"{previa}; {nueva}"
 
 
 def reserva_vacia() -> dict:
@@ -630,6 +656,8 @@ class AgenteAgenda:
         for i, m in enumerate(nuevo.get("mascotas") or []):
             base = dict(previas[i]) if i < len(previas) else {}
             fijo = base.get("servicio") if base.get("servicio_ajustado") else None
+            # Las observaciones se acumulan ("es ciega" y luego "tiene 14 años"), no se reemplazan.
+            m = {**m, "observaciones": _juntar_observaciones(base.get("observaciones"), m.get("observaciones"))}
             base.update({k: v for k, v in m.items() if v is not None})
             if fijo:
                 base["servicio"] = fijo  # el Completo que se recomendo no vuelve a ser Premium

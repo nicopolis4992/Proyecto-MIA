@@ -143,6 +143,8 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
         precio = f" — {texto_rango(d['rango'])}" if d.get("rango") else ""
         lineas.append(f"• {m.get('nombre') or 'Mascota'}: {d.get('servicio_nombre', m.get('servicio'))} "
                       f"({_descripcion_mascota(m)}){precio}")
+        if m.get("observaciones"):
+            lineas.append(f"   ⚠️ Ojo: {m['observaciones']}")
     lineas.append(f"Horario: {fecha_legible(cita.get('fecha_hora'))}")
     if cita["modalidad"] == "puerta_a_puerta":
         tr = c.get("traslado") or {}

@@ -91,7 +91,7 @@ ESCENARIOS: dict[str, list[tuple[str, str]]] = {
     "prueba_propietaria_17oct": [
         ("cliente", "Quiero un baño completo para mi perrita Fara, es mediana de doble capa"),
         ("cliente", "que dias tienen disponibles?"),
-        ("cliente", "no tiene nudos y es tranquila"),
+        ("cliente", "no tiene nudos y es tranquila, pero es cieguita"),
         ("cliente", "si, vacunas al dia y desparasitada"),
         ("cliente", "ahorita no tengo foto"),
         ("cliente", "no puedo enviarla ahora"),

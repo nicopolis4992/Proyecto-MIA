@@ -106,3 +106,5 @@ def test_escenario_prueba_propietaria_17oct():
     assert cita["estado"] == "confirmada" and cita["total_acordado"] == 22
     assert not cita["fecha_hora"].startswith("2026-10-06")                      # no el martes que no podia
     assert cita["mascotas"][0].get("salud")
+    assert "ciegui" in (cita["mascotas"][0].get("observaciones") or "").lower()   # llega a la propietaria
+    assert any("⚠️ Ojo:" in t for t in _textos(demo, "propietaria"))
