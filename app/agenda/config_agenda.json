@@ -66,5 +66,12 @@
     "activo": true,
     "texto": "Hola 👋 Le atiende el asistente virtual de Lina's Pet Salón. Le ayudo con precios y citas, y cada cita la revisamos personalmente antes de confirmarla. Sus datos y los de su mascota se usan solo para atenderle (Ley de Protección de Datos Personales); si desea consultarlos o borrarlos, escríbalo aquí.",
     "comentario": "SCRUM-92 punto 7. Se envia una sola vez, antes de la primera respuesta a cada cliente (solo WhatsApp real, no la demo). 18-oct: la propietaria prefiere que no se note el bot; el equipo mantiene esta unica mencion de 'asistente virtual' (transparencia, LOPDP) y el resto de mensajes habla en nombre del salon."
+  },
+  "ubicacion_local": {
+    "nombre": "Lina's Pet Salón",
+    "direccion": "",
+    "latitud": null,
+    "longitud": null,
+    "comentario": "Se envia como ubicacion de WhatsApp (pin de mapa) cuando preguntan donde queda el local. Mientras latitud/longitud esten vacias, la pregunta se le pasa a la propietaria. Coordenadas: en Google Maps, clic derecho sobre el local -> copiar las coordenadas."
   }
 }

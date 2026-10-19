@@ -49,6 +49,7 @@ from app.agenda.agente_agenda import AgenteAgenda, reserva_vacia
 from app.agenda.aprobacion import ProcesadorAprobacion
 from app.agenda.disponibilidad import cargar_config
 from app.config import MODELO_LLM, PROPIETARIA_WHATSAPP, RUTA_TARIFARIO, ahora
+from app.rag.agente_rag import RESPUESTA_SIN_CONTEXTO
 from app.cotizacion.cotizador_imagen import cargar_politica, procesar_foto
 from app.cotizacion.cotizador import Cotizador
 
@@ -85,7 +86,7 @@ class Dependencias:
 # --- Enrutamiento ---
 
 def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
-        "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda", "pausado"]:
+        "aprobacion", "cotizacion_imagen", "nlu", "agente_agenda", "pausado", "respuesta_fija"]:
     if d.propietaria and estado["remitente"] == d.propietaria:
         return "aprobacion"
     if d.repo.bot_pausado():
@@ -94,6 +95,9 @@ def enrutar_entrada(estado: EstadoConversacion, d: "Dependencias") -> Literal[
     origen.anotar(d.repo, estado["remitente"], estado.get("mensaje") or "")
     if estado.get("imagen"):
         return "cotizacion_imagen"
+    if pregunta_ubicacion(estado["mensaje"]) or (
+            pide_informacion_general(estado["mensaje"]) and not en_flujo_agenda(estado["remitente"], d)):
+        return "respuesta_fija"
     # Ahorro de llamadas: en medio de una reserva, un mensaje que no es una
     # pregunta general ("se llama Toby", "el viernes", "sin accesorio") va
     # directo a la agenda, sin pasar por el clasificador de intencion.
@@ -168,6 +172,26 @@ def pide_servicio(texto: str) -> bool:
     return not parece_pregunta(texto) and bool(_PIDE_SERVICIO.search(texto.lower()))
 
 
+# Prueba del 18-oct: "encontre este lugar en instagram y quiero saber mas
+# informacion" iba al RAG, que no encontraba nada concreto y lo pasaba a la
+# propietaria. Una pregunta general se responde con la presentacion del salon.
+_INFO_GENERAL = re.compile(r"\b(m[aá]s )?informaci[oó]n\b|\binfo\b|qu[eé] (servicios|hacen|ofrecen)|"
+                           r"c[oó]mo funciona|de qu[eé] se trata")
+_TEMA_CONCRETO = re.compile(r"precio|cu[aá]nto|cuest|vale|ba[nñ]o|corte|cita|agend|horario|puerta|"
+                            r"domicilio|pago|tarjeta|factura|hospedaje|snack")
+_UBICACION = re.compile(r"d[oó]nde (queda|quedan|est[aá]n?|se ubica|se encuentra|los encuentro|es el local)|"
+                        r"\bubicaci[oó]n\b|\bdirecci[oó]n\b|c[oó]mo llego|\bel local\b.*\bd[oó]nde\b")
+
+
+def pide_informacion_general(texto: str) -> bool:
+    t = texto.lower()
+    return bool(_INFO_GENERAL.search(t)) and not _TEMA_CONCRETO.search(t)
+
+
+def pregunta_ubicacion(texto: str) -> bool:
+    return bool(_UBICACION.search(texto.lower()))
+
+
 def enrutar_por_intencion(
     estado: EstadoConversacion,
 ) -> Literal["agente_rag", "agente_agenda", "agente_general"]:
@@ -222,6 +246,46 @@ def _reenviar_a_propietaria(estado: EstadoConversacion, d: Dependencias) -> None
         d.propietaria, f"❓ Pregunta sin respuesta de {estado['remitente']}: \"{estado['mensaje']}\"\n"
                        "Respóndeme citando este mensaje y se lo envío al cliente.")
     d.aprobacion.registrar_consulta(msg_id, estado["remitente"], estado["mensaje"])
+
+
+# Lo que agrega cada servicio (son acumulativos), para una lectura rapida en WhatsApp.
+RESUMEN_SERVICIO = {
+    "express": "baño, secado, perfume y accesorios",
+    "basico": "lo del Express más corte de la zona lagrimal y despeje de la zona genital",
+    "completo": "lo del Básico más corte o peinado, uñas, oídos e hidratación de almohadillas",
+    "premium": "lo del Completo más baño medicado y antipulgas",
+}
+
+
+def presentacion(cotizador: Cotizador) -> str:
+    """Respuesta a "quiero más información": qué es el salón y sus servicios (del tarifario)."""
+    servicios = "\n".join(f"• {s['nombre']}: {RESUMEN_SERVICIO.get(codigo, ', '.join(s['incluye']))} "
+                          f"(desde ${s['piso']:g})" for codigo, s in cotizador.datos["servicios"].items())
+    return ("¡Hola! Qué gusto saludarle 🐾 Somos Lina's Pet Salón, peluquería canina en Quito. "
+            f"Atendemos perritos de todos los tamaños, de raza y mestizos. Nuestros servicios:\n{servicios}\n\n"
+            "El precio exacto depende del tamaño, el tipo de pelo y el estado de su perrito. "
+            "¿Le gustaría agendar una cita o saber el precio para su perrito?")
+
+
+def nodo_respuesta_fija(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
+    """Ubicacion del local (pin de WhatsApp) y presentacion del salon, sin LLM."""
+    if not pregunta_ubicacion(estado["mensaje"]):
+        estado["respuesta"] = presentacion(d.cotizador)
+        return estado
+    ubicacion = cargar_config().get("ubicacion_local") or {}
+    if ubicacion.get("latitud") is None or ubicacion.get("longitud") is None:
+        # Aun sin coordenadas: se le pasa a la propietaria, como cualquier pregunta sin respuesta.
+        estado["respuesta"] = RESPUESTA_SIN_CONTEXTO
+        _reenviar_a_propietaria(estado, d)
+        return estado
+    d.mensajero.enviar_ubicacion(estado["remitente"], ubicacion)
+    texto = "Aquí le comparto nuestra ubicación 📍"
+    sesion = d.repo.obtener_sesion(estado["remitente"])
+    if en_flujo_agenda(estado["remitente"], d) and sesion.get("ultima_pregunta"):
+        texto += f"\n\n{sesion['ultima_pregunta']}"  # sigue la reserva donde iba
+    estado["respuesta"] = texto
+    logger.info("Respuesta fija: ubicacion del local")
+    return estado
 
 
 def nodo_pausado(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
@@ -347,12 +411,13 @@ def construir_grafo(d: Dependencias):
     grafo.add_node("aprobacion", lambda e: nodo_aprobacion(e, d))
     grafo.add_node("cotizacion_imagen", lambda e: nodo_cotizacion_imagen(e, d))
     grafo.add_node("pausado", lambda e: nodo_pausado(e, d))
+    grafo.add_node("respuesta_fija", lambda e: nodo_respuesta_fija(e, d))
 
     grafo.add_conditional_edges(
         START,
         lambda e: enrutar_entrada(e, d),
         {"aprobacion": "aprobacion", "cotizacion_imagen": "cotizacion_imagen", "nlu": "nlu",
-         "agente_agenda": "agente_agenda", "pausado": "pausado"},
+         "agente_agenda": "agente_agenda", "pausado": "pausado", "respuesta_fija": "respuesta_fija"},
     )
     # Este es el reemplazo real del "un solo nodo" de SCRUM-85: en lugar de
     # un edge fijo, add_conditional_edges decide el siguiente nodo en
@@ -366,7 +431,8 @@ def construir_grafo(d: Dependencias):
             "agente_general": "agente_general",
         },
     )
-    for nodo in ("agente_rag", "agente_agenda", "agente_general", "aprobacion", "cotizacion_imagen", "pausado"):
+    for nodo in ("agente_rag", "agente_agenda", "agente_general", "aprobacion", "cotizacion_imagen", "pausado",
+                 "respuesta_fija"):
         grafo.add_edge(nodo, END)
 
     return grafo.compile()

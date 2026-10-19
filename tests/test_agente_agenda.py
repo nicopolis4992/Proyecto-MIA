@@ -470,3 +470,34 @@ def test_que_dias_tienen_disponibles_en_medio_de_los_datos():
     r = ag.atender(TEL, "que dias tienen disponibles?", AHORA)
     assert "Primero necesito hacerle unas preguntas sobre Fara" in r
     assert "nudos" in r      # repite la pregunta que no respondio, no la salta
+
+
+def test_mas_informacion_responde_la_presentacion_sin_pasarlo_a_la_propietaria():
+    """Prueba del 18-oct: 'encontre este lugar en instagram y quiero saber mas informacion'."""
+    from app.agents.orchestrator_graph import (construir_grafo, crear_dependencias, pide_informacion_general,
+                                               procesar_mensaje, pregunta_ubicacion)
+    from app.agenda.origen import detectar
+
+    texto = "buenas noches, encontre este lugar en instagram y quiero saber más informacion"
+    assert pide_informacion_general(texto) and not pide_informacion_general("info del precio del baño")
+    assert detectar(texto)["origen"] == "instagram"
+    msj, repo = MensajeroMemoria(), Repositorio(":memory:")
+    d = crear_dependencias(client=ClienteFalso(), repo=repo, mensajero=msj, propietaria=PROP,
+                           agente_rag=lambda m: None, clasificador=object(), calendario=False)
+    r = procesar_mensaje(TEL, texto, grafo=construir_grafo(d))
+    assert "Somos Lina's Pet Salón" in r and "Baño Completo" in r and msj.a(PROP) == []
+    assert repo.obtener_sesion(TEL)["cliente"]["origen"] == "instagram"
+    assert pregunta_ubicacion("¿dónde quedan?") and pregunta_ubicacion("me pasa la ubicación")
+
+
+def test_ubicacion_del_local_se_envia_como_pin(monkeypatch):
+    from app.agents import orchestrator_graph as og
+
+    cfg = {**cargar_config(), "ubicacion_local": {"nombre": "Lina's Pet Salón", "direccion": "El Condado",
+                                                  "latitud": -0.1, "longitud": -78.5}}
+    monkeypatch.setattr(og, "cargar_config", lambda: cfg)
+    msj = MensajeroMemoria()
+    d = og.crear_dependencias(client=ClienteFalso(), repo=Repositorio(":memory:"), mensajero=msj,
+                              propietaria=PROP, agente_rag=lambda m: None, clasificador=object(), calendario=False)
+    r = og.procesar_mensaje(TEL, "¿dónde quedan?", grafo=og.construir_grafo(d))
+    assert "ubicación" in r and "maps.google.com/?q=-0.1,-78.5" in msj.a(TEL)[0]

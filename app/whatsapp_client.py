@@ -192,3 +192,14 @@ def send_image_message(to: str, datos: bytes, caption: str = "", mime: str = "im
     media_id = _con_reintentos(_subir, f"Subida de foto para {to}")
     return _enviar_payload(to, {"type": "image", "image": {"id": media_id, "caption": caption[:1024]}},
                            f"Foto a {to}")
+
+
+def send_location_message(to: str, latitud: float, longitud: float, nombre: str = "",
+                          direccion: str = "") -> str | None:
+    """Pin de ubicacion (el cliente lo abre en su app de mapas)."""
+    ubicacion = {"latitude": latitud, "longitude": longitud}
+    if nombre:
+        ubicacion["name"] = nombre
+    if direccion:
+        ubicacion["address"] = direccion
+    return _enviar_payload(to, {"type": "location", "location": ubicacion}, f"Ubicacion a {to}")

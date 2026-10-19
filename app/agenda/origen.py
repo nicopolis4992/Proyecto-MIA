@@ -1,8 +1,9 @@
 """
 SCRUM-75: de donde viene el cliente, para el resumen de la propietaria.
 
-- origen: Lina's (por defecto), Lavet (la veterinaria aliada) u Hospedaje
-  (cliente del servicio de hospedaje).
+- origen: Lina's (por defecto), Lavet (la veterinaria aliada), Hospedaje
+  (cliente del servicio de hospedaje) o la red social por la que los
+  encontro ("los vi en Instagram").
 - referido_por: quien le recomendo el salon ("me recomendo la Sra. Ana").
 
 Se detecta con reglas sobre los mensajes del cliente (sin LLM) y se guarda
@@ -15,7 +16,9 @@ from __future__ import annotations
 import re
 import unicodedata
 
-ETIQUETA_ORIGEN = {"linas": "Lina's", "lavet": "Lavet", "hospedaje": "Hospedaje"}
+ETIQUETA_ORIGEN = {"linas": "Lina's", "lavet": "Lavet", "hospedaje": "Hospedaje", "instagram": "Instagram",
+                   "facebook": "Facebook", "tiktok": "TikTok"}
+_RED_SOCIAL = re.compile(r"\b(instagram|insta|facebook|face|tik ?tok)\b")
 
 _LAVET = re.compile(r"\blavet\b")
 # "¿tienen hospedaje?" es una pregunta, no el origen: se exige "del/en el hospedaje".
@@ -42,6 +45,9 @@ def detectar(texto: str) -> dict:
         datos["origen"] = "lavet"
     elif _HOSPEDAJE.search(t):
         datos["origen"] = "hospedaje"
+    elif _RED_SOCIAL.search(t):
+        red = _RED_SOCIAL.search(t).group(1).replace(" ", "")
+        datos["origen"] = {"insta": "instagram", "face": "facebook"}.get(red, red)
     m = _REFERIDO.search(t)
     if m and m.group(1) not in ETIQUETA_ORIGEN:
         datos["referido_por"] = m.group(1).title()

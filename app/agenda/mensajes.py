@@ -88,7 +88,7 @@ def _linea_cliente(cita: dict) -> str:
     previas = cita.get("citas_previas")
     if previas is not None:
         partes.append("cliente nuevo" if previas == 0 else f"cliente frecuente ({previas} cita(s) antes)")
-    if cita.get("origen") in ("lavet", "hospedaje"):
+    if cita.get("origen") in ETIQUETA_ORIGEN and cita["origen"] != "linas":
         partes.append(f"viene de {ETIQUETA_ORIGEN[cita['origen']]}")
     if cita.get("referido_por"):
         partes.append(f"referido por {cita['referido_por']}")

@@ -29,7 +29,7 @@ from app import config
 from app.notificaciones import correo
 from app.persistencia.repositorio import Repositorio
 from app.whatsapp_client import (FUERA_DE_VENTANA, ErrorWhatsApp, send_audio_message, send_image_message,
-                                 send_template_message, send_text_message)
+                                 send_location_message, send_template_message, send_text_message)
 
 logger = logging.getLogger("mensajeria")
 
@@ -45,6 +45,9 @@ class Mensajero(Protocol):
 
     def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
         """Envia una foto con un texto al pie."""
+
+    def enviar_ubicacion(self, destino: str, ubicacion: dict) -> str | None:
+        """Envia el pin de ubicacion del local."""
 
 
 class MensajeroWhatsApp:
@@ -96,6 +99,14 @@ class MensajeroWhatsApp:
             logger.error("No se pudo enviar la foto a %s: %s", destino, exc.explicacion or exc)
             return self.enviar(destino, texto + "\n(No pude adjuntar la foto: pídesela al cliente.)")
 
+    def enviar_ubicacion(self, destino: str, ubicacion: dict) -> str | None:
+        try:
+            return send_location_message(destino, ubicacion["latitud"], ubicacion["longitud"],
+                                         ubicacion.get("nombre", ""), ubicacion.get("direccion", ""))
+        except ErrorWhatsApp as exc:
+            logger.error("No se pudo enviar la ubicacion a %s: %s", destino, exc.explicacion or exc)
+            return self.enviar(destino, texto_ubicacion(ubicacion))
+
     def _avisar_con_plantilla(self, destino: str, texto: str) -> str | None:
         """
         Fuera de la ventana de 24 h solo se puede enviar una plantilla aprobada
@@ -112,6 +123,15 @@ class MensajeroWhatsApp:
         except ErrorWhatsApp as exc:
             logger.error("Tampoco se pudo enviar la plantilla %s a %s: %s", plantilla, destino, exc)
             return None
+
+
+def texto_ubicacion(ubicacion: dict) -> str:
+    """La ubicacion como texto con enlace de Google Maps (demo y respaldo)."""
+    lineas = [f"📍 {ubicacion.get('nombre') or 'Ubicación'}"]
+    if ubicacion.get("direccion"):
+        lineas.append(ubicacion["direccion"])
+    lineas.append(f"https://maps.google.com/?q={ubicacion['latitud']},{ubicacion['longitud']}")
+    return "\n".join(lineas)
 
 
 def resumen_corto(texto: str, limite: int = 160) -> str:
@@ -183,6 +203,9 @@ class MensajeroMemoria:
 
     def enviar_imagen(self, destino: str, datos: bytes, texto: str) -> str | None:
         return self.enviar(destino, f"📷 {texto}")
+
+    def enviar_ubicacion(self, destino: str, ubicacion: dict) -> str | None:
+        return self.enviar(destino, texto_ubicacion(ubicacion))
 
     def a(self, destino: str) -> list[str]:
         return [t for d, t, _ in self.enviados if d == destino]
