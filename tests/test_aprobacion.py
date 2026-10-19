@@ -340,3 +340,19 @@ def test_respuesta_a_una_consulta_sin_cita_pendiente_se_reenvia():
     p.registrar_consulta("wamid.c2", CLI, "¿aceptan tarjeta?")
     p.procesar("sí, aceptamos tarjeta", id_citado="wamid.c2")
     assert msj.a(CLI) == ["sí, aceptamos tarjeta"]
+
+
+def test_indicador_tamano_por_foto_frente_a_la_propietaria():
+    """Base para aprender de sus correcciones: Gemini dijo pequeño, ella dijo grande."""
+    from app.panel.datos import indicador_foto
+
+    p, repo, _ = _procesador()
+    a, b = _cita(repo, modalidad="salon"), _cita(repo, modalidad="salon")
+    for cid, tam in ((a, "pequeno"), (b, "mediano")):
+        repo.registrar_evento(cid, "cotizacion_por_foto", {"clasificacion": {"tamano": tam}})
+    p.procesar("es grande", id_citado=f"wamid.cita{a}")          # corrige: era grande
+    p.procesar("listo", id_citado=f"wamid.cita{a}")
+    p.procesar("listo", id_citado=f"wamid.cita{b}")              # aprueba sin corregir: acierto
+    r = indicador_foto(repo, repo.todas_las_citas())
+    assert r["fotos_evaluadas"] == 2 and r["pct_tamano_acertado"] == 50
+    assert r["fotos_subestimadas"] == 1 and r["fotos_sobreestimadas"] == 0

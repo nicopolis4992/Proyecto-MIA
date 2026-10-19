@@ -379,7 +379,8 @@ function pintarPanel() {
     kpi("Tiempo hasta confirmar", k.tiempo_confirmacion_min == null ? "—" : `${Math.round(k.tiempo_confirmacion_min)} min`, "Promedio: solicitud → confirmación al cliente") +
     kpi("Cotizaciones con precio exacto", k.pct_precio_exacto == null ? "—" : `${k.pct_precio_exacto}%`, k.amplitud_media_usd == null ? "" : `Amplitud media del rango: ${usd(k.amplitud_media_usd)}`) +
     kpi("Desviación cotizado vs cobrado", k.desviacion_media_usd == null ? "—" : usd(k.desviacion_media_usd), k.citas_cobradas ? `Promedio en ${k.citas_cobradas} cita(s) cobrada(s) · ${k.pct_cobro_como_cotizado}% cobradas como se cotizó` : "La propietaria registra el cobro: \"cobré 22 a la cita #5\"") +
-    kpi("Servicio puerta a puerta", k.pct_puerta_a_puerta == null ? "—" : `${k.pct_puerta_a_puerta}%`, `${k.clientes_recurrentes} cliente(s) recurrente(s)`);
+    kpi("Servicio puerta a puerta", k.pct_puerta_a_puerta == null ? "—" : `${k.pct_puerta_a_puerta}%`, `${k.clientes_recurrentes} cliente(s) recurrente(s)`) +
+    kpi("Tamaño por foto vs. propietaria", k.fotos_evaluadas ? `${k.pct_tamano_acertado}% acertado` : "—", k.fotos_evaluadas ? `${k.fotos_evaluadas} foto(s) revisadas · ${k.fotos_subestimadas} subestimada(s), ${k.fotos_sobreestimadas} sobreestimada(s)` : "Cuando ella aprueba o corrige (\"es grande\") una cita con foto");
   const hoy = datos.generado.slice(0, 10);
   columnas($("#g-dias"), datos.citas_por_dia, "fecha", "citas", { hoy });
   tablaSimple($("#t-dias"), datos.citas_por_dia, [["fecha", "Fecha"], ["citas", "Citas"]]);

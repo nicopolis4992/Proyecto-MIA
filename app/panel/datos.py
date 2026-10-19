@@ -102,6 +102,43 @@ def indicadores_aprobacion(repo, citas: list[dict]) -> dict:
     }
 
 
+ORDEN_TAMANO = {"pequeno": 0, "mediano": 1, "grande": 2}
+
+
+def indicador_foto(repo, citas: list[dict]) -> dict:
+    """
+    Tamano estimado por la foto frente a lo que decidio la propietaria: si lo
+    corrigio ("es grande") vale su correccion; si aprobo sin corregir, se toma
+    como acierto. Es la base para mejorar el clasificador con su criterio
+    (aprendizaje con retroalimentacion humana, trabajo futuro).
+    """
+    pares = []
+    for c in citas:
+        estimado, corregido = None, None
+        for e in repo.eventos_de_cita(c["id"]):
+            detalle = e.get("detalle") or {}
+            if e["tipo"] == "cotizacion_por_foto":
+                estimado = (detalle.get("clasificacion") or {}).get("tamano")
+            elif e["tipo"] == "tamano_corregido":
+                corregido = detalle.get("tamano")
+        if not estimado:
+            continue
+        if corregido:
+            pares.append((estimado, corregido))
+        elif c["estado"] in ("aprobada", "confirmada"):
+            pares.append((estimado, estimado))
+    if not pares:
+        return {"fotos_evaluadas": 0}
+    matriz = Counter(pares)
+    return {
+        "fotos_evaluadas": len(pares),
+        "pct_tamano_acertado": round(100 * sum(1 for e, r in pares if e == r) / len(pares)),
+        "fotos_subestimadas": sum(1 for e, r in pares if ORDEN_TAMANO.get(e, 1) < ORDEN_TAMANO.get(r, 1)),
+        "fotos_sobreestimadas": sum(1 for e, r in pares if ORDEN_TAMANO.get(e, 1) > ORDEN_TAMANO.get(r, 1)),
+        "matriz_tamano": [{"foto": e, "propietaria": r, "n": n} for (e, r), n in sorted(matriz.items())],
+    }
+
+
 def resumen(repo, desde: datetime | None = None) -> dict:
     citas = repo.todas_las_citas()
     hoy = ahora()
@@ -117,6 +154,7 @@ def resumen(repo, desde: datetime | None = None) -> dict:
             tiempos.append(delta.total_seconds() / 60)
 
     aprobacion = indicadores_aprobacion(repo, citas)
+    foto = indicador_foto(repo, citas)
 
     cotizadas = [c for c in citas if c.get("cotizacion")]
     exactas = [c for c in cotizadas if _cita_publica(c)["comprometido"]]
@@ -161,7 +199,9 @@ def resumen(repo, desde: datetime | None = None) -> dict:
             "pct_cobro_como_cotizado": round(100 * sum(1 for d in desvios if d < 0.01) / len(desvios))
                                        if desvios else None,
             "rechazadas": sum(1 for c in citas if c["estado"] in ("rechazada", "cancelada")),
+            **{k: v for k, v in foto.items() if k != "matriz_tamano"},
         },
+        "matriz_tamano_foto": foto.get("matriz_tamano", []),
         "citas_por_dia": dias,
         "servicios": [{"servicio": s, "citas": n} for s, n in servicios.most_common()],
         "tamanos": [{"tamano": mensajes.ETIQUETA_TAMANO.get(t, t), "mascotas": tamanos.get(t, 0)}

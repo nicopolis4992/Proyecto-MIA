@@ -169,4 +169,15 @@ El análisis completo está en la sección 7.4 del documento Capstone.
 
 **Trabajo futuro**, ya acordado: recomendaciones de productos (SCRUM-79 a 82), versión 2 de la CNN con más datos, integración de la base PostgreSQL de producción y transcripción de notas de voz.
 
+**Aprender de las correcciones de la propietaria (retroalimentación humana).** En las pruebas del 19-oct, Gemini estimó un tamaño menos en dos fotos: un perro mediano como pequeño y uno grande como mediano. Desde el prototipo:
+- cada cita guarda lo que estimó la foto y, si ella corrige ("es grande"), su corrección;
+- el panel muestra **"Tamaño por foto vs. propietaria"**: % acertado, subestimadas y sobreestimadas.
+
+Con las correcciones del piloto, por orden de esfuerzo:
+1. Corregir el sesgo sistemático si se confirma (por ejemplo, subestimar un tamaño), con unas 15 a 20 correcciones.
+2. Pasar a Gemini fotos ya corregidas como ejemplos de referencia (aprendizaje en contexto).
+3. Reentrenar la CNN con sus etiquetas, que además elimina el sesgo de anclaje del dataset actual.
+
+El tamaño desde una sola foto es difícil por falta de escala. Por eso la foto se combina con la raza o el peso que da el cliente, y ninguna cita se confirma sin que ella la revise.
+
 **Tablero:** 27 de 45 historias finalizadas en [Jira](https://nicopolis4991.atlassian.net/browse/SCRUM-60) (proyecto SCRUM).
