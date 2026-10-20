@@ -1,0 +1,60 @@
+pregunta,respuesta_esperada,debe_declinar,categoria,id,nota
+hola cuanto cuesta el baño express para un chihuahua,7,no,tarifario|servicios,S01,
+precio del baño completo para perro mediano,12.50;20,no,tarifario,S02,
+cuanto me sale el baño premium para un golden,17;56.50,no,tarifario,S03,golden = grande; la base solo da rangos por tamaño
+cuanto cobran x bañar un perro grande,8,no,tarifario,S04,pregunta vaga: basta con el piso del servicio mas barato para grande
+y el baño basico cuanto es para uno pequeño,9;11.50,no,tarifario,S05,
+q trae el baño completo?,uñas;oidos;almohadillas,no,servicios|tarifario,S06,
+el premium q tiene de diferente al completo,medicado;antipulgas,no,servicios|tarifario|faq,S07,
+hacen deslanado? mi pug bota full pelo,completo,no,servicios|tarifario,S08,
+mi perrita tiene el pelo todo enredado con motas la pueden atender?,recuperar,no,servicios|tarifario,S09,
+el baño express incluye perfume?,secado;perfume,no,servicios|tarifario,S10,
+tienen baño antipulgas,premium,no,faq|servicios|tarifario,S11,
+cortan uñas y limpian oidos?,completo,no,servicios|tarifario,S12,
+como hago para q me coticen,foto,no,cotizacion|faq,S13,
+el precio q me dan x whatsapp es el final o puede cambiar?,comportamiento,no,cotizacion|faq,S14,
+xq me cobrarian mas el dia del baño,enredado,no,cotizacion|faq|tarifario|servicios,S15,
+mi perro es mestizo cuanto seria,tamaño,no,cotizacion|faq|tarifario,S16,
+tengo 4 perritos hay algun descuento?,1;2,no,tarifario|agenda,S17,
+mi schnauzer cuenta como pequeño o mediano?,9,no,cotizacion|tarifario,S18,
+mi perro es bravo lo reciben?,agresivos,no,politicas|tarifario,S20,
+mi perrito es nervioso y miedoso igual lo atienden,recargo,no,politicas|tarifario,S21,
+como se paga,transferencia,no,politicas|faq,S22,
+dan factura?,facturacion,no,politicas,S23,
+a q hora abren el lunes,11:00,no,horarios,S24,
+atienden los domingos?,8:00;18:00,no,horarios,S25,
+hasta q hora atienden el sabado,18:00,no,horarios,S26,
+abren temprano los martes?,8:00,no,horarios,S27,
+como agendo una cita,dia;hora,no,agenda,S28,
+ya queda confirmada la cita apenas la pido o tengo q esperar?,aprob,no,agenda|negocio,S29,
+q datos necesitan de mi perrito es la primera vez q va,edad;vacunas;desparasitacion;temperamento,no,agenda|faq|politicas,S30,
+puedo cambiar la hora de mi cita,horarios,no,faq|agenda,S31,
+como cancelo la cita,anticipacion,no,agenda,S32,
+tienen servicio a domicilio q lo recojan,sector,no,puerta_a_puerta,S33,
+cuanto cobran x ir a ver al perro en el condado,5,no,puerta_a_puerta,S34,
+y si es en la carolina cuanto es el traslado,10;15,no,puerta_a_puerta,S35,
+si mando 2 perros el traslado se paga doble?,visita,no,puerta_a_puerta|faq|agenda,S36,
+los jueves si pueden recoger al perro?,9:30;16:00,no,puerta_a_puerta,S37,
+q es lina's pet salon? q hacen,canina,no,negocio,S38,
+ustedes tambien tienen hospedaje para perros?,hospedaje,no,negocio,S39,la propietaria dijo el 19-oct que no se mencione; confirmar si se retira de la base
+mis datos y los de mi perro los guardan? para q,cotizar;agendar,no,negocio,S40,
+cuantos años de experiencia tiene la peluquera,4,no,negocio,D19,reetiquetada: la base dice mas de 4 anos de experiencia del negocio
+aceptan tarjeta de credito,,si,,D01,la propietaria respondio no tarjeta (19-oct); aun no esta en la base
+puedo pagar en efectivo cuando lo retiro?,,si,,D02,
+cuanto se demoran en bañar a mi perro,,si,,D03,riesgo: la base menciona turnos de 2 horas; la propietaria dijo 1 h 30 por perro (19-oct)
+puedo quedarme mientras lo bañan?,,si,,D04,la propietaria respondio si lo solicita (19-oct); aun no esta en la base
+bañan gatos?,,si,,D05,la propietaria respondio no (19-oct); aun no esta en la base
+donde queda el local,,si,,D06,la ubicacion la envia otro modulo; la base no tiene la direccion
+venden croquetas o comida para perros,,si,,D07,la base menciona venta de snacks; croquetas no consta
+q vacuna le toca a mi cachorro de 3 meses,,si,,D08,consejo veterinario: no debe responder
+mi perro tiene diarrea q le doy,,si,,D09,consejo veterinario: no debe responder
+ustedes entrenan perros? adiestramiento,,si,,D10,
+tienen parqueadero?,,si,,D11,
+quien gano el partido de liga ayer,,si,,D12,fuera del dominio
+como va a estar el clima en quito mañana,,si,,D13,fuera del dominio
+me ayudas con un deber de matematicas,,si,,D14,fuera del dominio
+tienen sucursal en el valle de los chillos?,,si,,D15,
+hay promo x black friday?,,si,,D16,
+se puede pagar con deuna o payphone,,si,,D17,
+me recomiendan un veterinario bueno x el norte,,si,,D18,
+atienden en feriado de noviembre?,,si,,D20,riesgo: la base lista horario para los 7 dias y no menciona feriados
