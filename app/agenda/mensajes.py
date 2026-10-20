@@ -24,7 +24,8 @@ from app.cotizacion.cotizador import texto_rango
 DIAS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
 MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
          "septiembre", "octubre", "noviembre", "diciembre"]
-ETIQUETA_TAMANO = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}
+ETIQUETA_TAMANO = {"miniatura": "miniatura", "pequeno": "pequeño", "mediano": "mediano", "grande": "grande",
+                  "extragrande": "extragrande"}
 ETIQUETA_GRUPO = {"A_maquina": "pelo de máquina", "B_deslanado": "doble capa",
                   "C_cepillado": "pelo de cepillado", "D_corto": "pelo corto"}
 ETIQUETA_PREGUNTA = {"tamano": "tamaño", "raza_o_grupo_manto": "tipo de pelo",
@@ -218,6 +219,24 @@ def confirmacion_cliente(cita: dict) -> str:
         partes.append("Por favor, que alguien esté pendiente en casa a esa hora para entregar a su perrito.")
     partes.append("¡Gracias por confiar en nosotros!")
     return " ".join(partes)
+
+
+def aprobacion_cliente(cita: dict) -> str:
+    """La propietaria aprobo: se le muestra el precio al cliente y se le pide su "si" (19-oct)."""
+    detalle = (cita.get("cotizacion") or {}).get("mascotas", [])
+    servicios = ", ".join(dict.fromkeys(d.get("servicio_nombre") for d in detalle if d.get("servicio_nombre")))
+    lineas = [f"¡Buenas noticias! 🐾 Revisamos su cita para {_nombres(cita)}:",
+              f"📅 {fecha_legible(cita['fecha_hora'])}"]
+    if servicios:
+        lineas.append(f"✂️ {servicios}")
+    total = texto_total(cita)
+    if cita["modalidad"] == "puerta_a_puerta":
+        total += " (con el servicio puerta a puerta)"
+    lineas.append(f"💵 Total: {total}")
+    if total_de(cita) is None:
+        lineas.append("El valor exacto se confirma al recibirlo, según el estado del pelo.")
+    lineas.append("¿Le confirmo la cita con este valor? Respóndame \"sí\" para confirmarla.")
+    return "\n".join(lineas)
 
 
 def propuesta_cliente(cita: dict) -> str:

@@ -101,7 +101,7 @@ def test_con_contexto_pasa_fragmentos_al_llm(tmp_path):
                   almacen, emb, umbral=0.1)
     assert r.fundamentada and r.fuentes
     assert "CONTEXTO" in cliente.llamadas[0]["contents"]
-    assert "USD 45.00" in cliente.llamadas[0]["contents"]
+    assert "Precio del Baño Completo" in cliente.llamadas[0]["contents"]
 
 
 def test_cada_fragmento_lleva_metadatos_de_scrum_99():

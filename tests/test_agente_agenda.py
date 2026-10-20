@@ -48,7 +48,8 @@ FOTO_Y_SALUD = ("tamano", "salud", "foto")
 def test_mestizo_no_pregunta_el_tamaño_lo_da_la_foto():
     """18-oct: primero los datos del perro; el tamaño lo da la foto, que se pide al final."""
     m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}
-    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]))
+    ag, repo, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]))
+    repo.guardar_sesion(TEL, {"traza_foto": {"clasificacion": {"tamano": "mediano"}}})   # ya envio la foto
     respuestas = [ag.atender(TEL, t, AHORA) for t in ("quiero un baño completo para Toby, es mestizo",
                                                      "no tiene nudos", "le crece el pelo")]
     assert not any("pesa" in r or "miniatura" in r for r in respuestas)
@@ -59,7 +60,7 @@ def test_cruce_conocido_ya_no_pregunta_el_pelo():
     # schnauzer (A, tamano variable) x poodle (A, tamano variable): grupo resuelto.
     ag, _, _ = _agente(_extraccion([{"nombre": "Kira", "servicio": "completo",
                                      "raza": "schnauzer con poodle", "tamano": "pequeno"}]),
-                       ya_preguntado=["tamano"])
+                       ya_preguntado=["tamano", "foto"])
     r = ag.atender(TEL, "es cruce de schnauzer con poodle, pequeñita", AHORA)
     assert "nudos" in r and "pelo" not in r.split("nudos")[0]
 
@@ -97,7 +98,7 @@ def test_reserva_completa_crea_cita_y_avisa_a_la_propietaria():
     r = ag.atender(TEL, "golden Luna sin nudos tranquila, martes 10am, recojan en Cotocollao", AHORA)
     [cita] = repo.citas_por_estado("pendiente_aprobacion")
     assert cita["cotizacion"]["total"] == [30, 30]  # 25 + traslado zona 5
-    assert "USD 30.00" in r
+    assert "Reviso el precio" in r and "USD" not in r          # 19-oct: el precio va al aprobar
     assert "Total: 30$" in msj.a(PROP)[0]  # estilo de la propietaria (SCRUM-75)
 
 
@@ -127,7 +128,7 @@ def test_cliente_acepta_la_propuesta_de_la_propietaria():
     r = ag.atender(TEL, "sí", AHORA)
     assert "Queda agendado" in r
     assert repo.obtener_cita(cid)["estado"] == "confirmada"
-    assert "aceptó el cambio" in msj.a(PROP)[0]
+    assert "El cliente aceptó" in msj.a(PROP)[0]
 
 
 def test_a_esa_hora_no_puedo_reprograma_la_cita_existente():
@@ -143,7 +144,7 @@ def test_a_esa_hora_no_puedo_reprograma_la_cita_existente():
     assert "el cliente eligió otro horario" in msj.a(PROP)[-1]
     assert len(repo.todas_las_citas()) == 1                          # misma cita, no una nueva
     assert cita["total_acordado"] == 22                               # el precio acordado se mantiene
-    assert "Le confirmo" in r2
+    assert "le confirmo" in r2
 
 
 def test_otro_horario_ante_una_propuesta_reprograma_en_vez_de_aceptar():
@@ -175,7 +176,7 @@ def test_cuales_son_sus_horarios_responde_turnos_y_opciones_sin_repetir_la_pregu
                        ya_preguntado=FOTO_Y_SALUD)
     assert ag.atender(TEL, "La llevo al salón", AHORA) == "¿Qué día y a qué hora le gustaría la cita?"
     r = ag.atender(TEL, "Cuales son sus horarios?", AHORA)
-    assert ("lunes, miércoles y viernes a las 12:00, 14:00 y 16:00; martes, jueves, sábado y domingo "
+    assert ("lunes, miércoles y viernes a las 11:00, 13:00 y 15:00; martes, jueves, sábado y domingo "
             "a las 08:00, 10:00, 12:00, 14:00 y 16:00") in r
     assert "1." in r and "¿Qué día y a qué hora" not in r
 
@@ -193,7 +194,10 @@ def test_si_no_da_fecha_la_segunda_vez_ofrece_opciones():
 def test_cliente_cancela_su_cita():
     ag, repo, msj = _agente(_extraccion_accion("cancelar_cita"))
     cid = _cita_confirmada(repo)
-    assert "cancelé su cita" in ag.atender(TEL, "ya no voy a poder ir, cancélela", AHORA)
+    r = ag.atender(TEL, "ya no voy a poder ir, cancélela", AHORA)
+    assert r.startswith("Entiendo, es una lástima") and "¿Prefiere que cambiemos la fecha" in r
+    assert repo.obtener_cita(cid)["estado"] == "confirmada"            # 19-oct: primero se pregunta
+    assert "cancelé su cita" in ag.atender(TEL, "sí, cancélela", AHORA)          # sin LLM
     assert repo.obtener_cita(cid)["estado"] == "cancelada"
     assert "canceló la cita" in msj.a(PROP)[0]
 
@@ -226,12 +230,12 @@ def test_opciones_repartidas_en_el_dia_y_respetan_la_tarde():
     horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
     assert horas == ["08:00", "10:00", "12:00", "14:00", "16:00"], r   # 18-oct: todos los turnos libres
 
-    # Lunes, miércoles y viernes abre a las 11: turnos de 12:00, 14:00 y 16:00 (propietaria, 18-oct).
+    # Lunes, miércoles y viernes: turnos de 11:00, 13:00 y 15:00 (propietaria, 19-oct).
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07"),
                        ya_preguntado=FOTO_Y_SALUD)
     r = ag.atender(TEL, "¿qué horarios tiene el miércoles 7?", AHORA)
     horas = [l.split(" a las ")[1] for l in r.splitlines() if " a las " in l]
-    assert horas == ["12:00", "14:00", "16:00"], r
+    assert horas == ["11:00", "13:00", "15:00"], r
 
     ag, _, _ = _agente(_extraccion([m], modalidad="salon", dia_consultado="2026-10-07", franja_preferida="tarde"),
                        ya_preguntado=FOTO_Y_SALUD)
@@ -266,16 +270,16 @@ def test_premium_sin_baño_medicado_se_recomienda_el_completo_sin_cambiar_el_pre
          "estado": "sin_motas", "comportamiento": "tranquilo"}
     ag, repo, msj = _agente(
         _extraccion([m], pedido_especial="sin baño medicado y sin accesorio"),
-        _extraccion([m], modalidad="salon", fecha_hora="2026-10-07T12:00"),
+        _extraccion([m], modalidad="salon", fecha_hora="2026-10-07T13:00"),
         ya_preguntado=FOTO_Y_SALUD,
     )
     r1 = ag.atender(TEL, "¿puede hacerle el premium pero sin el baño medicado y sin el accesorio?", AHORA)
     assert "se lo agendo como Baño Completo" in r1
-    r2 = ag.atender(TEL, "lo llevo yo, el miércoles a las 12", AHORA)
+    r2 = ag.atender(TEL, "lo llevo yo, el miércoles a las 13", AHORA)
     [cita] = repo.citas_por_estado("pendiente_aprobacion")
     assert cita["mascotas"][0]["servicio"] == "completo"
     assert cita["cotizacion"]["total"] == COT.cotizar([{**m, "servicio": "completo"}])["total"]
-    assert "USD" in r2 and "propietaria" not in r2
+    assert "Reviso el precio" in r2 and "propietaria" not in r2
     assert "📝 Pedido del cliente: sin baño medicado y sin accesorio (no cambia el precio)" in msj.a(PROP)[0]
 
 
@@ -466,7 +470,7 @@ def test_no_puedo_enviar_la_foto_no_cancela_la_reserva():
 
 def test_que_dias_tienen_disponibles_en_medio_de_los_datos():
     m = {"nombre": "Fara", "servicio": "completo"}
-    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]))
+    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]), ya_preguntado=["foto", "tamano"])
     ag.atender(TEL, "baño completo para Fara", AHORA)
     r = ag.atender(TEL, "que dias tienen disponibles?", AHORA)
     assert "Primero necesito hacerle unas preguntas sobre Fara" in r
@@ -545,3 +549,27 @@ def test_juntar_observaciones_sin_repetir_ni_vacunas():
     assert _juntar_observaciones("es ciega", "es ciega, tiene 14 años") == "es ciega, tiene 14 años"
     assert _juntar_observaciones("es ciega", "tiene 14 años") == "es ciega; tiene 14 años"
     assert _juntar_observaciones("es ciega", "vacunas al dia") == "es ciega"
+
+
+def test_cancelar_y_mejor_cambiar_de_dia_ofrece_horarios():
+    ag, repo, msj = _agente(_extraccion_accion("cancelar_cita"))
+    cid = _cita_confirmada(repo)
+    ag.atender(TEL, "quiero cancelar la cita", AHORA)
+    r = ag.atender(TEL, "mejor cambiemos de día", AHORA)              # sin LLM
+    assert "Tengo libre" in r and repo.obtener_cita(cid)["estado"] == "en_reprogramacion"
+
+
+def test_la_foto_se_pide_primero():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}
+    ag, _, _ = _agente(_extraccion([m]))
+    r = ag.atender(TEL, "quiero un baño completo para Toby", AHORA)
+    assert r.startswith("¡Con gusto! Para empezar, ¿me envía una foto actual de Toby")
+
+
+def test_sin_foto_pregunta_el_tamano_con_palabras():
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}
+    ag, _, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]))
+    ag.atender(TEL, "baño completo para Toby", AHORA)
+    ag.atender(TEL, "no tengo foto", AHORA)
+    r = ag.atender(TEL, "no puedo ahora", AHORA)
+    assert "miniatura, pequeño, mediano, grande o extragrande" in r

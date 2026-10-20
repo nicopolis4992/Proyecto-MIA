@@ -76,9 +76,14 @@ class Cotizador:
         r["sector"] = sector
         r["preguntas_pendientes"] = self._preguntas(r)
         dur = r.get("duracion_visita_min")
-        # Para validar el horario se usa la duracion minima: si la mascota
-        # resulta mas trabajosa, la propietaria lo ajusta al aprobar.
-        r["duracion_agenda_min"] = dur[0] if dur else 60
+        # Para la agenda: lo que dijo la propietaria (1 h 30 por perro); si no
+        # esta, la duracion minima del tarifario. Ella ajusta al aprobar.
+        por_mascota = (self.datos.get("duracion_agenda_por_mascota_min") or {}).get("minutos")
+        cotizables = [m for m in r["mascotas"] if m.get("rango")]
+        if por_mascota and cotizables:
+            r["duracion_agenda_min"] = por_mascota * len(cotizables)
+        else:
+            r["duracion_agenda_min"] = dur[0] if dur else 60
         r["mensaje_cliente"] = self.mensaje_cliente(r)
         return r
 

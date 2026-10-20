@@ -43,7 +43,8 @@ PEDIDO_FOTO = (
     " ¿Me podría enviar otra foto de cuerpo entero, de costado, con buena luz "
     "y no muy de lejos? Así le doy un valor más preciso."
 )
-ETIQUETA_TAMANO = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}
+ETIQUETA_TAMANO = {"miniatura": "miniatura", "pequeno": "pequeño", "mediano": "mediano", "grande": "grande",
+                  "extragrande": "extragrande"}
 ETIQUETA_GRUPO = {"A_maquina": "pelo que se corta con máquina", "B_deslanado": "pelo de doble capa",
                   "C_cepillado": "pelo largo de cepillado", "D_corto": "pelo corto"}
 

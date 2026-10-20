@@ -1,6 +1,6 @@
 {
-  "version": "2.1.0",
-  "fecha": "2026-10-17",
+  "version": "2.2.0",
+  "fecha": "2026-10-19",
   "reemplaza": "tarifario_v1.json (precios de referencia del mercado de Quito)",
   "moneda": "USD",
   "redondeo": 0.5,
@@ -88,9 +88,16 @@
     "potenciador de color": "premium"
   },
   "tamanos": {
-    "pequeno": {
+    "miniatura": {
       "peso_kg": [
         0,
+        4.0
+      ],
+      "fuente": "SUPUESTO (equipo): limite de peso por confirmar"
+    },
+    "pequeno": {
+      "peso_kg": [
+        4.01,
         9.0
       ],
       "fuente": "PROPIETARIA"
@@ -109,8 +116,15 @@
       ],
       "fuente": "PROPIETARIA"
     },
+    "extragrande": {
+      "peso_kg": [
+        45.01,
+        70.0
+      ],
+      "fuente": "SUPUESTO (equipo): limite de peso por confirmar"
+    },
     "_nota": "La propietaria acepta los rangos, pero no pesa a los perros: decide por raza y apariencia. El motor clasifica por limite superior (peso <= maximo), asi no quedan huecos entre rangos.",
-    "_nota_17oct": "La propietaria usa 5 categorias: miniatura, pequeño, mediano, grande y extragrande. Mientras no de precios propios para miniatura y extragrande, se cotizan como pequeño y grande; el tamaño que dice la clienta se muestra igual a la propietaria y ella ajusta al aprobar."
+    "_nota_19oct": "La propietaria usa 5 categorias. Miniatura (12 $ el completo) y extragrande (desde 50 $ el completo) tienen precio propio desde el 19-oct; sus limites de peso son supuestos del equipo."
   },
   "grupos_manto": {
     "A_maquina": {
@@ -335,6 +349,31 @@
       ],
       "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
     },
+    "castellano": {
+      "grupo": null,
+      "tamano": "mediano",
+      "factor": 1.3333,
+      "recargo_estado": {
+        "moderado": {
+          "monto": [
+            2,
+            3
+          ]
+        },
+        "severo": {
+          "monto": [
+            2,
+            4
+          ]
+        }
+      },
+      "fuente": "PROPIETARIA (19-oct-2026)",
+      "evidencia": "castellano mediano: 16 $ en buen estado, 18 a 20 $ en mal estado",
+      "alias": [
+        "castellana",
+        "perro castellano"
+      ]
+    },
     "pomerania": {
       "grupo": "B_deslanado",
       "tamano": "pequeno",
@@ -423,10 +462,33 @@
       ],
       "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
     },
-    "_nota_cruces": "Cruces ('schnauzer con poodle') se cotizan con la union de tamaños y grupos de ambas razas. 'Mestizo de X' usa los valores de X como raza predominante y lo avisa."
+    "_nota_cruces": "Cruces ('schnauzer con poodle') se cotizan con la union de tamaños y grupos de ambas razas. 'Mestizo de X' usa los valores de X como raza predominante y lo avisa.",
+    "_factor": "Una raza con 'factor' propio (castellano) usa ese factor y su recargo por estado cuando el tamano es el tipico de la raza; si la propietaria corrige el tamano, se usa la tabla general."
   },
   "factor_tamano_grupo": {
     "_uso": "precio_base = piso(servicio) x factor[tamano][grupo]. Un solo factor por celda para todos los servicios.",
+    "miniatura": {
+      "A_maquina": {
+        "factor": 1.0,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "miniatura: 12 $ el baño completo = 12 x 1,00"
+      },
+      "B_deslanado": {
+        "factor": 1.0,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "miniatura: 12 $ el baño completo = 12 x 1,00"
+      },
+      "C_cepillado": {
+        "factor": 1.0,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "miniatura: 12 $ el baño completo = 12 x 1,00"
+      },
+      "D_corto": {
+        "factor": 1.0,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "miniatura: 12 $ el baño completo = 12 x 1,00"
+      }
+    },
     "pequeno": {
       "A_maquina": {
         "factor": 1.25,
@@ -492,11 +554,41 @@
         "fuente": "PROPIETARIA",
         "evidencia": "mestizo de rottweiler, baño medicado antipulgas (Premium): 17 = 15 x 1,13"
       }
+    },
+    "extragrande": {
+      "A_maquina": {
+        "factor": 4.1667,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "extragrande: desde 50 $ el baño completo = 12 x 4,17 (precio minimo)"
+      },
+      "B_deslanado": {
+        "factor": 4.1667,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "extragrande: desde 50 $ el baño completo = 12 x 4,17 (precio minimo)"
+      },
+      "C_cepillado": {
+        "factor": 4.1667,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "extragrande: desde 50 $ el baño completo = 12 x 4,17 (precio minimo)"
+      },
+      "D_corto": {
+        "factor": 4.1667,
+        "fuente": "PROPIETARIA (19-oct-2026)",
+        "evidencia": "extragrande: desde 50 $ el baño completo = 12 x 4,17 (precio minimo)"
+      }
     }
   },
   "servicios_especiales": {
     "_nota": "17-oct: la propietaria aclara que el deslanado es parte del Baño Completo (doble capa y pelo corto). El agente ya no lo ofrece aparte; los precios quedan como referencia historica de sus audios.",
     "deslanado": {
+      "miniatura": {
+        "precio": [
+          12,
+          12
+        ],
+        "fuente": "PROPIETARIA",
+        "evidencia": "pug: 12"
+      },
       "pequeno": {
         "precio": [
           12,
@@ -520,6 +612,14 @@
         "fuente": "PROPIETARIA",
         "evidencia": "husky: 25–35, 3–4 horas"
       },
+      "extragrande": {
+        "precio": [
+          25,
+          35
+        ],
+        "fuente": "PROPIETARIA",
+        "evidencia": "husky: 25–35, 3–4 horas"
+      },
       "grupos_aplicables": [
         "B_deslanado"
       ]
@@ -528,12 +628,22 @@
   "recargo_estado_manto": {
     "_uso": "'pct' = porcentaje sobre el precio base; 'monto' = recargo fijo en USD [min, max]. 'moderado' = algunos nudos; 'severo' = quitar motas (desenredo de pelo recuperable).",
     "sin_motas": {
+      "miniatura": 0.0,
       "pequeno": 0.0,
       "mediano": 0.0,
       "grande": 0.0,
+      "extragrande": 0.0,
       "fuente": "PROPIETARIA"
     },
     "moderado": {
+      "miniatura": {
+        "monto": [
+          2,
+          3
+        ],
+        "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+        "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
+      },
       "pequeno": {
         "monto": [
           2,
@@ -557,9 +667,22 @@
         ],
         "fuente": "PROPIETARIA (reunion 17-oct-2026)",
         "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
+      },
+      "extragrande": {
+        "monto": [
+          2,
+          3
+        ],
+        "fuente": "PROPIETARIA (reunion 17-oct-2026)",
+        "evidencia": "con nudos, recargo fijo de 2 o 3 $, no por porcentaje"
       }
     },
     "severo": {
+      "miniatura": {
+        "pct": 0.33,
+        "fuente": "SUPUESTO: igual a pequeño",
+        "evidencia": "shih tzu en mal estado: 15 -> hasta 20"
+      },
       "pequeno": {
         "pct": 0.33,
         "fuente": "PROPIETARIA",
@@ -573,6 +696,11 @@
       "grande": {
         "pct": 0.56,
         "fuente": "PROPIETARIA",
+        "evidencia": "pastor inglés con muchos nudos: 45 -> hasta 70, todo el día"
+      },
+      "extragrande": {
+        "pct": 0.56,
+        "fuente": "SUPUESTO: igual a grande",
         "evidencia": "pastor inglés con muchos nudos: 45 -> hasta 70, todo el día"
       }
     },
@@ -603,12 +731,12 @@
       "fuente": "PROPIETARIA: 'perros agresivos no trabajamos'"
     }
   },
-  "peso_max_kg": 45,
+  "peso_max_kg": 70,
   "exclusiones": [
     {
-      "regla": "peso_kg > 45",
+      "regla": "peso_kg > 70",
       "accion": "RECHAZAR",
-      "fuente": "PROPIETARIA"
+      "fuente": "SUPUESTO (equipo): antes 45 kg; desde el 19-oct atiende extragrandes. Confirmar limite"
     },
     {
       "regla": "dueño declara que el perro es agresivo",
@@ -711,6 +839,10 @@
   "duracion_min": {
     "_nota": "Casi todo es SUPUESTO. SCRUM-103 debe devolver duración; reemplazar cuando la propietaria la entregue.",
     "express": {
+      "miniatura": [
+        45,
+        60
+      ],
       "pequeno": [
         45,
         60
@@ -723,9 +855,17 @@
         75,
         105
       ],
+      "extragrande": [
+        75,
+        105
+      ],
       "fuente": "SUPUESTO"
     },
     "basico": {
+      "miniatura": [
+        60,
+        75
+      ],
       "pequeno": [
         60,
         75
@@ -738,9 +878,17 @@
         90,
         120
       ],
+      "extragrande": [
+        90,
+        120
+      ],
       "fuente": "SUPUESTO"
     },
     "completo": {
+      "miniatura": [
+        90,
+        120
+      ],
       "pequeno": [
         90,
         120
@@ -753,9 +901,17 @@
         150,
         240
       ],
+      "extragrande": [
+        150,
+        240
+      ],
       "fuente": "SUPUESTO"
     },
     "premium": {
+      "miniatura": [
+        105,
+        135
+      ],
       "pequeno": [
         105,
         135
@@ -768,9 +924,17 @@
         165,
         255
       ],
+      "extragrande": [
+        165,
+        255
+      ],
       "fuente": "SUPUESTO"
     },
     "deslanado": {
+      "miniatura": [
+        60,
+        90
+      ],
       "pequeno": [
         60,
         90
@@ -783,12 +947,18 @@
         180,
         240
       ],
+      "extragrande": [
+        180,
+        240
+      ],
       "fuente": "PROPIETARIA (grande: husky 3–4 h); resto SUPUESTO"
     },
     "extra_estado_severo": {
+      "miniatura": 60,
       "pequeno": 60,
       "mediano": 120,
       "grande": 360,
+      "extragrande": 360,
       "fuente": "PROPIETARIA (grande: desenredo 'todo el día'); resto SUPUESTO"
     }
   },
@@ -805,15 +975,17 @@
       "pequeño": "pequeno",
       "chico": "pequeno",
       "pequeña": "pequeno",
-      "mini": "pequeno",
+      "mini": "miniatura",
       "mediana": "mediano",
       "grande": "grande",
       "grandote": "grande",
-      "gigante": "grande",
-      "miniatura": "pequeno",
-      "toy": "pequeno",
-      "extragrande": "grande",
-      "extra grande": "grande"
+      "gigante": "extragrande",
+      "miniatura": "miniatura",
+      "toy": "miniatura",
+      "extragrande": "extragrande",
+      "extra grande": "extragrande",
+      "chiquito": "miniatura",
+      "muy grande": "extragrande"
     },
     "estado": {
       "sin nudos": "sin_motas",
@@ -861,5 +1033,10 @@
     "raza_o_grupo_manto": "¿De qué raza es? Si es mestizo, cuénteme cómo es su pelo: ¿corto, le crece y hay que cortárselo, o es tupido y bota mucho pelo?",
     "estado_manto": "¿Tiene nudos o el pelo enredado?",
     "comportamiento": "¿Cómo se porta durante el baño: tranquilo, nervioso o agresivo?"
+  },
+  "duracion_agenda_por_mascota_min": {
+    "minutos": 90,
+    "fuente": "PROPIETARIA (19-oct-2026)",
+    "evidencia": "dos perros de la misma casa: 'normalmente toma 1h30 cada uno'. Se usa para la agenda; duracion_min queda como rango orientativo."
   }
 }

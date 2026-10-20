@@ -114,7 +114,7 @@ def fragmentos_desde_tarifario(ruta: Path) -> list[Fragmento]:
     tar = Tarifario.desde_archivo(ruta)
     t = tar.datos
     fuente = Path(ruta).name
-    etiqueta = {"pequeno": "pequeño", "mediano": "mediano", "grande": "grande"}
+    etiqueta = {"miniatura": "miniatura", "pequeno": "pequeño", "mediano": "mediano", "grande": "grande", "extragrande": "extragrande"}
     kg = {k: v["peso_kg"] for k, v in t["tamanos"].items() if not k.startswith("_")}
     grupos = [g for g in t["grupos_manto"] if not g.startswith("_")]
     nota = " El valor exacto depende del tamaño, el tipo de pelo y si tiene nudos."

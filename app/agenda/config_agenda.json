@@ -42,7 +42,7 @@
     "14:00",
     "16:00"
   ],
-  "comentario_turnos": "Las citas empiezan solo en estos turnos de 2 horas y dentro del horario de cada dia: lunes, miercoles y viernes quedan 12:00, 14:00 y 16:00 (abre a las 11). La ultima cita es a las 16:00. Dos perros a la vez solo si son de la misma casa (una sola cita); su duracion se suma (pendiente: confirmar si son 2 h por perro o 2 h en conjunto).",
+  "comentario_turnos": "Turnos de 2 horas. Martes, jueves, sabado y domingo: 08:00 a 16:00 (turnos). Lunes, miercoles y viernes: 11:00, 13:00 y 15:00 (turnos_por_dia; propietaria, 19-oct: 'el lunes esta bien desde las 11'). Dos perros de la misma casa van en una sola cita y la agenda calcula 1 h 30 por perro (tarifario).",
   "paso_alternativas_min": 60,
   "num_alternativas": 10,
   "dias_alternativas": 2,
@@ -74,5 +74,22 @@
     "longitud": -78.5071798,
     "comentario": "Se envia como ubicacion de WhatsApp (pin de mapa con nombre y direccion) cuando preguntan donde queda el local. enlace_maps: el enlace de la ficha del negocio en Google Maps (Compartir -> Copiar enlace); si esta, se envia tambien, para que abra la ficha con fotos y opiniones y no solo un punto. Sin latitud/longitud, la pregunta se le pasa a la propietaria.",
     "enlace_maps": "https://www.google.com/maps/place/Lina%27s+Pet+Salon/@-0.1003098,-78.5071798,17z/data=!4m6!3m5!1s0x91d585b91ba0e7a9:0x5c2bd39445a77506!8m2!3d-0.1003098!4d-78.5071798!16s%2Fg%2F11sfx1_gql"
+  },
+  "turnos_por_dia": {
+    "lunes": [
+      "11:00",
+      "13:00",
+      "15:00"
+    ],
+    "miercoles": [
+      "11:00",
+      "13:00",
+      "15:00"
+    ],
+    "viernes": [
+      "11:00",
+      "13:00",
+      "15:00"
+    ]
   }
 }

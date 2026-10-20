@@ -36,37 +36,41 @@ Los botones de respuesta rápida debajo de cada chat traen varios de estos texto
 
 ### 2. Agendar una cita completa (4 min)
 
-Primero los datos del perro, después la foto y al final el horario. A la clienta el bot le habla en
+Primero la foto, después solo lo que la foto no dice y al final el horario. A la clienta el bot le habla en
 nombre del salón ("le confirmamos"); solo el saludo inicial dice que es un asistente virtual.
 
 | Clienta escribe | Qué mostrarle |
 |---|---|
-| `Quiero agendar un baño completo para mi perrita Luna, es mestiza` | Pregunta por nudos y comportamiento (tranquilo, nervioso o agresivo) |
+| `Quiero agendar un baño completo para mi perrita Luna, es mestiza` | **Pide primero una foto actual** de cuerpo entero |
+| 📷 enviar la foto del perro | "¡Gracias por la foto!" y pregunta solo lo que falta (pelo, nudos, comportamiento) |
 | `¿qué días tienen disponibles?` | "Con gusto le reviso la disponibilidad. **Primero necesito hacerle unas preguntas**" y repite la pregunta |
-| `Tiene algunos nudos pero es tranquila` | Pregunta cómo es su pelo |
-| `Su pelo le crece y hay que cortárselo` | Pregunta por vacunas y desparasitación |
-| `Sí, tiene sus vacunas y está desparasitada` | **Pide una foto actual** de cuerpo entero |
-| 📷 enviar la foto del perro | "¡Gracias por la foto!" y muestra **todos** los turnos libres de los próximos días |
-| `¿tienen el jueves a las 10?` | Responde si está libre y pregunta **"¿Se lo reservo?"** (no lo da por confirmado) |
-| `sí` | Le dice que se lo confirman en un momento |
+| `Tiene algunos nudos pero es tranquila` | Pregunta por vacunas y desparasitación |
+| `Sí, tiene sus vacunas y está desparasitada` | Muestra **todos** los turnos libres de los próximos días |
+| `¿tienen el jueves a las 10?` | Responde si está libre y pregunta **"¿Se lo reservo?"** |
+| `sí` | "Reviso el precio y la agenda, y en un momento le confirmo" (**sin precio todavía**) |
 
-A la derecha le llega **la foto y el resumen de la cita**: mascota, servicio, horario, precio propuesto, vacunas y
-**lo que el sistema vio en la foto** (tamaño, pelo y nudos, con su porcentaje de confianza).
+A la derecha le llega **la foto y el resumen de la cita**: mascota, servicio, horario, precio propuesto, vacunas,
+observaciones ("⚠️ Ojo: es ciega") y **lo que el sistema vio en la foto** (tamaño, pelo y nudos, con su confianza).
 
 > **Para decirle:** "Tú ves la foto y el precio que propone el sistema, y apruebas o corriges. Si el perro es más
 > grande, escribe `es grande` y el precio se recalcula."
 
-El puerta a puerta no se ofrece: solo si la clienta lo pide (`que la recojan en mi casa, vivo en el Condado`), y
-entonces suma el traslado. Si pide un **Premium sin el baño medicado**, el bot le recomienda el Baño Completo.
+Si la clienta no tiene foto, el bot la pide dos veces y después pregunta el tamaño (miniatura a extragrande). El
+puerta a puerta no se ofrece: solo si la clienta lo pide. Un **Premium sin baño medicado** se agenda como Completo.
 
-### 3. Ella decide (2 min)
+### 3. Ella decide y la clienta acepta el precio (2 min)
 
-**Propietaria:** `listo` → la clienta recibe la **confirmación** con fecha, servicio y total.
+**Propietaria:** `listo` → a la clienta le llega **el precio** y la pregunta "¿Le confirmo la cita con este valor?".
+**Clienta:** `sí` → recibe la **confirmación**, la cita va al calendario y a la propietaria le llega "El cliente aceptó".
 
-> **Para decirle:** "Ninguna cita se confirma sin ti. Puedes decir 'listo', 'no' o cambiar algo: 'es grande', 'cóbrale 20', 'a las 12 está bien'. Si cambias algo, se lo propone a la clienta antes de confirmar."
+> **Para decirle:** "Ninguna cita se confirma sin ti, y el precio se lo dice el sistema recién cuando tú lo apruebas.
+> Si la clienta no está de acuerdo con el precio, te llega su mensaje y puedes responder con otro (`cóbrale 14`)."
 
-Si hay tiempo, mostrar el cambio: otra clienta pide cita, y la propietaria responde `a las 12 estaría mejor` → la clienta recibe la propuesta y responde `sí, perfecto`.
-O si ese día no puede: `el lunes no puedo, el total sería 22` → a la clienta le ofrece turnos de otros días con el precio nuevo.
+Si hay tiempo:
+- **Cambio:** la propietaria responde `a las 12 estaría mejor` → la clienta recibe la propuesta y responde `sí, perfecto`.
+- **Otro día:** `el lunes no puedo, el total sería 22` → a la clienta le ofrece turnos de otros días con el precio nuevo.
+- **Cancelar:** la clienta escribe `ya no puedo ir, cancélela` → el bot responde "Entiendo, es una lástima…
+  ¿Prefiere que cambiemos la fecha, o desea cancelar?"; con `mejor otro día` le ofrece horarios.
 
 ### 4. Después del servicio y contingencia (1 min)
 

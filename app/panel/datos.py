@@ -102,7 +102,7 @@ def indicadores_aprobacion(repo, citas: list[dict]) -> dict:
     }
 
 
-ORDEN_TAMANO = {"pequeno": 0, "mediano": 1, "grande": 2}
+ORDEN_TAMANO = {"miniatura": 0, "pequeno": 1, "mediano": 2, "grande": 3, "extragrande": 4}
 
 
 def indicador_foto(repo, citas: list[dict]) -> dict:
@@ -114,18 +114,20 @@ def indicador_foto(repo, citas: list[dict]) -> dict:
     """
     pares = []
     for c in citas:
-        estimado, corregido = None, None
+        estimado, corregido, aprobo = None, None, False
         for e in repo.eventos_de_cita(c["id"]):
             detalle = e.get("detalle") or {}
             if e["tipo"] == "cotizacion_por_foto":
                 estimado = (detalle.get("clasificacion") or {}).get("tamano")
             elif e["tipo"] == "tamano_corregido":
                 corregido = detalle.get("tamano")
+            elif e["tipo"] == "aprobada":
+                aprobo = True
         if not estimado:
             continue
         if corregido:
             pares.append((estimado, corregido))
-        elif c["estado"] in ("aprobada", "confirmada"):
+        elif aprobo:
             pares.append((estimado, estimado))
     if not pares:
         return {"fotos_evaluadas": 0}
@@ -205,7 +207,8 @@ def resumen(repo, desde: datetime | None = None) -> dict:
         "citas_por_dia": dias,
         "servicios": [{"servicio": s, "citas": n} for s, n in servicios.most_common()],
         "tamanos": [{"tamano": mensajes.ETIQUETA_TAMANO.get(t, t), "mascotas": tamanos.get(t, 0)}
-                    for t in ("pequeno", "mediano", "grande", "sin dato") if tamanos.get(t)],
+                    for t in ("miniatura", "pequeno", "mediano", "grande", "extragrande", "sin dato")
+                    if tamanos.get(t)],
         "proximas": [_cita_publica(c) for c in proximas[:10]],
         "pendientes": [_cita_publica(c) for c in pendientes],
         "citas": [_cita_publica(c) for c in citas],

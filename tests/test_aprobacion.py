@@ -35,6 +35,14 @@ def _cita(repo, modalidad="puerta_a_puerta", fecha=JUEVES_10):
     return cid
 
 
+def _cliente_acepta(repo, msj, texto="sí"):
+    """El cliente responde al precio que le llego tras la aprobacion (19-oct)."""
+    from app.agenda.agente_agenda import AgenteAgenda
+
+    agenda = AgenteAgenda(ClienteFalso(), repo, msj, MOTOR, CFG, PROP)
+    return agenda.atender(CLI, texto, datetime(2026, 9, 30, 9, 0, tzinfo=ZONA_HORARIA))
+
+
 def _procesador(cliente=None):
     repo, msj = Repositorio(":memory:"), MensajeroMemoria()
     return ProcesadorAprobacion(cliente or ClienteFalso(), repo, msj, MOTOR, CFG, PROP), repo, msj
@@ -47,18 +55,42 @@ def test_aprobaciones_coloquiales_no_usan_llm(texto):
     assert cliente.llamadas == []
 
 
-def test_aprobar_confirma_y_notifica_al_cliente():
+def test_aprobar_muestra_el_precio_y_confirma_cuando_el_cliente_acepta():
+    """Propietaria, 19-oct: el precio se le dice al cliente al aprobar y la cita se confirma con su "sí"."""
     p, repo, msj = _procesador()
     cid = _cita(repo)
     resp = p.procesar("listo", id_citado=f"wamid.cita{cid}")
-    assert "confirmada" in resp
+    assert "aprobada" in resp and "si acepta el precio" in resp
+    assert repo.obtener_cita(cid)["estado"] == "propuesta_cliente"
+    [precio] = msj.a(CLI)
+    assert "jueves 1 de octubre a las 10:00" in precio and "30.00$" in precio and "¿Le confirmo la cita" in precio
+    assert repo.obtener_sesion(CLI)["propuesta_cita"] == cid
+    confirmacion = _cliente_acepta(repo, msj)
+    assert "Queda agendado" in confirmacion and "pendiente en casa" in confirmacion   # puerta a puerta
     assert repo.obtener_cita(cid)["estado"] == "confirmada"
-    [confirmacion] = msj.a(CLI)
-    assert "jueves 1 de octubre a las 10:00" in confirmacion
-    assert "pendiente en casa" in confirmacion  # puerta a puerta
+    assert "El cliente aceptó" in msj.a(PROP)[-1]
     tipos = [e["tipo"] for e in repo.eventos_de_cita(cid)]
-    assert tipos == ["creada", "respuesta_propietaria", "aprobada", "confirmada"]
-    assert repo.obtener_sesion(CLI)["cita_en_aprobacion"] is None
+    assert tipos[:4] == ["creada", "respuesta_propietaria", "aprobada", "precio_enviado_al_cliente"]
+    assert "confirmada" in tipos
+
+
+def test_si_el_cliente_no_acepta_el_precio_vuelve_a_la_propietaria():
+    import json as _json
+
+    p, repo, msj = _procesador()
+    cid = _cita(repo)
+    p.procesar("listo", id_citado=f"wamid.cita{cid}")
+    from app.agenda.agente_agenda import AgenteAgenda
+
+    rechazo = _json.dumps({"mascotas": [], "fecha_hora": None, "modalidad": None, "sector": None,
+                           "cliente_nombre": None, "eligio_alternativa": None, "cancelar": False,
+                           "dia_consultado": None, "franja_preferida": None, "hora_minima": None,
+                           "pedido_especial": None, "pregunta_precio": False, "accion_cita": "rechazar_propuesta"})
+    agenda = AgenteAgenda(ClienteFalso(rechazo), repo, msj, MOTOR, CFG, PROP)
+    r = agenda.atender(CLI, "uy está muy caro", datetime(2026, 9, 30, 9, 0, tzinfo=ZONA_HORARIA))
+    assert r == "Entiendo 🙏 Lo reviso y le escribo en un momento."
+    assert repo.obtener_cita(cid)["estado"] == "pendiente_aprobacion"
+    assert "no aceptó el precio" in msj.a(PROP)[-1]
 
 
 def test_rechazar_ofrece_alternativas_validas_y_reabre_la_reserva():
@@ -156,18 +188,19 @@ def test_solo_se_agenda_en_turnos_de_dos_horas():
     assert not ok and "08:00, 10:00, 12:00, 14:00 y 16:00" in motivo           # jueves abre a las 8
     lunes_10 = datetime(2026, 10, 5, 10, 0, tzinfo=ZONA_HORARIA)
     ok, motivo = validar_horario(lunes_10, 60, "salon", MOTOR, CFG)
-    assert not ok and "12:00, 14:00 y 16:00" in motivo
+    assert not ok and "11:00, 13:00 y 15:00" in motivo
     alternativas = proponer_alternativas(JUEVES_10.replace(hour=11), 60, "salon", MOTOR, CFG)
-    assert alternativas and all(a.hour in (8, 10, 12, 14, 16) and a.minute == 0 for a in alternativas)
+    assert alternativas and all(a.hour in ((11, 13, 15) if a.weekday() in (0, 2, 4) else (8, 10, 12, 14, 16))
+                                and a.minute == 0 for a in alternativas)
 
 
 def test_confirmacion_incluye_total_y_traslado():
     p, repo, msj = _procesador()
     cid = _cita(repo)
     p.procesar("listo", id_citado=f"wamid.cita{cid}")
-    [confirmacion] = msj.a(CLI)
-    assert "Baño Completo" in confirmacion
-    assert "30.00$ con el servicio puerta a puerta incluido" in confirmacion
+    [precio] = msj.a(CLI)
+    assert "Baño Completo" in precio and "30.00$ (con el servicio puerta a puerta)" in precio
+    assert "30.00$ con el servicio puerta a puerta incluido" in _cliente_acepta(repo, msj)
 
 
 # -- cobro real (SCRUM-95) ---------------------------------------------------
@@ -188,9 +221,10 @@ def test_leer_cobro(texto, esperado):
 def test_cobro_se_registra_sin_llm_y_alimenta_la_desviacion():
     from app.panel.datos import desviacion_cobro, resumen
     cliente = ClienteFalso()
-    p, repo, _ = _procesador(cliente)
+    p, repo, msj = _procesador(cliente)
     cid = _cita(repo)
     p.procesar("listo", id_citado=f"wamid.cita{cid}")
+    _cliente_acepta(repo, msj)
     resp = p.procesar("cobré 33", ahora=DESPUES)  # una sola cita atendida: no hace falta el numero
     assert "registré 33.00$" in resp
     cita = repo.obtener_cita(cid)
@@ -229,11 +263,11 @@ def test_aprobar_con_numero_de_cita_sin_citar_el_mensaje():
     cliente = ClienteFalso()
     p, repo, _ = _procesador(cliente)
     a, b = _cita(repo), _cita(repo)
-    assert "confirmada" in p.procesar(f"listo #{b}")
-    assert repo.obtener_cita(b)["estado"] == "confirmada"
+    assert "aprobada" in p.procesar(f"listo #{b}")
+    assert repo.obtener_cita(b)["estado"] == "propuesta_cliente"
     assert repo.obtener_cita(a)["estado"] == "pendiente_aprobacion"
     assert cliente.llamadas == []
-    assert "no está esperando" in p.procesar(f"listo #{b}")
+    assert "ya está aprobada" in p.procesar(f"listo #{b}")      # no se le reenvía el precio al cliente
 
 
 # -- plan de contingencia: pausar el bot (SCRUM-92) ----------------------------
@@ -294,7 +328,7 @@ def test_es_grande_tras_ver_la_foto_recotiza_y_luego_listo_aprueba():
     assert cita["estado"] == "pendiente_aprobacion" and msj.a(CLI) == []
     assert cita["cotizacion"]["total"] == MOTOR.cotizar([{**cita["mascotas"][0]}], "salon")["total"]
     p.procesar("listo", id_citado=f"wamid.cita{cid}")
-    assert repo.obtener_cita(cid)["estado"] == "confirmada" and antes is not None
+    assert repo.obtener_cita(cid)["estado"] == "propuesta_cliente" and antes is not None
 
 
 def test_es_mediana_listo_corrige_y_aprueba_en_un_mensaje():
@@ -302,7 +336,7 @@ def test_es_mediana_listo_corrige_y_aprueba_en_un_mensaje():
     cid = _cita(repo, modalidad="salon")
     p.procesar("es mediana, listo", id_citado=f"wamid.cita{cid}")
     cita = repo.obtener_cita(cid)
-    assert cita["estado"] == "confirmada" and cita["mascotas"][0]["tamano"] == "mediano"
+    assert cita["estado"] == "propuesta_cliente" and cita["mascotas"][0]["tamano"] == "mediano"
 
 
 def test_error_del_calendario_se_explica():

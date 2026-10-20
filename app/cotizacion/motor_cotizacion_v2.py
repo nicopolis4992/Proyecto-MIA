@@ -29,7 +29,7 @@ from datetime import datetime, time
 from pathlib import Path
 from typing import Any
 
-TAMANOS = ("pequeno", "mediano", "grande")
+TAMANOS = ("miniatura", "pequeno", "mediano", "grande", "extragrande")
 GRUPOS = ("A_maquina", "B_deslanado", "C_cepillado", "D_corto")
 ESTADOS_COTIZABLES = ("sin_motas", "moderado", "severo")
 COMPORTAMIENTOS_COTIZABLES = ("tranquilo", "dificil")
@@ -189,7 +189,7 @@ class Tarifario:
 # Precio de un escenario completamente determinado
 # --------------------------------------------------------------------------
 def precio_escenario(t: Tarifario, servicio: str, tamano: str, grupo: str,
-                     estado: str, comportamiento: str) -> tuple[float, float, dict]:
+                     estado: str, comportamiento: str, raza: dict | None = None) -> tuple[float, float, dict]:
     """Devuelve (mínimo, máximo, desglose) para un escenario sin incógnitas.
 
     El mínimo y el máximo solo difieren por rangos que la propia tarifa declara
@@ -198,11 +198,18 @@ def precio_escenario(t: Tarifario, servicio: str, tamano: str, grupo: str,
     if servicio in SERVICIOS_ESPECIALES:
         base_lo, base_hi = t.datos["servicios_especiales"][servicio][tamano]["precio"]
         origen_base = f"{servicio} {tamano}"
+    elif raza and raza.get("factor") and raza.get("tamano") == tamano:
+        # Raza con precio propio dicho por la propietaria (castellano: 16 $ el completo).
+        base_lo = base_hi = t.piso(servicio) * raza["factor"]
+        origen_base = f"piso {servicio} {t.piso(servicio)} x factor de la raza {raza['factor']}"
     else:
         base_lo = base_hi = t.piso(servicio) * t.factor(tamano, grupo)
         origen_base = f"piso {servicio} {t.piso(servicio)} x factor {tamano}/{grupo} {t.factor(tamano, grupo)}"
 
     pct_estado, monto_lo, monto_hi = t.recargo_estado(estado, tamano)
+    propio = ((raza or {}).get("recargo_estado") or {}).get(estado) if (raza or {}).get("tamano") == tamano else None
+    if propio:
+        pct_estado, (monto_lo, monto_hi) = propio.get("pct", 0.0), propio.get("monto", [0.0, 0.0])
     pc_lo, pc_hi = t.recargo_comportamiento(comportamiento)
 
     lo = redondear(base_lo * (1 + pct_estado) * (1 + pc_lo) + monto_lo, t.paso)
@@ -369,10 +376,12 @@ def _cotizar_mascota(t: Tarifario, m: dict) -> dict:
                     "motivo": f"El {servicio} solo aplica a perros de doble capa."}
         cand["grupo"] = posibles
 
+    razas, _ = t.resolver_razas(m.get("raza"))
+    propia = razas[0][1] if len(razas) == 1 and razas[0][1].get("factor") else None
     escenarios = []
     for tam, gru, est, com in itertools.product(cand["tamano"], cand["grupo"],
                                                 cand["estado"], cand["comportamiento"]):
-        lo, hi, des = precio_escenario(t, servicio, tam, gru, est, com)
+        lo, hi, des = precio_escenario(t, servicio, tam, gru, est, com, propia)
         escenarios.append({"tamano": tam, "grupo": gru, "estado": est,
                            "comportamiento": com, "min": lo, "max": hi, "desglose": des})
 

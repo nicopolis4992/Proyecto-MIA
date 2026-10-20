@@ -70,7 +70,7 @@ _TODO_EL_DIA = re.compile(r"\b(lunes|martes|miercoles|jueves|viernes|sabado|domi
 # Correccion del tamano tras ver la foto: "es grande", "es mediana".
 _TAMANO_CORREGIDO = re.compile(r"\b(?:es|son)\s+(miniatura|pequen[oa]s?|median[oa]s?|grandes?|extragrandes?|"
                                r"extra grandes?)\b")
-_TAMANO_MOTOR = {"mini": "pequeno", "peq": "pequeno", "med": "mediano", "gra": "grande", "ext": "grande"}
+_TAMANO_MOTOR = {"min": "miniatura", "peq": "pequeno", "med": "mediano", "gra": "grande", "ext": "extragrande"}
 # Lo que dice la propietaria sobre una cita (hora, precio, aprobar). Si responde
 # citando una consulta pero el texto es esto y hay una cita por aprobar, es para
 # la cita (prueba del 18-oct: "cambialo para las 2pm, el precio a 20" se le
@@ -359,18 +359,21 @@ class ProcesadorAprobacion:
                 f"Se había cotizado {mensajes.texto_total(cita)}.")
 
     def _aprobar(self, cita: dict) -> str:
-        self.repo.actualizar_cita(cita["id"], estado="aprobada")
+        """Propietaria, 19-oct: el precio se le muestra al cliente recien al aprobar, y la cita
+        se confirma (y va al calendario) cuando el cliente acepta (agente_agenda._aceptar_propuesta)."""
+        if cita["estado"] == "propuesta_cliente":
+            return f"La cita #{cita['id']} ya está aprobada: estoy esperando que el cliente acepte el precio."
+        self.repo.actualizar_cita(cita["id"], estado="propuesta_cliente")
         self.repo.registrar_evento(cita["id"], "aprobada")
-        texto = mensajes.confirmacion_cliente(cita)
+        texto = mensajes.aprobacion_cliente(self.repo.obtener_cita(cita["id"]))
         msg_id = self.mensajero.enviar(cita["cliente_telefono"], texto)
-        # SCRUM-78: la cita pasa a confirmada cuando el mensaje sale (o queda
-        # encolado para reintento, SCRUM-87: no se pierde).
-        self.repo.actualizar_cita(cita["id"], estado="confirmada")
-        self.repo.registrar_evento(cita["id"], "confirmada",
+        self.repo.registrar_evento(cita["id"], "precio_enviado_al_cliente",
                                    {"mensaje_cliente": texto, "wa_id": msg_id, "encolado": msg_id is None})
-        self._marcar_cita_activa(cita)
-        extra = registrar_en_calendario(self.repo, self.calendario, cita)
-        return f"✅ Cita #{cita['id']} confirmada. Ya le avisé al cliente.{extra}"
+        sesion = self.repo.obtener_sesion(cita["cliente_telefono"])
+        sesion.update(propuesta_cita=cita["id"], cita_en_aprobacion=None)
+        self.repo.guardar_sesion(cita["cliente_telefono"], sesion)
+        return (f"✅ Cita #{cita['id']} aprobada. Le pregunté al cliente si acepta el precio "
+                f"({mensajes.texto_total(cita)}); te aviso cuando confirme.")
 
     def _rechazar(self, cita: dict, decision: Decision, ahora: datetime | None) -> str:
         self.repo.actualizar_cita(cita["id"], estado="rechazada")

@@ -32,6 +32,8 @@ def turnos(cfg: dict, dia: str | None = None) -> list[time]:
     todos = [time.fromisoformat(t) for t in cfg.get("turnos") or []]
     if dia is None:
         return todos
+    if dia in (cfg.get("turnos_por_dia") or {}):
+        return [time.fromisoformat(t) for t in cfg["turnos_por_dia"][dia]]
     franja = cfg["horario_laboral"].get(dia)
     if not franja:
         return []
@@ -132,7 +134,7 @@ def proponer_alternativas(desde: datetime, duracion_min: int, modalidad: str, co
         horario = cfg["horario_laboral"].get(DIAS[dia.weekday()])
         if horario:
             if turnos(cfg):
-                candidatos = [dia.replace(hour=h.hour, minute=h.minute) for h in turnos(cfg)]
+                candidatos = [dia.replace(hour=h.hour, minute=h.minute) for h in turnos(cfg, DIAS[dia.weekday()])]
             else:
                 apertura = time.fromisoformat(horario[0])
                 t = dia.replace(hour=apertura.hour, minute=apertura.minute)
@@ -174,7 +176,8 @@ def ocupado_segun_repositorio(repo) -> Callable[[datetime, int], bool]:
     """Choque con citas aprobadas/confirmadas en la base local (provisional)."""
     def _ocupado(inicio: datetime, duracion_min: int) -> bool:
         fin = inicio + timedelta(minutes=duracion_min)
-        for estado in ("aprobada", "confirmada"):
+        # Una cita aprobada que espera el "si" del cliente tambien guarda su horario.
+        for estado in ("aprobada", "confirmada", "propuesta_cliente"):
             for c in repo.citas_por_estado(estado):
                 if not c.get("fecha_hora"):
                     continue

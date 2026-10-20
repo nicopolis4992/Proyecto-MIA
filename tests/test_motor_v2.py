@@ -55,8 +55,9 @@ class TestCasosReales:
 
 
 class TestExclusiones:
-    def test_mas_de_45_kg(self):
-        r = cotizar_mascota(T, {"peso_kg": 48, "servicio": "express"})
+    def test_mas_de_70_kg(self):
+        """Desde el 19-oct atiende extragrandes (hasta 70 kg, limite supuesto); antes rechazaba sobre 45."""
+        r = cotizar_mascota(T, {"peso_kg": 75, "servicio": "express"})
         assert r["rechazada"]
 
     def test_45_kg_exactos_se_atiende(self):
@@ -140,7 +141,7 @@ class TestVisita:
         assert r["total"] == [52, 56]
 
     def test_mascota_rechazada_no_suma(self):
-        r = cotizar({"mascotas": [self.base, {"peso_kg": 50, "servicio": "express"}]}, T)
+        r = cotizar({"mascotas": [self.base, {"peso_kg": 80, "servicio": "express"}]}, T)
         assert r["total"] == [15, 15]
 
     def test_iva_pendiente_avisado(self):
@@ -259,3 +260,22 @@ def test_razas_con_descripciones_como_las_escribe_la_propietaria():
                             ("mestizo de rottweiler", "rottweiler"), ("mestizo negro", "mestizo")]:
         razas, _ = T.resolver_razas(texto)
         assert [c for c, _ in razas] == [esperada], texto
+
+
+def test_respuestas_de_la_propietaria_del_19_oct():
+    """Miniatura 12 $ y extragrande desde 50 $ el completo; castellano 16 $ (18 a 20 $ en mal estado)."""
+    base = {"servicio": "completo", "estado": "sin_motas", "comportamiento": "tranquilo"}
+    assert cotizar_mascota(T, {**base, "tamano": "miniatura", "grupo": "A_maquina"})["rango"] == [12, 12]
+    assert cotizar_mascota(T, {**base, "tamano": "extragrande", "grupo": "B_deslanado"})["rango"] == [50, 50]
+    assert cotizar_mascota(T, {**base, "raza": "castellano"})["rango"] == [16, 16]
+    assert cotizar_mascota(T, {**base, "raza": "castellana", "estado": "severo"})["rango"] == [18, 20]
+    # Si la propietaria corrige el tamaño, el castellano usa la tabla general.
+    assert cotizar_mascota(T, {**base, "raza": "castellano", "tamano": "grande", "grupo": "D_corto"})["rango"] != [16, 16]
+
+
+def test_la_agenda_calcula_1h30_por_perro():
+    from app.cotizacion.cotizador import Cotizador
+
+    golden = {"servicio": "completo", "raza": "golden"}
+    assert Cotizador().cotizar([golden])["duracion_agenda_min"] == 90
+    assert Cotizador().cotizar([golden, golden])["duracion_agenda_min"] == 180

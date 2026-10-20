@@ -31,11 +31,17 @@ pasárselas a Claude para actualizar el sistema.
 | Días y horario (18-oct) | Todos los días. Lunes, miércoles y viernes de 11h a 18h; martes, jueves, sábado y domingo de 8h a 18h; la última cita a las 16h | Lunes, miércoles y viernes: turnos de 12:00, 14:00 y 16:00. Los demás días: 08:00, 10:00, 12:00, 14:00 y 16:00 |
 | Dos perros a la vez (18-oct) | Solo si son de la misma casa | Van en una sola cita; perros de casas distintas no se cruzan. La duración de los perros se suma |
 
+| Precios del sistema (19-oct) | "Los valores que da el sistema están correctos" | Se mantienen pequinés 15 $ y pastor inglés 45 $ |
+| Miniatura (19-oct) | 12 $ el completo | Tamaño propio: Express 7, Básico 9, Completo 12, Premium 15 |
+| Extragrande (19-oct) | Desde 50 $ el completo | Tamaño propio con 50 $ como precio mínimo |
+| Castellano (19-oct) | Mediano; buen estado 16 $, mal estado 18–20 $ | Raza con precio propio: 16 $, con nudos 18–19 $, muy enredado 18–20 $ |
+| Lunes, miércoles y viernes (19-oct) | "El lunes está bien desde las 11" | Turnos a las 11:00, 13:00 y 15:00 |
+| Dos perros de la misma casa (19-oct) | 1 h 30 cada uno | La agenda calcula 90 minutos por perro |
+
 **Pendiente de aclarar con ella:**
-- Lunes, miércoles y viernes: ¿el primer turno es a las 11:00 (11, 13, 15) o a las 12:00 (12, 14, 16)? Hoy está a las 12:00, para que la última cita sea a las 16:00.
-- Dos perros de la misma casa: ¿son 2 horas por perro o 2 horas en total? Hoy se suman, así que ocupan dos turnos.
-- Precios de miniatura y extragrande, y sus rangos de peso.
-- Precios del Excel: ¿el pequinés con baño completo es 12 $ (el bot dice 15 $)? ¿El pastor inglés es 25 $ (el bot dice 45 $)? ¿Cuánto cuesta el "solo baño" según el tamaño?
+- Pesos de miniatura (hoy hasta 4 kg) y extragrande (hoy de 45 a 70 kg): son supuestos del equipo.
+- En sus audios del 4-oct dijo que no atiende perros de más de 45 kg; ahora atiende extragrandes. ¿Hasta qué peso?
+- Puerta a puerta (sectores cercanos y precio), descuento por varias mascotas (¿desde 3 o 4?) y RIMPE/IVA.
 
 ---
 
