@@ -309,9 +309,14 @@ def nodo_pausado(estado: EstadoConversacion, d: Dependencias) -> EstadoConversac
 def nodo_agenda(estado: EstadoConversacion, d: Dependencias) -> EstadoConversacion:
     estado["respuesta"] = d.agenda.atender(estado["remitente"], estado["mensaje"], ahora())
     if estado["respuesta"] is None:
-        # Pregunta suelta con la cita ya enviada a aprobar: la responde la base de conocimiento.
+        # Pregunta que no es de la agenda ("¿que es el baño premium?"): la responde la base de
+        # conocimiento y, si hay una reserva en curso, se repite la pregunta pendiente.
         logger.info("Agenda sin respuesta: pregunta para el RAG")
-        return nodo_rag(estado, d)
+        nodo_rag(estado, d)
+        sesion = d.repo.obtener_sesion(estado["remitente"])
+        if sesion.get("flujo") == "agendando" and sesion.get("ultima_pregunta"):
+            estado["respuesta"] = f"{estado['respuesta']}\n\n{sesion['ultima_pregunta']}"
+        return estado
     logger.info("Enrutado a agente_agenda")
     return estado
 

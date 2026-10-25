@@ -201,7 +201,11 @@ PREGUNTA_SALUD = "¿Tiene sus vacunas y la desparasitación al día?"
 MAX_PEDIDOS_FOTO = 2
 # "¿hay cita a las 10?", "¿tiene a las 3?": pregunta por un horario, no lo elige.
 _INICIO_PREGUNTA = ("hay ", "tiene ", "tienen ", "tendra", "habra", "puede ", "se puede", "estara", "esta libre",
-                    "queda ")
+                    "queda ", "q es", "que es", "qué es", "que incluye", "qué incluye", "cual es", "cuál es",
+                    "cuanto", "cuánto", "por que", "por qué")
+# "¿tú cómo lo ves?", "no sé" ante la pregunta de los nudos: se responde con lo que se ve en la foto.
+_OPINION_FOTO = re.compile(r"\b(tu|usted)\s+(como|que)\s+(lo|la|le)\s+ve|como (lo|la|le) ve|\bno se\b|no sabria|"
+                           r"no estoy segur")
 
 
 def _es_pregunta(texto: str) -> bool:
@@ -261,6 +265,11 @@ def _juntar_observaciones(previa: str | None, nueva: str | None) -> str | None:
     if _normalizar(nueva) in _normalizar(previa) or _mismo_texto(previa, nueva):
         return previa
     return f"{previa}; {nueva}"
+
+
+def _sin_salud(reserva: dict) -> dict:
+    """La reserva sin la respuesta de vacunas, para saber si un mensaje aporto datos."""
+    return {k: v for k, v in reserva.items() if k != "salud"}
 
 
 def reserva_vacia() -> dict:
@@ -334,6 +343,16 @@ class AgenteAgenda:
                 return self._cancelar_cita(telefono, cita)
             self.repo.guardar_sesion(telefono, sesion)  # otra cosa: la cita sigue igual
 
+        if alternativas and mensaje.strip().isdigit() and (not cita or sesion.get("reprogramar_cita_id")):
+            n = int(mensaje.strip())
+            if not 1 <= n <= len(alternativas):
+                # Prueba del 22-oct: "4" con 3 opciones agendaba una hora que no estaba en la lista.
+                return (f"Esa opción no está en la lista 🙂 Respóndame con un número del 1 al {len(alternativas)}, "
+                        "o dígame otro día u hora.")
+            sesion["flujo"] = "agendando"
+            sesion["reserva"]["fecha_hora"] = alternativas[n - 1]
+            return self.continuar(telefono, sesion, ahora)
+
         ofrecido = sesion.pop("horario_ofrecido", None)
         if ofrecido and _normalizar(mensaje) in _ACEPTAR | {"si porfa", "si por favor", "reservelo", "si reservelo"}:
             # "¿Hay cita a las 10?" -> "Sí, está libre, ¿se lo reservo?" -> "sí".
@@ -386,6 +405,9 @@ class AgenteAgenda:
                 and not mensaje.strip().isdigit():
             # La respuesta se anota tal cual para la propietaria: no cambia el precio.
             sesion["reserva"]["salud"] = mensaje.strip()[:200]
+        import copy
+
+        antes = copy.deepcopy(sesion["reserva"])
         reserva = self._fusionar(sesion["reserva"], datos)
         self._recordar_mascotas(sesion, reserva)
         n = datos.get("eligio_alternativa")
@@ -397,6 +419,9 @@ class AgenteAgenda:
             consulta_hora, reserva["fecha_hora"] = reserva["fecha_hora"], sesion["reserva"].get("fecha_hora")
         sesion["reserva"] = reserva
 
+        opinion = self._opinion_por_foto(telefono, sesion, mensaje, datos)
+        if opinion:
+            return opinion
         if datos.get("pedido_especial"):
             return f"{self._anotar_pedido(reserva, datos['pedido_especial'])}\n\n{self._repetir_o_seguir(telefono, sesion, ahora)}"
         if datos.get("pregunta_precio") and reserva.get("pedido_especial"):
@@ -417,6 +442,12 @@ class AgenteAgenda:
             sesion["horario_consultado"] = consulta_hora
         pide_opciones = datos.get("dia_consultado") or datos.get("franja_preferida") or datos.get("hora_minima")
         pide_disponibilidad = bool(pide_opciones or consulta_hora or _PIDE_HORARIOS.search(mensaje.lower()))
+        if _es_pregunta(mensaje) and not pide_disponibilidad and not datos.get("pregunta_precio") \
+                and _sin_salud(reserva) == _sin_salud(antes):
+            # Prueba del 22-oct: "q es el baño premium" recibia otra vez la pregunta del servicio.
+            # La responde la base de conocimiento y despues se repite la pregunta pendiente.
+            self.repo.guardar_sesion(telefono, sesion)
+            return None
         if accion in ("reprogramar", "rechazar_propuesta") and not reserva.get("fecha_hora") and not pide_opciones:
             return self._ofrecer_horarios_del_dia(telefono, sesion, None, ahora, cita)
         if pide_disponibilidad and not reserva.get("fecha_hora") and self._faltan_datos(sesion):
@@ -449,6 +480,21 @@ class AgenteAgenda:
             self.repo.guardar_sesion(telefono, sesion)
             return pendiente
         return self.continuar(telefono, sesion, ahora)
+
+    def _opinion_por_foto(self, telefono: str, sesion: dict, mensaje: str, datos: dict) -> str | None:
+        """"¿Tú cómo lo ves?" a la pregunta de los nudos: lo que muestra la foto (lo confirma la propietaria)."""
+        if "nudos" not in (sesion.get("ultima_pregunta") or "") or not _OPINION_FOTO.search(_normalizar(mensaje)):
+            return None
+        if any(m.get("estado") for m in datos.get("mascotas") or []):
+            return None
+        estado = ((sesion.get("traza_foto") or {}).get("clasificacion") or {}).get("estado")
+        if estado not in mensajes.ETIQUETA_ESTADO:
+            return None
+        pregunta = "¿Y cómo se porta durante el baño: tranquilo, nervioso o agresivo?"
+        sesion["ultima_pregunta"] = pregunta
+        self.repo.guardar_sesion(telefono, sesion)
+        return (f"Por la foto se ve {mensajes.ETIQUETA_ESTADO[estado]}, aunque lo confirmamos al recibirlo 🙂 "
+                f"{pregunta}")
 
     def _faltan_datos(self, sesion: dict) -> bool:
         """Todavia hay preguntas del perro (o la foto) antes de llegar a la fecha."""
@@ -758,12 +804,17 @@ class AgenteAgenda:
             if atributo in preguntado:
                 continue
             if atributo == "tamano":
-                if sesion.get("traza_foto") or sesion.get("reprogramar_cita_id"):
-                    continue  # el tamano lo da la foto (y lo confirma la propietaria)
-                # Sin foto: se pregunta con palabras, con las 5 categorias de la propietaria.
+                if sesion.get("reprogramar_cita_id"):
+                    continue
+                # Sin foto, o la foto no dejo ver el tamano (prueba del 22-oct: mediano al 60 %
+                # quedo sin tamano y la propietaria recibio un rango de 15 a 97,50 $).
                 preguntado.append("tamano")
-                return (f"Entonces, ¿de qué tamaño es {nombre or 'su perrito'}: miniatura, pequeño, mediano, "
-                        "grande o extragrande? Si sabe más o menos cuánto pesa, también me sirve.")
+                inicio = (f"En la foto no logro ver bien el tamaño de {nombre or 'su perrito'}"
+                          if sesion.get("traza_foto") else f"Entonces, ¿de qué tamaño es {nombre or 'su perrito'}")
+                return (f"{inicio}: ¿es miniatura, pequeño, mediano, grande o extragrande? Si sabe más o menos "
+                        "cuánto pesa, también me sirve." if sesion.get("traza_foto") else
+                        f"{inicio}: miniatura, pequeño, mediano, grande o extragrande? Si sabe más o menos cuánto "
+                        "pesa, también me sirve.")
             if atributo in ("estado_manto", "comportamiento"):
                 preguntado += ["estado_manto", "comportamiento"]
                 return f"{self.cotizador.pregunta('estado_manto')} {self.cotizador.pregunta('comportamiento')}"

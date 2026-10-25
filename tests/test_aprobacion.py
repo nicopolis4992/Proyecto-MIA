@@ -390,3 +390,27 @@ def test_indicador_tamano_por_foto_frente_a_la_propietaria():
     r = indicador_foto(repo, repo.todas_las_citas())
     assert r["fotos_evaluadas"] == 2 and r["pct_tamano_acertado"] == 50
     assert r["fotos_subestimadas"] == 1 and r["fotos_sobreestimadas"] == 0
+
+
+def test_es_grande_y_precio_en_un_mensaje_avisa_la_correccion():
+    """'Es grande el precio es de 20': corregia el tamaño sin decirlo y la propietaria creyo que no la entendio."""
+    llm = json.dumps({"tipo": "modificar", "nueva_fecha_hora": None, "nuevo_total": 20,
+                      "nuevo_costo_transporte": None, "motivo": None})
+    p, repo, msj = _procesador(ClienteFalso(llm))
+    cid = _cita(repo, modalidad="salon")
+    resp = p.procesar("Es grande el precio es de 20", id_citado=f"wamid.cita{cid}")
+    assert resp.startswith("📐 Tamaño corregido a grande.") and "Le propuse el cambio" in resp
+    cita = repo.obtener_cita(cid)
+    assert cita["mascotas"][0]["tamano"] == "grande" and cita["total_acordado"] == 20
+
+
+def test_no_entendido_explica_por_que_el_rango_es_amplio():
+    llm = json.dumps({"tipo": "no_entendido", "nueva_fecha_hora": None, "nuevo_total": None,
+                      "nuevo_costo_transporte": None, "motivo": None})
+    p, repo, _ = _procesador(ClienteFalso(llm))
+    luna = {"nombre": "Luna", "servicio": "completo", "raza": "mestizo"}
+    cid = repo.crear_cita(cliente_telefono=CLI, mascotas=[luna], fecha_hora=JUEVES_10, modalidad="salon",
+                          cotizacion=MOTOR.cotizar([luna]))
+    repo.actualizar_cita(cid, msg_aprobacion_id="wamid.x")
+    resp = p.procesar("por qué el valor es tan variable?", id_citado="wamid.x")
+    assert "porque falta confirmar: tamaño" in resp and "es mediano" in resp

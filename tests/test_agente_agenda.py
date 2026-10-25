@@ -47,7 +47,7 @@ FOTO_Y_SALUD = ("tamano", "salud", "foto")
 
 def test_mestizo_no_pregunta_el_tamaño_lo_da_la_foto():
     """18-oct: primero los datos del perro; el tamaño lo da la foto, que se pide al final."""
-    m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo"}
+    m = {"nombre": "Toby", "servicio": "completo", "raza": "mestizo", "tamano": "mediano"}   # lo dio la foto
     ag, repo, _ = _agente(_extraccion([m]), _extraccion([m]), _extraccion([m]))
     repo.guardar_sesion(TEL, {"traza_foto": {"clasificacion": {"tamano": "mediano"}}})   # ya envio la foto
     respuestas = [ag.atender(TEL, t, AHORA) for t in ("quiero un baño completo para Toby, es mestizo",
@@ -573,3 +573,54 @@ def test_sin_foto_pregunta_el_tamano_con_palabras():
     ag.atender(TEL, "no tengo foto", AHORA)
     r = ag.atender(TEL, "no puedo ahora", AHORA)
     assert "miniatura, pequeño, mediano, grande o extragrande" in r
+
+
+# --- Pruebas internas del 22 al 24-oct -------------------------------------------
+
+def test_numero_de_opcion_que_no_existe():
+    """'4' con 3 opciones agendaba el lunes a las 15:00."""
+    m = {"nombre": "Zuko", "servicio": "premium", "tamano": "mediano", "grupo": "A_maquina",
+         "estado": "sin_motas", "comportamiento": "tranquilo"}
+    ag, repo, _ = _agente(_extraccion([m], dia_consultado="2026-10-12"), ya_preguntado=FOTO_Y_SALUD)
+    ag.atender(TEL, "ayúdame con una cita para el lunes", AHORA)
+    r = ag.atender(TEL, "4", AHORA)                                     # sin LLM
+    assert "no está en la lista" in r and "del 1 al 3" in r
+    assert repo.citas_por_estado("pendiente_aprobacion") == []
+    ag.atender(TEL, "3", AHORA)                                         # opcion valida, sin LLM
+    [cita] = repo.citas_por_estado("pendiente_aprobacion")
+    assert cita["fecha_hora"].startswith("2026-10-12T15:00")
+
+
+def test_si_la_foto_no_dio_el_tamano_se_pregunta():
+    """La foto dijo mediano al 60 % (bajo el umbral): antes no se preguntaba y el rango iba de 15 a 97,50."""
+    m = {"nombre": "Zuko", "servicio": "premium", "grupo": "A_maquina"}
+    ag, repo, _ = _agente(_extraccion([m]))
+    repo.guardar_sesion(TEL, {"traza_foto": {"clasificacion": {"tamano": "mediano", "confianza_tamano": 0.6}}})
+    r = ag.atender(TEL, "el premium", AHORA)
+    assert r.startswith("En la foto no logro ver bien el tamaño de Zuko")
+
+
+def test_tu_como_lo_ves_responde_con_lo_que_se_ve_en_la_foto():
+    m = {"nombre": "Zuko", "servicio": "premium", "tamano": "mediano", "grupo": "A_maquina"}
+    ag, repo, _ = _agente(_extraccion([m]), _extraccion([m]))
+    repo.guardar_sesion(TEL, {"traza_foto": {"clasificacion": {"tamano": "mediano", "estado": "sin_motas"}}})
+    assert "nudos" in ag.atender(TEL, "el premium", AHORA)
+    r = ag.atender(TEL, "tú como le ves a mi perro", AHORA)
+    assert r.startswith("Por la foto se ve sin nudos") and "tranquilo, nervioso o agresivo" in r
+
+
+def test_pregunta_sobre_un_servicio_en_medio_de_la_reserva_se_responde():
+    """'q es el bañ premium' recibia dos veces la pregunta del servicio."""
+    from types import SimpleNamespace
+
+    from app.agents.orchestrator_graph import construir_grafo, crear_dependencias, procesar_mensaje
+
+    msj, repo = MensajeroMemoria(), Repositorio(":memory:")
+    rag = lambda m: SimpleNamespace(texto="El Baño Premium incluye el baño medicado.", fundamentada=True)
+    m = {"nombre": "Zuko"}
+    d = crear_dependencias(client=ClienteFalso(_extraccion([m])), repo=repo, mensajero=msj,
+                           propietaria=PROP, agente_rag=rag, clasificador=object(), calendario=False)
+    repo.guardar_sesion(TEL, {"flujo": "agendando", "reserva": {"mascotas": [m], "fecha_hora": None},
+                              "ultima_pregunta": "¡Con gusto le agendo! ¿Qué servicio le gustaría?"})
+    r = procesar_mensaje(TEL, "q es el bañ premium", grafo=construir_grafo(d))
+    assert r.startswith("El Baño Premium incluye") and r.endswith("¿Qué servicio le gustaría?")

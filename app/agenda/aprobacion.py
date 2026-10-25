@@ -251,14 +251,18 @@ class ProcesadorAprobacion:
         if cita is None:
             return aviso
 
+        nota = ""
         correccion = _TAMANO_CORREGIDO.search(_sin_tildes(texto))
         if correccion:
             # "es grande" tras ver la foto: se recotiza con ese tamaño (sin LLM).
             cita = self._corregir_tamano(cita, correccion.group(1))
             resto = (_sin_tildes(texto)[:correccion.start()] + _sin_tildes(texto)[correccion.end():]).strip(" ,.;")
+            tamano = mensajes.ETIQUETA_TAMANO.get(cita["mascotas"][0].get("tamano"), "")
             if not resto:
-                return (f"📐 Cita #{cita['id']}: tamaño corregido. El precio queda en {mensajes.texto_total(cita)}. "
-                        "Responde \"listo\" para aprobar o dime el precio.")
+                return (f"📐 Cita #{cita['id']}: tamaño corregido a {tamano}. El precio queda en "
+                        f"{mensajes.texto_total(cita)}. Responde \"listo\" para aprobar o dime el precio.")
+            # Prueba del 22-oct: "es grande, el precio es 20" corregia el tamaño sin decirlo.
+            nota = f"📐 Tamaño corregido a {tamano}. "
             texto = resto
         decision = interpretar_respuesta(texto, cita, self.client)
         self.repo.registrar_evento(cita["id"], "respuesta_propietaria",
@@ -267,15 +271,25 @@ class ProcesadorAprobacion:
 
         if decision.tipo in ("rechazar", "modificar") and decision.nueva_fecha_hora is None \
                 and _SIN_ESPACIO.search(_sin_tildes(texto)):
-            return self._pedir_otro_horario(cita, decision, texto, ahora or reloj())
+            return nota + self._pedir_otro_horario(cita, decision, texto, ahora or reloj())
         if decision.tipo == "aprobar":
-            return self._aprobar(cita)
+            return nota + self._aprobar(cita)
         if decision.tipo == "rechazar":
-            return self._rechazar(cita, decision, ahora)
+            return nota + self._rechazar(cita, decision, ahora)
         if decision.tipo == "modificar":
-            return self._modificar(cita, decision)
-        return ("No te entendí 😅. Responde \"listo\" para aprobar, \"no\" para rechazar, "
-                "o indícame el cambio (hora o precio).")
+            return nota + (self._modificar(cita, decision) or "")
+        return nota + self._no_entendido(cita)
+
+    def _no_entendido(self, cita: dict) -> str:
+        """Prueba del 22-oct: "¿por qué el valor es tan variable?" recibia solo "No te entendí"."""
+        faltan = [mensajes.ETIQUETA_PREGUNTA.get(p, p)
+                  for p in (cita.get("cotizacion") or {}).get("preguntas_pendientes", [])]
+        explicacion = ""
+        if faltan and mensajes.total_de(cita) is None:
+            explicacion = (f" El precio de la cita #{cita['id']} va {mensajes.texto_total(cita)} porque falta "
+                           f"confirmar: {', '.join(faltan)}.")
+        return (f"No te entendí 😅.{explicacion} Puedes responder con el tamaño (\"es mediano\"), el precio "
+                "(\"cóbrale 20\"), la hora (\"a las 12\"), \"listo\" para aprobar o \"no\" para rechazar.")
 
     # -- relevo de consultas sin respuesta -----------------------------------
 

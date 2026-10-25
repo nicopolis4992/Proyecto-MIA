@@ -2,12 +2,12 @@
 
 Errores encontrados durante el desarrollo y las pruebas del prototipo, con su
 causa, la corrección aplicada y la prueba que evita que vuelva a aparecer.
-Insumo para el capítulo de resultados y limitaciones (SCRUM-90). Versión 1.1 ·
-19-oct-2026.
+Insumo para el capítulo de resultados y limitaciones (SCRUM-90). Versión 1.2 ·
+24-oct-2026.
 
 **Cómo se detectaron:**
 - **Manual:** conversaciones de prueba del equipo (capturas del 30-sep al 06-oct).
-- **Pruebas internas:** el equipo simulando a la clienta y a la propietaria en la demo y por WhatsApp (16 al 19-oct), con las reglas que dio la propietaria el 17 y 18-oct.
+- **Pruebas internas:** el equipo simulando a la clienta y a la propietaria en la demo y por WhatsApp (16 al 24-oct), con las reglas que dio la propietaria del 17 al 19-oct.
 - **Evaluación:** conjunto ciego de 222 mensajes (SCRUM-64).
 - **Grabación:** errores que aparecieron al grabar los escenarios repetibles (`scripts/escenarios.py`).
 
@@ -68,7 +68,7 @@ Detalle de los 9 errores del conjunto ciego: `evaluacion/nlu/resultados/nlu_v2_e
 | E-26 | Si WhatsApp no le llega a la propietaria, la solicitud se pierde | Análisis | Un solo canal | Respaldo por correo (SCRUM-86) · `c6a9208` | Corregido |
 | E-27 | Un escenario grabado ocultaba errores detrás del mensaje de "error técnico" | Grabación | La prueba solo revisaba que hubiera respuesta | Las pruebas fallan si aparece el mensaje de error técnico · `a604a2f` | Corregido |
 
-## 6. Pruebas internas del 16 al 19 de octubre
+## 6. Pruebas internas del 16 al 24 de octubre
 
 | ID | Caso | Detección | Causa | Corrección | Estado |
 |---|---|---|---|---|---|
@@ -87,17 +87,23 @@ Detalle de los 9 errores del conjunto ciego: `evaluacion/nlu/resultados/nlu_v2_e
 | E-40 | El número con el que el cliente eligió un horario quedó como respuesta de vacunas | Pruebas internas | Se anotaba cualquier respuesta tras la pregunta de vacunas | No se anotan números ni elecciones · `95b2979` | Corregido |
 | E-41 | "Es ciego" se respondía pero no le llegaba a la propietaria | Pruebas internas | Solo se extraía lo que cambia el precio | Campo de observaciones por mascota en el resumen · `a10ba52` | Corregido |
 | E-42 | Gemini estimó un tamaño menos en las dos fotos probadas (mediano → pequeño, grande → mediano) | Pruebas internas | La foto no tiene escala; posible sesgo sistemático | La propietaria corrige al aprobar ("es grande"); el panel mide el acierto · `8e0fb4a` | Abierto |
+| E-43 | "4" con tres opciones en la lista agendaba una hora que no estaba ofrecida | Pruebas internas | El número fuera de rango se ignoraba y el LLM extraía una hora | Se responde que la opción no existe; las opciones válidas se eligen sin LLM | Corregido |
+| E-44 | La foto no dio el tamaño (confianza bajo el umbral) y no se preguntó: rango de 15 a 97,50 $ para la propietaria | Pruebas internas | Con foto se omitía siempre la pregunta del tamaño | Si la foto no da el tamaño, se pregunta con las 5 categorías | Corregido |
+| E-45 | "Es grande, el precio es 20" corregía el tamaño sin decirlo y la propietaria creyó que no la entendió | Pruebas internas | La respuesta solo informaba el cambio de precio | La respuesta empieza con "Tamaño corregido a …" | Corregido |
+| E-46 | "q es el bañ premium" en medio de la reserva recibía dos veces la pregunta del servicio | Pruebas internas | La pregunta no aportaba datos y la agenda repetía su pregunta | La responde la base de conocimiento y luego se repite la pregunta pendiente | Corregido |
+| E-47 | "¿Tú cómo lo ves?" ante la pregunta de los nudos hacía saltar a la siguiente pregunta | Pruebas internas | La pregunta se daba por respondida | Se responde con lo que muestra la foto (lo confirma la propietaria) | Corregido |
+| E-48 | "¿Por qué el valor es tan variable?" de la propietaria recibía solo "No te entendí" | Pruebas internas | Sin explicación del rango | Se explica qué falta confirmar y cómo corregir ("es mediano", "cóbrale 20") | Corregido |
 
 ## 7. Resumen
 
 | Componente | Corregidos | Mitigados | Abiertos |
 |---|---|---|---|
 | NLU y orquestación | 4 | 2 | 1 |
-| Agenda y aprobación | 20 | 0 | 0 |
+| Agenda y aprobación | 26 | 0 | 0 |
 | Cotización | 4 | 0 | 2 |
 | RAG | 2 | 0 | 1 |
 | WhatsApp e infraestructura | 5 | 1 | 0 |
-| **Total** | **35** | **3** | **4** |
+| **Total** | **41** | **3** | **4** |
 
 **Limitaciones abiertas que conviene declarar en el informe:**
 - La confianza que declara el LLM no sirve como umbral (E-05).

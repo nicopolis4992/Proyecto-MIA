@@ -180,7 +180,7 @@ def resumen_para_propietaria(cita: dict, encabezado: str | None = None) -> str:
     return "\n".join(lineas)
 
 
-ETIQUETA_ESTADO = {"sin_motas": "sin nudos", "moderado": "algunos nudos", "severo": "muy enredado"}
+ETIQUETA_ESTADO = {"sin_motas": "sin nudos", "moderado": "con algunos nudos", "severo": "muy enredado"}
 BACKEND = {"cnn_onnx": "CNN", "gemini_zero_shot": "Gemini"}
 
 
