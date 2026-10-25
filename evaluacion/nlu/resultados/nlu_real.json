@@ -1,0 +1,184 @@
+{
+  "muestra": {
+    "n": 148,
+    "por_clase": {
+      "agendar_cita": 33,
+      "consultar_servicio_producto": 12,
+      "consulta_general": 103
+    },
+    "fuente": "export real de WhatsApp de una clienta frecuente (2024-2026), seudonimizado; etiquetado con la guía de SCRUM-63 antes de ver las predicciones"
+  },
+  "modelo_de_lenguaje": {
+    "modelo": "gemini-3.5-flash-lite (prompt v2)",
+    "exactitud": 0.872,
+    "ic95_exactitud": [
+      0.811,
+      0.926
+    ],
+    "f1_macro": 0.792,
+    "ic95_f1_macro": [
+      0.683,
+      0.88
+    ],
+    "f1_por_clase": {
+      "agendar_cita": 0.793,
+      "consultar_servicio_producto": 0.667,
+      "consulta_general": 0.916
+    },
+    "matriz_confusion": [
+      [
+        23,
+        1,
+        9
+      ],
+      [
+        0,
+        8,
+        4
+      ],
+      [
+        2,
+        3,
+        98
+      ]
+    ]
+  },
+  "linea_base": {
+    "modelo": "TF-IDF + RL",
+    "exactitud": 0.743,
+    "ic95_exactitud": [
+      0.669,
+      0.811
+    ],
+    "f1_macro": 0.601,
+    "ic95_f1_macro": [
+      0.488,
+      0.704
+    ],
+    "f1_por_clase": {
+      "agendar_cita": 0.562,
+      "consultar_servicio_producto": 0.4,
+      "consulta_general": 0.841
+    },
+    "matriz_confusion": [
+      [
+        18,
+        2,
+        13
+      ],
+      [
+        3,
+        5,
+        4
+      ],
+      [
+        10,
+        6,
+        87
+      ]
+    ]
+  },
+  "mcnemar": {
+    "acierta_llm_falla_base": 25,
+    "falla_llm_acierta_base": 6,
+    "p_exacta": 0.0009
+  },
+  "errores_llm": [
+    {
+      "id": "REAL-011",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-012",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-018",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-019",
+      "real": "agendar_cita",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-020",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-032",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-058",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-070",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-072",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-074",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-080",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-081",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-086",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-108",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-139",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-140",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-172",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-180",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-192",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto"
+    }
+  ],
+  "advertencia": "Una sola clienta: la muestra no representa la variedad de clientes; la mayoría de los mensajes son de cortesía y logística (consulta general)."
+}

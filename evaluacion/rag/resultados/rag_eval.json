@@ -1,0 +1,1285 @@
+{
+  "n": 59,
+  "n_sabe": 40,
+  "n_no_sabe": 19,
+  "recuperacion": {
+    "hit1_pct": 95.0,
+    "hit4_pct": 100.0
+  },
+  "umbral_actual": {
+    "umbral": 0.66,
+    "responde_lo_que_sabe_pct": 100.0,
+    "declina_lo_que_no_sabe_pct": 52.6,
+    "exactitud_balanceada_pct": 76.3
+  },
+  "umbral_propuesto": {
+    "umbral": 0.7,
+    "responde_lo_que_sabe_pct": 90.0,
+    "declina_lo_que_no_sabe_pct": 94.7,
+    "exactitud_balanceada_pct": 92.3
+  },
+  "curva_umbral": [
+    {
+      "umbral": 0.5,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 0.0,
+      "exactitud_balanceada_pct": 50.0
+    },
+    {
+      "umbral": 0.51,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 0.0,
+      "exactitud_balanceada_pct": 50.0
+    },
+    {
+      "umbral": 0.52,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 0.0,
+      "exactitud_balanceada_pct": 50.0
+    },
+    {
+      "umbral": 0.53,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 0.0,
+      "exactitud_balanceada_pct": 50.0
+    },
+    {
+      "umbral": 0.54,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 0.0,
+      "exactitud_balanceada_pct": 50.0
+    },
+    {
+      "umbral": 0.55,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 5.3,
+      "exactitud_balanceada_pct": 52.6
+    },
+    {
+      "umbral": 0.56,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 5.3,
+      "exactitud_balanceada_pct": 52.6
+    },
+    {
+      "umbral": 0.57,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 10.5,
+      "exactitud_balanceada_pct": 55.2
+    },
+    {
+      "umbral": 0.58,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 10.5,
+      "exactitud_balanceada_pct": 55.2
+    },
+    {
+      "umbral": 0.59,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 10.5,
+      "exactitud_balanceada_pct": 55.2
+    },
+    {
+      "umbral": 0.6,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 15.8,
+      "exactitud_balanceada_pct": 57.9
+    },
+    {
+      "umbral": 0.61,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 26.3,
+      "exactitud_balanceada_pct": 63.1
+    },
+    {
+      "umbral": 0.62,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 36.8,
+      "exactitud_balanceada_pct": 68.4
+    },
+    {
+      "umbral": 0.63,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 42.1,
+      "exactitud_balanceada_pct": 71.0
+    },
+    {
+      "umbral": 0.64,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 42.1,
+      "exactitud_balanceada_pct": 71.0
+    },
+    {
+      "umbral": 0.65,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 47.4,
+      "exactitud_balanceada_pct": 73.7
+    },
+    {
+      "umbral": 0.66,
+      "responde_lo_que_sabe_pct": 100.0,
+      "declina_lo_que_no_sabe_pct": 52.6,
+      "exactitud_balanceada_pct": 76.3
+    },
+    {
+      "umbral": 0.67,
+      "responde_lo_que_sabe_pct": 97.5,
+      "declina_lo_que_no_sabe_pct": 78.9,
+      "exactitud_balanceada_pct": 88.2
+    },
+    {
+      "umbral": 0.68,
+      "responde_lo_que_sabe_pct": 95.0,
+      "declina_lo_que_no_sabe_pct": 84.2,
+      "exactitud_balanceada_pct": 89.6
+    },
+    {
+      "umbral": 0.69,
+      "responde_lo_que_sabe_pct": 92.5,
+      "declina_lo_que_no_sabe_pct": 89.5,
+      "exactitud_balanceada_pct": 91.0
+    },
+    {
+      "umbral": 0.7,
+      "responde_lo_que_sabe_pct": 90.0,
+      "declina_lo_que_no_sabe_pct": 94.7,
+      "exactitud_balanceada_pct": 92.3
+    },
+    {
+      "umbral": 0.71,
+      "responde_lo_que_sabe_pct": 82.5,
+      "declina_lo_que_no_sabe_pct": 94.7,
+      "exactitud_balanceada_pct": 88.6
+    },
+    {
+      "umbral": 0.72,
+      "responde_lo_que_sabe_pct": 67.5,
+      "declina_lo_que_no_sabe_pct": 94.7,
+      "exactitud_balanceada_pct": 81.1
+    },
+    {
+      "umbral": 0.73,
+      "responde_lo_que_sabe_pct": 67.5,
+      "declina_lo_que_no_sabe_pct": 94.7,
+      "exactitud_balanceada_pct": 81.1
+    },
+    {
+      "umbral": 0.74,
+      "responde_lo_que_sabe_pct": 60.0,
+      "declina_lo_que_no_sabe_pct": 94.7,
+      "exactitud_balanceada_pct": 77.3
+    },
+    {
+      "umbral": 0.75,
+      "responde_lo_que_sabe_pct": 55.0,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 77.5
+    },
+    {
+      "umbral": 0.76,
+      "responde_lo_que_sabe_pct": 45.0,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 72.5
+    },
+    {
+      "umbral": 0.77,
+      "responde_lo_que_sabe_pct": 42.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 71.2
+    },
+    {
+      "umbral": 0.78,
+      "responde_lo_que_sabe_pct": 40.0,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 70.0
+    },
+    {
+      "umbral": 0.79,
+      "responde_lo_que_sabe_pct": 37.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 68.8
+    },
+    {
+      "umbral": 0.8,
+      "responde_lo_que_sabe_pct": 17.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 58.8
+    },
+    {
+      "umbral": 0.81,
+      "responde_lo_que_sabe_pct": 7.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 53.8
+    },
+    {
+      "umbral": 0.82,
+      "responde_lo_que_sabe_pct": 7.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 53.8
+    },
+    {
+      "umbral": 0.83,
+      "responde_lo_que_sabe_pct": 5.0,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 52.5
+    },
+    {
+      "umbral": 0.84,
+      "responde_lo_que_sabe_pct": 2.5,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 51.2
+    },
+    {
+      "umbral": 0.85,
+      "responde_lo_que_sabe_pct": 0.0,
+      "declina_lo_que_no_sabe_pct": 100.0,
+      "exactitud_balanceada_pct": 50.0
+    }
+  ],
+  "respuestas": {
+    "exactitud_pct": 82.5,
+    "respondio_lo_que_sabe_pct": 85.0,
+    "no_se_correcto_pct": 100.0,
+    "alucinacion_pct": 0.0
+  },
+  "detalle": [
+    {
+      "pregunta": "hola cuanto cuesta el baño express para un chihuahua",
+      "debe_declinar": false,
+      "categoria": "tarifario|servicios",
+      "top1_similitud": 0.8311,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Hola. El Baño Express tiene un precio desde USD 7.00. Para un cachorro miniatura (0-4 kg) el valor es de USD 7.00 a USD 7.00, pero el valor exacto depende del tamaño, tipo de pelo y si tiene nudos; le sugiero enviar una foto de su perrito para una cotización exacta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "precio del baño completo para perro mediano",
+      "debe_declinar": false,
+      "categoria": "tarifario",
+      "top1_similitud": 0.8277,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Qué gusto saludarle! Para un perro mediano (9.01–18 kg), el precio del baño completo va de USD 12.50 a USD 20.00 sin nudos. Le sugiero enviar una foto de su perrito para una cotización exacta, ya que el valor depende del tamaño, tipo de pelo y si tiene nudos.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "cuanto me sale el baño premium para un golden",
+      "debe_declinar": false,
+      "categoria": "tarifario",
+      "top1_similitud": 0.7964,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para un perrito grande como un Golden (18.01 a 45 kg), el Baño Premium cuesta desde USD 17.00 hasta USD 56.50 según su tipo de pelo y si tiene nudos. Le sugiero enviar una foto de su mascota para darle una cotización exacta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "cuanto cobran x bañar un perro grande",
+      "debe_declinar": false,
+      "categoria": "tarifario",
+      "top1_similitud": 0.8075,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Para un perro grande (18.01–45 kg), los precios sin nudos van desde USD 8.00 hasta USD 26.50 en el Baño Express, desde USD 10.00 hasta USD 34.00 en el Baño Básico, desde USD 13.50 hasta USD 45.00 en el Baño Completo, y desde USD 17.00 hasta USD 56.50 en el Baño Premium. El valor exacto depende del tamaño, tipo de pelo y si tiene nudos, por lo que le sugiero enviar una foto de su perrito para una cotización exacta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "y el baño basico cuanto es para uno pequeño",
+      "debe_declinar": false,
+      "categoria": "tarifario",
+      "top1_similitud": 0.8024,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para un perrito pequeño (4.01 a 9 kg), el precio del baño básico va de USD 9.00 a USD 11.50, siempre que esté sin nudos. El valor exacto depende del tamaño, el tipo de pelo y si tiene nudos, por lo que le sugiero enviar una foto de su mascota para una cotización exacta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "q trae el baño completo?",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario",
+      "top1_similitud": 0.7168,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "tarifario",
+        "servicios",
+        "faq"
+      ],
+      "hit1": false,
+      "hitk": true,
+      "respuesta": "El Baño Completo incluye baño, peinado o corte de pelo, secado, despeje de zonas interdigitales y genital, corte de uñas, limpieza de oídos, perfume, hidratación de almohadillas y accesorios. Quedamos a sus órdenes para cualquier otra duda.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "el premium q tiene de diferente al completo",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario|faq",
+      "top1_similitud": 0.7008,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "faq",
+        "tarifario",
+        "servicios"
+      ],
+      "hit1": false,
+      "hitk": true,
+      "respuesta": "El Baño Premium incluye todo lo del Baño Completo más el baño medicado (para caspa o alergias) y antipulgas o potenciador de color. Si desea saber más detalles, se lo confirma la propietaria.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "hacen deslanado? mi pug bota full pelo",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario",
+      "top1_similitud": 0.7946,
+      "categorias_recuperadas": [
+        "tarifario",
+        "servicios",
+        "servicios",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Sí hacemos deslanado, el retiro del subpelo es parte del Baño Completo para perros de doble capa como su pug y no se cobra aparte. El precio es el del Baño Completo según el tamaño y tipo de pelo; para darle una cotización exacta, le sugiero enviar una foto de su perrito.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "mi perrita tiene el pelo todo enredado con motas la pueden atender?",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario",
+      "top1_similitud": 0.7929,
+      "categorias_recuperadas": [
+        "tarifario",
+        "servicios",
+        "cotizacion",
+        "cotizacion"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "recuperar"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "el baño express incluye perfume?",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario",
+      "top1_similitud": 0.7765,
+      "categorias_recuperadas": [
+        "servicios",
+        "tarifario",
+        "faq",
+        "cotizacion"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Sí, el Baño Express incluye perfume, además de baño, secado y accesorios. Díganos al agendar si prefiere que no se lo pongan.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "tienen baño antipulgas",
+      "debe_declinar": false,
+      "categoria": "faq|servicios|tarifario",
+      "top1_similitud": 0.8018,
+      "categorias_recuperadas": [
+        "faq",
+        "servicios",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Sí tenemos, para eso debe pedir el Baño Premium, que incluye baño medicado y antipulgas además de todo lo del Baño Completo. El precio va desde USD 15.00 según el tamaño y tipo de pelo; le sugiero enviar una foto de su perrito para una cotización exacta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "cortan uñas y limpian oidos?",
+      "debe_declinar": false,
+      "categoria": "servicios|tarifario",
+      "top1_similitud": 0.7417,
+      "categorias_recuperadas": [
+        "servicios",
+        "tarifario",
+        "tarifario",
+        "politicas"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Sí, cortamos las uñas y limpiamos los oídos, ya que estos servicios están incluidos tanto en el Baño Completo como en el Baño Premium. ¿Desea que le ayude con una cotización? Puede enviarnos una foto de su perrito.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "como hago para q me coticen",
+      "debe_declinar": false,
+      "categoria": "cotizacion|faq",
+      "top1_similitud": 0.7165,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "cotizacion",
+        "agenda",
+        "faq"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para cotizar, necesitamos que nos envíe una foto de su perrito de cuerpo entero y el servicio que le interesa. Con eso estimamos el tamaño, tipo de pelo y si tiene nudos; si nos dice su peso aproximado, el precio será más exacto.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "el precio q me dan x whatsapp es el final o puede cambiar?",
+      "debe_declinar": false,
+      "categoria": "cotizacion|faq",
+      "top1_similitud": 0.7132,
+      "categorias_recuperadas": [
+        "faq",
+        "agenda",
+        "cotizacion",
+        "cotizacion"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "El precio que le damos es para lo que nos contó de su mascota, pero puede ajustarse el día del servicio si el pelo está más enredado de lo declarado o si su comportamiento requiere más trabajo; en ese caso se le explica antes de cobrar.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "xq me cobrarian mas el dia del baño",
+      "debe_declinar": false,
+      "categoria": "cotizacion|faq|tarifario|servicios",
+      "top1_similitud": 0.7516,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "El valor exacto del servicio depende del tamaño, el tipo de pelo de su perrito y si tiene nudos. Si gusta, puede enviarnos una foto de su mascota para una cotización exacta.",
+      "respondio": true,
+      "faltan": [
+        "enredado"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "mi perro es mestizo cuanto seria",
+      "debe_declinar": false,
+      "categoria": "cotizacion|faq|tarifario",
+      "top1_similitud": 0.7951,
+      "categorias_recuperadas": [
+        "faq",
+        "cotizacion",
+        "tarifario",
+        "cotizacion"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Con mucho gusto atendemos perritos mestizos. Para cotizar, cuénteme su tamaño (pequeño hasta 9 kg, mediano de 9 a 18 kg, grande de 18 a 45 kg) y cómo es su pelo, o envíenos una foto de cuerpo entero para darle un valor exacto.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "tengo 4 perritos hay algun descuento?",
+      "debe_declinar": false,
+      "categoria": "tarifario|agenda",
+      "top1_similitud": 0.8407,
+      "categorias_recuperadas": [
+        "tarifario",
+        "agenda",
+        "faq",
+        "tarifario"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Qué alegría que nos escriba con sus perritos. Si trae 4 o más mascotas en la misma cita, se le descuenta de USD 1.00 a USD 2.00 por cada una. ¿Le gustaría que le ayude agendando una cita?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "mi schnauzer cuenta como pequeño o mediano?",
+      "debe_declinar": false,
+      "categoria": "cotizacion|tarifario",
+      "top1_similitud": 0.7116,
+      "categorias_recuperadas": [
+        "tarifario",
+        "cotizacion",
+        "tarifario",
+        "negocio"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "9"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "mi perro es bravo lo reciben?",
+      "debe_declinar": false,
+      "categoria": "politicas|tarifario",
+      "top1_similitud": 0.7907,
+      "categorias_recuperadas": [
+        "politicas",
+        "politicas",
+        "politicas",
+        "faq"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "agresivos"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "mi perrito es nervioso y miedoso igual lo atienden",
+      "debe_declinar": false,
+      "categoria": "politicas|tarifario",
+      "top1_similitud": 0.7995,
+      "categorias_recuperadas": [
+        "politicas",
+        "politicas",
+        "tarifario",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Claro que sí, atendemos a perritos nerviosos o miedosos con paciencia y sin costo adicional. Solo en casos especiales, que le explicamos antes, puede haber un recargo. Lo demás se lo confirma la propietaria. ¿Le gustaría agendar una cita?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "como se paga",
+      "debe_declinar": false,
+      "categoria": "politicas|faq",
+      "top1_similitud": 0.7072,
+      "categorias_recuperadas": [
+        "faq",
+        "politicas",
+        "cotizacion",
+        "cotizacion"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "El pago se hace por transferencia bancaria al finalizar el servicio; en ese momento le compartimos los datos de la cuenta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "dan factura?",
+      "debe_declinar": false,
+      "categoria": "politicas",
+      "top1_similitud": 0.7355,
+      "categorias_recuperadas": [
+        "politicas",
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Sí, emitimos factura. Si la necesita, indíquenos sus datos de facturación al momento de pagar. ¡Con gusto le ayudamos!",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "a q hora abren el lunes",
+      "debe_declinar": false,
+      "categoria": "horarios",
+      "top1_similitud": 0.6943,
+      "categorias_recuperadas": [
+        "horarios",
+        "puerta_a_puerta",
+        "agenda",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "El lunes abrimos a las 11:00. Las citas se agendan en turnos de 2 horas (11:00, 13:00 y 15:00) con al menos 2 horas de anticipación. ¿Le gustaría agendar un turno para su peludito?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "atienden los domingos?",
+      "debe_declinar": false,
+      "categoria": "horarios",
+      "top1_similitud": 0.7193,
+      "categorias_recuperadas": [
+        "horarios",
+        "politicas",
+        "puerta_a_puerta",
+        "negocio"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Sí atendemos los domingos de 08:00 a 18:00. Las citas se pueden agendar en turnos de 2 horas (08:00, 10:00, 12:00, 14:00 y 16:00) con al menos 2 horas de anticipación. ¿Le gustaría apartar un turno para su perrito?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "hasta q hora atienden el sabado",
+      "debe_declinar": false,
+      "categoria": "horarios",
+      "top1_similitud": 0.7356,
+      "categorias_recuperadas": [
+        "horarios",
+        "politicas",
+        "puerta_a_puerta",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "El sábado atendemos de 08:00 a 18:00. Será un gusto agendar una cita para su perrito, ¿a qué hora le vendría bien?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "abren temprano los martes?",
+      "debe_declinar": false,
+      "categoria": "horarios",
+      "top1_similitud": 0.6856,
+      "categorias_recuperadas": [
+        "horarios",
+        "puerta_a_puerta",
+        "politicas",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "¡Hola! Los martes atendemos desde las 08:00 hasta las 18:00. ¿Le gustaría agendar una cita para su peludito?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "como agendo una cita",
+      "debe_declinar": false,
+      "categoria": "agenda",
+      "top1_similitud": 0.7512,
+      "categorias_recuperadas": [
+        "agenda",
+        "agenda",
+        "agenda",
+        "negocio"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para agendar, escríbanos por WhatsApp indicando el servicio, el nombre de su mascota, el día y la hora que prefiere, y si la trae al salón o prefiere el servicio puerta a puerta. También puede enviar una foto para la cotización y le ayudamos con los horarios disponibles.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "ya queda confirmada la cita apenas la pido o tengo q esperar?",
+      "debe_declinar": false,
+      "categoria": "agenda|negocio",
+      "top1_similitud": 0.7513,
+      "categorias_recuperadas": [
+        "agenda",
+        "faq",
+        "agenda",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Toda cita la revisamos y aprobamos personalmente antes de confirmarla. Después de agendar le llega un mensaje de confirmación con los datos definitivos. Si necesitamos cambiar la hora o el precio, se lo proponemos y usted decide si le parece bien. Quedamos a sus órdenes por aquí.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "q datos necesitan de mi perrito es la primera vez q va",
+      "debe_declinar": false,
+      "categoria": "agenda|faq|politicas",
+      "top1_similitud": 0.7987,
+      "categorias_recuperadas": [
+        "faq",
+        "agenda",
+        "cotizacion",
+        "faq"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para la primera vez que atendemos a su perrito, le pedimos su edad, si tiene las vacunas y la desparasitación al día, si tiene alguna enfermedad y cómo es su temperamento. ¡Quedamos a las órdenes!",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "puedo cambiar la hora de mi cita",
+      "debe_declinar": false,
+      "categoria": "faq|agenda",
+      "top1_similitud": 0.8075,
+      "categorias_recuperadas": [
+        "faq",
+        "agenda",
+        "agenda",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Claro que sí, escríbanos por WhatsApp y le ofrecemos otros horarios disponibles para cambiar la hora de su cita. La nueva hora se la confirmamos. Le pedimos avisar con la mayor anticipación posible.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "como cancelo la cita",
+      "debe_declinar": false,
+      "categoria": "agenda",
+      "top1_similitud": 0.761,
+      "categorias_recuperadas": [
+        "agenda",
+        "faq",
+        "agenda",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para cancelar su cita, por favor escríbanos por WhatsApp avisando con la mayor anticipación posible para liberar el espacio; con gusto le ayudamos.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "tienen servicio a domicilio q lo recojan",
+      "debe_declinar": false,
+      "categoria": "puerta_a_puerta",
+      "top1_similitud": 0.7567,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Sí contamos con servicio puerta a puerta para retirar y entregar a su mascota en su domicilio. El costo depende del sector: en sectores cercanos al local va de USD 0.00 a USD 3.00, El Condado, Condado Alto y Cotocollao cuesta USD 5.00, y La Carolina de USD 10.00 a USD 15.00; para otros sectores se lo confirmamos. ¿De qué sector nos escribe para verificar la cobertura exacta?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "cuanto cobran x ir a ver al perro en el condado",
+      "debe_declinar": false,
+      "categoria": "puerta_a_puerta",
+      "top1_similitud": 0.6782,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "tarifario",
+        "politicas",
+        "faq"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "5"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "y si es en la carolina cuanto es el traslado",
+      "debe_declinar": false,
+      "categoria": "puerta_a_puerta",
+      "top1_similitud": 0.7096,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "faq",
+        "puerta_a_puerta",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Para el sector de La Carolina, el costo del servicio de traslado puerta a puerta es de USD 10.00 a USD 15.00. Si tiene alguna duda adicional, la propietaria se la confirma con mucho gusto.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "si mando 2 perros el traslado se paga doble?",
+      "debe_declinar": false,
+      "categoria": "puerta_a_puerta|faq|agenda",
+      "top1_similitud": 0.7939,
+      "categorias_recuperadas": [
+        "faq",
+        "agenda",
+        "tarifario",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Buenas tardes. Si retiran a varias mascotas de la misma dirección, el servicio puerta a puerta se cobra una sola vez por visita y no por mascota, por lo que no se paga doble. Quedo a sus órdenes para cualquier otra consulta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "los jueves si pueden recoger al perro?",
+      "debe_declinar": false,
+      "categoria": "puerta_a_puerta",
+      "top1_similitud": 0.7488,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "politicas",
+        "puerta_a_puerta",
+        "puerta_a_puerta"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Hola. Sí podemos recoger a su mascota los jueves, pero por la restricción vehicular no se hacen retiros a domicilio entre 06:00 a 09:30 y 16:00 a 20:00; fuera de esas franjas sí hay servicio puerta a puerta.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "q es lina's pet salon? q hacen",
+      "debe_declinar": false,
+      "categoria": "negocio",
+      "top1_similitud": 0.7846,
+      "categorias_recuperadas": [
+        "negocio",
+        "servicios",
+        "horarios",
+        "negocio"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "canina"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "ustedes tambien tienen hospedaje para perros?",
+      "debe_declinar": false,
+      "categoria": "negocio",
+      "top1_similitud": 0.7142,
+      "categorias_recuperadas": [
+        "negocio",
+        "politicas",
+        "faq",
+        "politicas"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Hola. Sí, además del grooming ofrecemos hospedaje canino y venta de snacks. Escríbanos por aquí para atenderle directamente con su consulta, con mucho gusto le ayudamos.",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "mis datos y los de mi perro los guardan? para q",
+      "debe_declinar": false,
+      "categoria": "negocio",
+      "top1_similitud": 0.7315,
+      "categorias_recuperadas": [
+        "negocio",
+        "agenda",
+        "faq",
+        "politicas"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "Sus datos y las fotos de su mascota se usan solo para cotizar y agendar su cita, conforme a la ley, y no los compartimos con terceros. ¿Le ayudo con algo más para su perrito?",
+      "respondio": true,
+      "faltan": [],
+      "correcta": true
+    },
+    {
+      "pregunta": "cuantos años de experiencia tiene la peluquera",
+      "debe_declinar": false,
+      "categoria": "negocio",
+      "top1_similitud": 0.6677,
+      "categorias_recuperadas": [
+        "negocio",
+        "agenda",
+        "cotizacion",
+        "agenda"
+      ],
+      "hit1": true,
+      "hitk": true,
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "faltan": [
+        "4"
+      ],
+      "correcta": false
+    },
+    {
+      "pregunta": "aceptan tarjeta de credito",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6163,
+      "categorias_recuperadas": [
+        "politicas",
+        "politicas",
+        "negocio",
+        "agenda"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "puedo pagar en efectivo cuando lo retiro?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6545,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "puerta_a_puerta"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "cuanto se demoran en bañar a mi perro",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.7457,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "tarifario"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "puedo quedarme mientras lo bañan?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.666,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "politicas",
+        "tarifario",
+        "tarifario"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "bañan gatos?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6974,
+      "categorias_recuperadas": [
+        "tarifario",
+        "tarifario",
+        "tarifario",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "donde queda el local",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6659,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "negocio",
+        "agenda",
+        "puerta_a_puerta"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "venden croquetas o comida para perros",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6661,
+      "categorias_recuperadas": [
+        "negocio",
+        "politicas",
+        "negocio",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "q vacuna le toca a mi cachorro de 3 meses",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6666,
+      "categorias_recuperadas": [
+        "politicas",
+        "faq",
+        "agenda",
+        "tarifario"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "mi perro tiene diarrea q le doy",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6101,
+      "categorias_recuperadas": [
+        "cotizacion",
+        "politicas",
+        "servicios",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "ustedes entrenan perros? adiestramiento",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6877,
+      "categorias_recuperadas": [
+        "politicas",
+        "faq",
+        "politicas",
+        "negocio"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "tienen parqueadero?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6228,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "negocio",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "quien gano el partido de liga ayer",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.5421,
+      "categorias_recuperadas": [
+        "negocio",
+        "negocio",
+        "horarios",
+        "politicas"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "como va a estar el clima en quito mañana",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6058,
+      "categorias_recuperadas": [
+        "negocio",
+        "puerta_a_puerta",
+        "negocio",
+        "puerta_a_puerta"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "me ayudas con un deber de matematicas",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6042,
+      "categorias_recuperadas": [
+        "servicios",
+        "agenda",
+        "cotizacion",
+        "cotizacion"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "tienen sucursal en el valle de los chillos?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6632,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "negocio",
+        "puerta_a_puerta"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "hay promo x black friday?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.5688,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "tarifario",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "se puede pagar con deuna o payphone",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.599,
+      "categorias_recuperadas": [
+        "puerta_a_puerta",
+        "puerta_a_puerta",
+        "tarifario",
+        "faq"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "me recomiendan un veterinario bueno x el norte",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6478,
+      "categorias_recuperadas": [
+        "agenda",
+        "politicas",
+        "negocio",
+        "agenda"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    },
+    {
+      "pregunta": "atienden en feriado de noviembre?",
+      "debe_declinar": true,
+      "categoria": "",
+      "top1_similitud": 0.6733,
+      "categorias_recuperadas": [
+        "horarios",
+        "puerta_a_puerta",
+        "politicas",
+        "agenda"
+      ],
+      "respuesta": "No tengo esa información a la mano en este momento. Lo consulto y le respondo por aquí lo antes posible 🙏",
+      "respondio": false,
+      "correcta": true,
+      "alucinacion": false
+    }
+  ]
+}

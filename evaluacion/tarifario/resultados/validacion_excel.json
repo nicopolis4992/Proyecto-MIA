@@ -1,75 +1,75 @@
 {
   "fuente": "registro de cuentas de la propietaria (Excel), servicios con raza y código de catálogo",
-  "version_tarifario": "2.1.0",
+  "version_tarifario": "2.2.0",
   "registros_leidos": 708,
   "excluidos": {
     "sin_codigo": 311,
     "con_extras": 39,
     "sin_raza": 33,
     "bano_especial": 7,
-    "raza_no_reconocida": 19
+    "raza_no_reconocida": 9
   },
   "en_salon": {
-    "n": 247,
-    "dentro_del_rango_pct": 68.4,
+    "n": 255,
+    "dentro_del_rango_pct": 74.5,
     "cobrado_menos_motor_sin_nudos": {
-      "n": 247,
-      "media": -9.27,
-      "mediana": -11.75,
-      "media_abs": 9.68
+      "n": 255,
+      "media": -12.61,
+      "mediana": -16.0,
+      "media_abs": 12.86
     }
   },
   "en_salon_raza_determinada": {
-    "n": 71,
-    "dentro_del_rango_pct": 45.1,
+    "n": 79,
+    "dentro_del_rango_pct": 45.6,
     "cobrado_menos_motor_sin_nudos": {
-      "n": 71,
-      "media": -3.6,
+      "n": 79,
+      "media": -3.36,
       "mediana": -1.0,
-      "media_abs": 4.29
+      "media_abs": 4.14
     }
   },
   "en_salon_por_servicio": {
     "completo": {
-      "n": 219,
-      "dentro_del_rango_pct": 69.9,
+      "n": 227,
+      "dentro_del_rango_pct": 75.3,
       "cobrado_menos_motor_sin_nudos": {
-        "n": 219,
-        "media": -9.83,
-        "mediana": -12.5,
-        "media_abs": 10.02
+        "n": 227,
+        "media": -13.09,
+        "mediana": -16.0,
+        "media_abs": 13.23
       }
     },
     "express": {
       "n": 28,
-      "dentro_del_rango_pct": 57.1,
+      "dentro_del_rango_pct": 67.9,
       "cobrado_menos_motor_sin_nudos": {
         "n": 28,
-        "media": -4.91,
-        "mediana": -5.25,
-        "media_abs": 7.0
+        "media": -8.72,
+        "mediana": -11.0,
+        "media_abs": 9.83
       }
     }
   },
   "en_salon_por_anio": {
     "2024": {
-      "n": 26,
-      "dentro_del_rango_pct": 73.1,
+      "n": 27,
+      "dentro_del_rango_pct": 77.8,
       "cobrado_menos_motor_sin_nudos": {
-        "n": 26,
-        "media": -8.93,
-        "mediana": -12.12,
-        "media_abs": 9.49
+        "n": 27,
+        "media": -12.11,
+        "mediana": -16.0,
+        "media_abs": 12.7
       }
     },
     "2025": {
-      "n": 168,
-      "dentro_del_rango_pct": 64.3,
+      "n": 175,
+      "dentro_del_rango_pct": 72.6,
       "cobrado_menos_motor_sin_nudos": {
-        "n": 168,
-        "media": -9.47,
-        "mediana": -11.75,
-        "media_abs": 9.92
+        "n": 175,
+        "media": -12.44,
+        "mediana": -16.0,
+        "media_abs": 12.71
       }
     },
     "2026": {
@@ -77,20 +77,20 @@
       "dentro_del_rango_pct": 79.2,
       "cobrado_menos_motor_sin_nudos": {
         "n": 53,
-        "media": -8.81,
-        "mediana": -11.5,
-        "media_abs": 9.0
+        "media": -13.42,
+        "mediana": -16.0,
+        "media_abs": 13.42
       }
     }
   },
   "con_puerta_a_puerta": {
-    "n": 52,
-    "dentro_del_rango_pct": 90.4,
+    "n": 54,
+    "dentro_del_rango_pct": 90.7,
     "cobrado_menos_motor_sin_nudos": {
-      "n": 52,
-      "media": -5.54,
-      "mediana": -3.5,
-      "media_abs": 7.54
+      "n": 54,
+      "media": -8.05,
+      "mediana": -11.0,
+      "media_abs": 9.42
     }
   },
   "completo_por_raza": [
@@ -119,6 +119,19 @@
         20.0
       ],
       "dentro_del_rango_pct": 33.3
+    },
+    {
+      "raza": "castellano",
+      "n": 8,
+      "cobrado_mediana": 14.0,
+      "cobrado_min": 12.0,
+      "cobrado_max": 20.0,
+      "motor_sin_nudos": 16.0,
+      "motor_rango": [
+        16.0,
+        20.0
+      ],
+      "dentro_del_rango_pct": 50.0
     },
     {
       "raza": "yorkie",
