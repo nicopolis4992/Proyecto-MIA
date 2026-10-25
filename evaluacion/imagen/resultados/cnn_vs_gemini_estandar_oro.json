@@ -1,0 +1,320 @@
+{
+  "n_fotos": 48,
+  "referencia": "propietaria (a ciegas)",
+  "cnn": {
+    "tamano": {
+      "n": 48,
+      "f1_macro": 0.238,
+      "f1_macro_ic95": [
+        0.085,
+        0.407
+      ],
+      "exactitud": 0.25,
+      "f1_por_clase": {
+        "pequeno": 0.0,
+        "mediano": 0.379,
+        "grande": 0.333
+      },
+      "matriz": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          32,
+          11,
+          3
+        ],
+        [
+          0,
+          1,
+          1
+        ]
+      ]
+    },
+    "grupo": {
+      "n": 48,
+      "f1_macro": 0.521,
+      "f1_macro_ic95": [
+        0.23,
+        0.688
+      ],
+      "exactitud": 0.854,
+      "f1_por_clase": {
+        "A_maquina": 0.916,
+        "B_deslanado": 0.667,
+        "C_cepillado": 0.0,
+        "D_corto": 0.5
+      },
+      "matriz": [
+        [
+          38,
+          2,
+          3,
+          2
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "estado": {
+      "n": 48,
+      "f1_macro": 0.424,
+      "f1_macro_ic95": [
+        0.283,
+        0.562
+      ],
+      "exactitud": 0.5,
+      "f1_por_clase": {
+        "sin_motas": 0.692,
+        "moderado": 0.421,
+        "severo": 0.16
+      },
+      "matriz": [
+        [
+          18,
+          1,
+          13
+        ],
+        [
+          2,
+          4,
+          3
+        ],
+        [
+          0,
+          5,
+          2
+        ]
+      ]
+    }
+  },
+  "gemini": {
+    "tamano": {
+      "n": 48,
+      "f1_macro": 0.462,
+      "f1_macro_ic95": [
+        0.105,
+        0.51
+      ],
+      "exactitud": 0.271,
+      "f1_por_clase": {
+        "pequeno": 0.0,
+        "mediano": 0.386,
+        "grande": 1.0
+      },
+      "matriz": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          35,
+          11,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ]
+    },
+    "grupo": {
+      "n": 48,
+      "f1_macro": 0.744,
+      "f1_macro_ic95": [
+        0.245,
+        0.75
+      ],
+      "exactitud": 0.958,
+      "f1_por_clase": {
+        "A_maquina": 0.977,
+        "B_deslanado": 1.0,
+        "C_cepillado": 0.0,
+        "D_corto": 1.0
+      },
+      "matriz": [
+        [
+          43,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "estado": {
+      "n": 48,
+      "f1_macro": 0.42,
+      "f1_macro_ic95": [
+        0.27,
+        0.599
+      ],
+      "exactitud": 0.708,
+      "f1_por_clase": {
+        "sin_motas": 0.842,
+        "moderado": 0.167,
+        "severo": 0.25
+      },
+      "matriz": [
+        [
+          32,
+          0,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          4,
+          2,
+          1
+        ]
+      ]
+    }
+  },
+  "advertencia": "Referencia independiente: etiquetas de la propietaria hechas sin ver propuestas.",
+  "equipo_vs_propietaria": {
+    "tamano": {
+      "n": 48,
+      "f1_macro": 0.452,
+      "f1_macro_ic95": [
+        0.095,
+        0.503
+      ],
+      "exactitud": 0.25,
+      "f1_por_clase": {
+        "pequeno": 0.0,
+        "mediano": 0.357,
+        "grande": 1.0
+      },
+      "matriz": [
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          36,
+          10,
+          0
+        ],
+        [
+          0,
+          0,
+          2
+        ]
+      ]
+    },
+    "grupo": {
+      "n": 48,
+      "f1_macro": 0.744,
+      "f1_macro_ic95": [
+        0.245,
+        0.75
+      ],
+      "exactitud": 0.958,
+      "f1_por_clase": {
+        "A_maquina": 0.977,
+        "B_deslanado": 1.0,
+        "C_cepillado": 0.0,
+        "D_corto": 1.0
+      },
+      "matriz": [
+        [
+          43,
+          0,
+          2,
+          0
+        ],
+        [
+          0,
+          2,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ]
+    },
+    "estado": {
+      "n": 48,
+      "f1_macro": 0.38,
+      "f1_macro_ic95": [
+        0.229,
+        0.546
+      ],
+      "exactitud": 0.562,
+      "f1_por_clase": {
+        "sin_motas": 0.746,
+        "moderado": 0.143,
+        "severo": 0.25
+      },
+      "matriz": [
+        [
+          25,
+          0,
+          0
+        ],
+        [
+          8,
+          1,
+          0
+        ],
+        [
+          2,
+          4,
+          1
+        ]
+      ]
+    }
+  }
+}
