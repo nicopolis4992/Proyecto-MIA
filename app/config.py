@@ -84,13 +84,16 @@ def crear_cliente_gemini():
 
     from app.llm_cache import envolver_si_corresponde
 
+    from app.limites import ClienteLimitado
+
     if os.getenv("GEMINI_CACHE_SOLO_LECTURA") == "1":
         return envolver_si_corresponde(None)  # pruebas: nunca se llama a Gemini
-    return envolver_si_corresponde(genai.Client(
+    # Tope diario de llamadas (app/limites.py): la cache de grabaciones no cuenta.
+    return ClienteLimitado(envolver_si_corresponde(genai.Client(
         http_options=types.HttpOptions(
             retry_options=types.HttpRetryOptions(
                 attempts=5, initial_delay=1.0, max_delay=8.0,
                 http_status_codes=[429, 500, 502, 503, 504],
             )
         )
-    ))
+    )))

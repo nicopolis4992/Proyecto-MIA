@@ -38,6 +38,9 @@ logger = logging.getLogger("main")
 # exactamente con el que registras en la configuración del webhook
 # en Meta for Developers.
 VERIFY_TOKEN = os.getenv("WHATSAPP_VERIFY_TOKEN", "")
+from app.limites import LimitadorPorNumero  # noqa: E402
+
+LIMITADOR = LimitadorPorNumero()
 INTERVALO_COLA_S = int(os.getenv("COLA_INTERVALO_S", "60"))
 _SOLO_VER = {"ver", "ver.", "ver detalle", "detalle"}  # palabra que pide la plantilla
 INTERVALO_SEGUIMIENTO_S =int(os.getenv("SEGUIMIENTO_INTERVALO_S", "300"))
@@ -266,8 +269,16 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     mismo webhook varias veces, lo que puede generar respuestas
     duplicadas al cliente. Por la misma razón se deduplica por id.
     """
+    from app.limites import firma_valida
+
+    cuerpo = await request.body()
+    if not firma_valida(cuerpo, request.headers.get("X-Hub-Signature-256")):
+        # No viene de Meta (falta la firma con el App Secret): no se procesa.
+        logger.warning("Webhook rechazado: firma de Meta invalida o ausente")
+        return Response(status_code=403)
     try:
-        payload = await request.json()
+        import json as _json
+        payload = _json.loads(cuerpo)
     except ValueError:
         return Response(status_code=200)
 
@@ -284,6 +295,15 @@ async def receive_webhook(request: Request, background_tasks: BackgroundTasks):
     if entrante["id"] and not obtener_repositorio().marcar_procesado(entrante["id"]):
         logger.info("Webhook duplicado ignorado: %s", entrante["id"])
         return Response(status_code=200)
+
+    if entrante["from"] != config.PROPIETARIA_WHATSAPP:
+        decision = LIMITADOR.permitir(entrante["from"], config.ahora())
+        if decision == "silencio":
+            return Response(status_code=200)
+        if decision == "aviso":
+            from app.limites import AVISO_LIMITE
+            background_tasks.add_task(MensajeroWhatsApp(obtener_repositorio()).enviar, entrante["from"], AVISO_LIMITE)
+            return Response(status_code=200)
 
     background_tasks.add_task(_procesar, entrante)
     return Response(status_code=200)

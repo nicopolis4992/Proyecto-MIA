@@ -90,6 +90,19 @@ def diagnostico(repo) -> list[dict]:
     agregar("Google Calendar", cal, "configurado" if cal else "no configurado (las citas solo quedan en el panel)",
             critico=False)
 
+    from app.limites import CONTADOR_GEMINI
+
+    firma = bool(os.getenv("WHATSAPP_APP_SECRET"))
+    agregar("Firma de Meta en el webhook", firma,
+            "se verifica (WHATSAPP_APP_SECRET)" if firma else
+            "sin verificar: falta WHATSAPP_APP_SECRET (cualquiera con la URL podría enviar mensajes falsos)",
+            critico=False)
+    limite = int(os.getenv("MIA_LIMITE_GEMINI_DIA", "1500"))
+    usadas = CONTADOR_GEMINI.llamadas if CONTADOR_GEMINI.dia == config.ahora().date() else 0
+    agregar("Uso de Gemini hoy", usadas < limite * 0.8,
+            f"{usadas} de {limite} llamadas (al llegar al tope se pausa el bot); "
+            f"máximo {os.getenv('MIA_LIMITE_MENSAJES_HORA', '30')} mensajes por número y hora", critico=False)
+
     no_entregados = len(repo.mensajes_no_entregados())
     agregar("Mensajes no entregados", no_entregados == 0,
             "ninguno" if not no_entregados else f"{no_entregados}: revisar en el panel", critico=False)

@@ -250,3 +250,19 @@ def test_audio_de_la_propietaria_sin_citar_recibe_instrucciones(mock_texto, mock
     client.post("/webhook", json=_audio("593922222222", "wamid.voz3"))
     mock_audio.assert_not_called()
     assert "desliza su mensaje" in mock_texto.call_args.kwargs["body"]
+
+
+def test_con_app_secret_se_rechaza_lo_que_no_firma_meta(monkeypatch):
+    """Incidente de Railway (22-oct): solo se aceptan webhooks firmados con el App Secret."""
+    import hashlib
+    import hmac
+    import json
+
+    monkeypatch.setenv("WHATSAPP_APP_SECRET", "secreto-de-prueba")
+    cuerpo = json.dumps(_texto("593999999999", "hola", "wamid.firma1")).encode()
+    assert client.post("/webhook", content=cuerpo, headers={"Content-Type": "application/json"}).status_code == 403
+    firma = "sha256=" + hmac.new(b"secreto-de-prueba", cuerpo, hashlib.sha256).hexdigest()
+    with patch("app.main.procesar_mensaje", return_value=None):
+        r = client.post("/webhook", content=cuerpo,
+                        headers={"Content-Type": "application/json", "X-Hub-Signature-256": firma})
+    assert r.status_code == 200

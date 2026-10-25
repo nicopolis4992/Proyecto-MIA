@@ -505,12 +505,35 @@ def procesar_mensaje(remitente: str, texto: str = "", imagen: bytes | None = Non
     (o None si el agente ya envio lo necesario por su cuenta). `grafo`
     permite usar un grafo con otras dependencias (la demo web).
     """
+    from app.limites import LimiteGeminiAlcanzado
+
+    entrada = {"remitente": remitente, "mensaje": texto, "imagen": imagen,
+               "id_citado": id_citado, "nlu": None, "respuesta": None}
     try:
-        estado_final = (grafo or _grafo()).invoke({
-            "remitente": remitente, "mensaje": texto, "imagen": imagen,
-            "id_citado": id_citado, "nlu": None, "respuesta": None,
-        })
+        estado_final = (grafo or _grafo()).invoke(entrada)
         return estado_final.get("respuesta")
+    except LimiteGeminiAlcanzado:
+        # Tope diario de Gemini: se pausa el bot (los mensajes van a la propietaria) y se avisa.
+        logger.error("Tope diario de Gemini alcanzado: bot en pausa")
+        d = _deps
+        if d is not None and not d.repo.bot_pausado():
+            d.repo.pausar_bot(True)
+            if d.propietaria:
+                d.mensajero.enviar(d.propietaria, (
+                    "⚠️ Se alcanzó el límite diario de uso del asistente. Lo pausé por seguridad: te reenvío "
+                    "los mensajes de los clientes. Escribe \"activar bot\" cuando lo revisemos."))
+            try:
+                from app.notificaciones import correo
+                if correo.configurado():
+                    correo.enviar_correo("Lina's Pet Salón: límite diario de Gemini alcanzado",
+                                         "El asistente se pausó al llegar al tope diario de llamadas a Gemini "
+                                         "(MIA_LIMITE_GEMINI_DIA). Revisar si hay uso abusivo.")
+            except Exception:  # noqa: BLE001
+                logger.exception("No se pudo enviar el correo del limite de Gemini")
+        try:
+            return (grafo or _grafo()).invoke(entrada).get("respuesta")  # ahora va a la propietaria
+        except Exception:  # noqa: BLE001
+            return MENSAJE_ERROR
     except Exception:  # noqa: BLE001
         logger.exception("Error procesando mensaje de %s", remitente)
         return MENSAJE_ERROR
