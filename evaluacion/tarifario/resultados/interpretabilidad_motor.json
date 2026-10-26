@@ -1,0 +1,28 @@
+{
+  "version_tarifario": "2.3.0",
+  "escenarios": 480,
+  "shapley_abs_medio_usd": {
+    "servicio": 6.36,
+    "tamano": 12.95,
+    "grupo": 2.6,
+    "estado": 4.13,
+    "comportamiento": 0.0
+  },
+  "efecto_medio_por_tamano_usd": {
+    "miniatura": -12.88,
+    "pequeno": -11.33,
+    "mediano": -7.83,
+    "grande": 3.75,
+    "extragrande": 28.29
+  },
+  "semiamplitud_sin_datos_usd": 29.56,
+  "semiamplitud_tamano_y_grupo_usd": 5.3,
+  "semiamplitud_tamano_grupo_estado_usd": 0.17,
+  "semiamplitud_todo_declarado_usd": 0.17,
+  "valor_informacion_usd": {
+    "tamano": 20.09,
+    "grupo": 2.27,
+    "estado": 7.04,
+    "comportamiento": 0.0
+  }
+}
