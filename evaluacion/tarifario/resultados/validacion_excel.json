@@ -1,6 +1,6 @@
 {
   "fuente": "registro de cuentas de la propietaria (Excel), servicios con raza y código de catálogo",
-  "version_tarifario": "2.2.0",
+  "version_tarifario": "2.3.0",
   "registros_leidos": 708,
   "excluidos": {
     "sin_codigo": 311,
@@ -11,33 +11,33 @@
   },
   "en_salon": {
     "n": 255,
-    "dentro_del_rango_pct": 74.5,
+    "dentro_del_rango_pct": 78.4,
     "cobrado_menos_motor_sin_nudos": {
       "n": 255,
-      "media": -12.61,
+      "media": -12.16,
       "mediana": -16.0,
-      "media_abs": 12.86
+      "media_abs": 12.85
     }
   },
   "en_salon_raza_determinada": {
     "n": 79,
-    "dentro_del_rango_pct": 45.6,
+    "dentro_del_rango_pct": 58.2,
     "cobrado_menos_motor_sin_nudos": {
       "n": 79,
-      "media": -3.36,
-      "mediana": -1.0,
-      "media_abs": 4.14
+      "media": -1.92,
+      "mediana": 0.0,
+      "media_abs": 4.11
     }
   },
   "en_salon_por_servicio": {
     "completo": {
       "n": 227,
-      "dentro_del_rango_pct": 75.3,
+      "dentro_del_rango_pct": 79.7,
       "cobrado_menos_motor_sin_nudos": {
         "n": 227,
-        "media": -13.09,
+        "media": -12.59,
         "mediana": -16.0,
-        "media_abs": 13.23
+        "media_abs": 13.22
       }
     },
     "express": {
@@ -54,32 +54,32 @@
   "en_salon_por_anio": {
     "2024": {
       "n": 27,
-      "dentro_del_rango_pct": 77.8,
+      "dentro_del_rango_pct": 85.2,
       "cobrado_menos_motor_sin_nudos": {
         "n": 27,
-        "media": -12.11,
+        "media": -11.67,
         "mediana": -16.0,
-        "media_abs": 12.7
+        "media_abs": 12.93
       }
     },
     "2025": {
       "n": 175,
-      "dentro_del_rango_pct": 72.6,
+      "dentro_del_rango_pct": 74.9,
       "cobrado_menos_motor_sin_nudos": {
         "n": 175,
-        "media": -12.44,
+        "media": -11.99,
         "mediana": -16.0,
         "media_abs": 12.71
       }
     },
     "2026": {
       "n": 53,
-      "dentro_del_rango_pct": 79.2,
+      "dentro_del_rango_pct": 86.8,
       "cobrado_menos_motor_sin_nudos": {
         "n": 53,
-        "media": -13.42,
+        "media": -12.97,
         "mediana": -16.0,
-        "media_abs": 13.42
+        "media_abs": 13.27
       }
     }
   },
@@ -88,9 +88,9 @@
     "dentro_del_rango_pct": 90.7,
     "cobrado_menos_motor_sin_nudos": {
       "n": 54,
-      "media": -8.05,
+      "media": -7.55,
       "mediana": -11.0,
-      "media_abs": 9.42
+      "media_abs": 9.81
     }
   },
   "completo_por_raza": [
@@ -100,12 +100,12 @@
       "cobrado_mediana": 14.0,
       "cobrado_min": 6.0,
       "cobrado_max": 15.0,
-      "motor_sin_nudos": 15.0,
+      "motor_sin_nudos": 12.0,
       "motor_rango": [
-        15.0,
-        20.0
+        12.0,
+        16.0
       ],
-      "dentro_del_rango_pct": 46.2
+      "dentro_del_rango_pct": 76.9
     },
     {
       "raza": "pequines",
@@ -113,12 +113,12 @@
       "cobrado_mediana": 12.0,
       "cobrado_min": 10.0,
       "cobrado_max": 20.0,
-      "motor_sin_nudos": 15.0,
+      "motor_sin_nudos": 12.0,
       "motor_rango": [
-        15.0,
-        20.0
+        12.0,
+        16.0
       ],
-      "dentro_del_rango_pct": 33.3
+      "dentro_del_rango_pct": 50.0
     },
     {
       "raza": "castellano",

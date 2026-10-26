@@ -22,8 +22,10 @@ class TestCasosReales:
     """Precios dichos por la propietaria (tolerancia ±1,5 USD salvo indicación)."""
 
     @pytest.mark.parametrize("caso, mascota, esperado, tol", [
-        ("shih tzu buen estado", dict(raza="shih tzu", estado="sin_motas", servicio="completo"), 15, 0),
-        ("shih tzu en mal estado", dict(raza="shih tzu", estado="severo", servicio="completo"), 20, 0),
+        # 26-oct: "shih tzu y pequines, 12 $ el completo sin nudos" (antes, en sus audios, 15 y hasta 20).
+        ("shih tzu buen estado", dict(raza="shih tzu", estado="sin_motas", servicio="completo"), 12, 0),
+        ("pequines buen estado", dict(raza="pequines", estado="sin_motas", servicio="completo"), 12, 0),
+        ("shih tzu en mal estado", dict(raza="shih tzu", estado="severo", servicio="completo"), 16, 0),
         ("golden peluquería", dict(raza="golden", estado="sin_motas", servicio="completo"), 25, 0),
         ("pastor inglés peluquería", dict(raza="pastor ingles", estado="sin_motas", servicio="completo"), 45, 0),
         ("pastor inglés desenredo", dict(raza="pastor ingles", estado="severo", servicio="completo"), 70, 0),
@@ -51,7 +53,7 @@ class TestCasosReales:
         """Corrige el orden invertido del factor de pelaje de v1."""
         pug = precio(raza="pug", estado="sin_motas", servicio="deslanado")["rango"][0]
         shih = precio(raza="shih tzu", estado="sin_motas", servicio="completo")["rango"][0]
-        assert pug < shih
+        assert pug <= shih     # 26-oct: los dos parten de 12 $
 
 
 class TestExclusiones:
@@ -96,11 +98,11 @@ class TestBanda:
         """Propietaria, 17-oct: nervioso/miedoso no agrega costo salvo casos especiales."""
         r = cotizar_mascota(T, {"raza": "shih tzu", "estado": "sin_motas",
                                 "comportamiento": "dificil", "servicio": "completo"})
-        assert r["rango"] == [15, 15] and r["comprometido"] and "sin recargo" in r["nota"]
+        assert r["rango"] == [12, 12] and r["comprometido"] and "sin recargo" in r["nota"]
 
     def test_nudos_suman_un_monto_fijo_de_2_a_3(self):
         """Propietaria, 17-oct: con nudos, 2 o 3 $ fijos, no por porcentaje."""
-        for raza, base in (("shih tzu", 15), ("golden", 25), ("pastor ingles", 45)):
+        for raza, base in (("shih tzu", 12), ("golden", 25), ("pastor ingles", 45)):
             r = cotizar_mascota(T, {"raza": raza, "estado": "moderado", "comportamiento": "tranquilo",
                                     "servicio": "completo"})
             assert r["rango"] == [base + 2, base + 3], raza
@@ -113,7 +115,8 @@ class TestBanda:
 
 
 class TestVisita:
-    base = {"raza": "shih tzu", "estado": "sin_motas", "comportamiento": "tranquilo", "servicio": "completo"}
+    # yorkie: pequeño de máquina sin precio propio (15 $ el completo), para probar la visita.
+    base = {"raza": "yorkie", "estado": "sin_motas", "comportamiento": "tranquilo", "servicio": "completo"}
 
     def test_traslado_por_sector(self):
         r = cotizar({"mascotas": [self.base], "traslado": {"sector": "Cotocollao"}}, T)

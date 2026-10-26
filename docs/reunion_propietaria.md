@@ -38,6 +38,8 @@ pasárselas a Claude para actualizar el sistema.
 | Lunes, miércoles y viernes (19-oct) | "El lunes está bien desde las 11" | Turnos a las 11:00, 13:00 y 15:00 |
 | Dos perros de la misma casa (19-oct) | 1 h 30 cada uno | La agenda calcula 90 minutos por perro |
 
+| Tamaño en las fotos (26-oct) | Las 3 fotos de control: "mediano" otra vez; les cobra 12, 15 y 17 $. Pequeño = hasta 9 kg. Shih tzu y pequinés: 12 $ el completo sin nudos; "12 es el mínimo y a veces sube, al ojo" | Shih tzu y pequinés con precio propio de 12 $ (tarifario v2.3). Su criterio de tamaño es estable, pero el precio no sigue la categoría: el bot da un rango y ella fija el precio al aprobar |
+
 **Pendiente de aclarar con ella:**
 - Pesos de miniatura (hoy hasta 4 kg) y extragrande (hoy de 45 a 70 kg): son supuestos del equipo.
 - En sus audios del 4-oct dijo que no atiende perros de más de 45 kg; ahora atiende extragrandes. ¿Hasta qué peso?

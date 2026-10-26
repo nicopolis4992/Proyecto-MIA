@@ -1,6 +1,6 @@
 {
-  "version": "2.2.0",
-  "fecha": "2026-10-19",
+  "version": "2.3.0",
+  "fecha": "2026-10-26",
   "reemplaza": "tarifario_v1.json (precios de referencia del mercado de Quito)",
   "moneda": "USD",
   "redondeo": 0.5,
@@ -124,7 +124,8 @@
       "fuente": "SUPUESTO (equipo): limite de peso por confirmar"
     },
     "_nota": "La propietaria acepta los rangos, pero no pesa a los perros: decide por raza y apariencia. El motor clasifica por limite superior (peso <= maximo), asi no quedan huecos entre rangos.",
-    "_nota_19oct": "La propietaria usa 5 categorias. Miniatura (12 $ el completo) y extragrande (desde 50 $ el completo) tienen precio propio desde el 19-oct; sus limites de peso son supuestos del equipo."
+    "_nota_19oct": "La propietaria usa 5 categorias. Miniatura (12 $ el completo) y extragrande (desde 50 $ el completo) tienen precio propio desde el 19-oct; sus limites de peso son supuestos del equipo.",
+    "_nota_26oct": "Etiquetado ciego (48 fotos) y aclaracion del 26-oct: la propietaria llama 'mediano' a perros que cobra entre 12 y 17 $ (pequenos hasta 9 kg segun ella). Su precio no sigue estrictamente la categoria: parte de 12 $ y sube 'al ojo'. Por eso el bot cotiza un rango y ella fija el precio al aprobar."
   },
   "grupos_manto": {
     "A_maquina": {
@@ -162,7 +163,9 @@
         "shih tsu",
         "chitzu",
         "shitzú"
-      ]
+      ],
+      "factor": 1.0,
+      "fuente_precio": "PROPIETARIA (26-oct-2026): shih tzu y pequines, 12 $ el completo sin nudos; '12 es el valor minimo y a veces sube un poco mas, al ojo'"
     },
     "yorkie": {
       "grupo": "A_maquina",
@@ -207,7 +210,9 @@
         "pekines",
         "pekinés",
         "pequinés"
-      ]
+      ],
+      "factor": 1.0,
+      "fuente_precio": "PROPIETARIA (26-oct-2026): shih tzu y pequines, 12 $ el completo sin nudos; '12 es el valor minimo y a veces sube un poco mas, al ojo'"
     },
     "chihuahua": {
       "grupo": "D_corto",
@@ -463,7 +468,7 @@
       "fuente": "SUPUESTO (equipo, 04/10/2026): validar con la propietaria"
     },
     "_nota_cruces": "Cruces ('schnauzer con poodle') se cotizan con la union de tamaños y grupos de ambas razas. 'Mestizo de X' usa los valores de X como raza predominante y lo avisa.",
-    "_factor": "Una raza con 'factor' propio (castellano) usa ese factor y su recargo por estado cuando el tamano es el tipico de la raza; si la propietaria corrige el tamano, se usa la tabla general."
+    "_factor": "Una raza con 'factor' propio (castellano, shih tzu, pequines) usa ese factor y su recargo por estado cuando el tamano es el tipico de la raza; si la propietaria corrige el tamano, se usa la tabla general."
   },
   "factor_tamano_grupo": {
     "_uso": "precio_base = piso(servicio) x factor[tamano][grupo]. Un solo factor por celda para todos los servicios.",
