@@ -1,87 +1,117 @@
 {
   "muestra": {
-    "n": 148,
+    "n": 283,
     "por_clase": {
-      "agendar_cita": 33,
-      "consultar_servicio_producto": 12,
-      "consulta_general": 103
+      "agendar_cita": 71,
+      "consultar_servicio_producto": 17,
+      "consulta_general": 195
     },
-    "fuente": "export real de WhatsApp de una clienta frecuente (2024-2026), seudonimizado; etiquetado con la guía de SCRUM-63 antes de ver las predicciones"
+    "fuente": "export reales de WhatsApp de cuatro clientes (2024-2026), seudonimizados; etiquetado con la guía de SCRUM-63 antes de ver las predicciones"
   },
   "modelo_de_lenguaje": {
     "modelo": "gemini-3.5-flash-lite (prompt v2)",
-    "exactitud": 0.872,
+    "exactitud": 0.894,
     "ic95_exactitud": [
-      0.811,
+      0.859,
       0.926
     ],
-    "f1_macro": 0.792,
+    "f1_macro": 0.814,
     "ic95_f1_macro": [
-      0.683,
-      0.88
+      0.735,
+      0.878
     ],
     "f1_por_clase": {
-      "agendar_cita": 0.793,
+      "agendar_cita": 0.842,
       "consultar_servicio_producto": 0.667,
-      "consulta_general": 0.916
+      "consulta_general": 0.932
     },
     "matriz_confusion": [
       [
-        23,
-        1,
-        9
+        56,
+        3,
+        12
       ],
       [
         0,
-        8,
-        4
+        12,
+        5
       ],
       [
-        2,
-        3,
-        98
+        6,
+        4,
+        185
       ]
     ]
   },
   "linea_base": {
     "modelo": "TF-IDF + RL",
-    "exactitud": 0.743,
+    "exactitud": 0.792,
     "ic95_exactitud": [
-      0.669,
-      0.811
+      0.742,
+      0.837
     ],
-    "f1_macro": 0.601,
+    "f1_macro": 0.63,
     "ic95_f1_macro": [
-      0.488,
-      0.704
+      0.545,
+      0.707
     ],
     "f1_por_clase": {
-      "agendar_cita": 0.562,
-      "consultar_servicio_producto": 0.4,
-      "consulta_general": 0.841
+      "agendar_cita": 0.676,
+      "consultar_servicio_producto": 0.343,
+      "consulta_general": 0.871
     },
     "matriz_confusion": [
       [
-        18,
-        2,
-        13
-      ],
-      [
+        46,
         3,
-        5,
-        4
+        22
       ],
       [
-        10,
+        5,
         6,
-        87
+        6
+      ],
+      [
+        14,
+        9,
+        172
       ]
     ]
   },
   "mcnemar": {
-    "acierta_llm_falla_base": 25,
-    "falla_llm_acierta_base": 6,
-    "p_exacta": 0.0009
+    "acierta_llm_falla_base": 38,
+    "falla_llm_acierta_base": 9,
+    "p_exacta": 2.5e-05
+  },
+  "por_cliente": {
+    "cliente_1": {
+      "n": 148,
+      "exactitud_llm": 0.872,
+      "f1_macro_llm": 0.792,
+      "exactitud_base": 0.743,
+      "f1_macro_base": 0.601
+    },
+    "cliente_2": {
+      "n": 44,
+      "exactitud_llm": 0.955,
+      "f1_macro_llm": 0.85,
+      "exactitud_base": 0.818,
+      "f1_macro_base": 0.491
+    },
+    "cliente_3": {
+      "n": 44,
+      "exactitud_llm": 0.909,
+      "f1_macro_llm": 0.926,
+      "exactitud_base": 0.886,
+      "f1_macro_base": 0.795
+    },
+    "cliente_4": {
+      "n": 47,
+      "exactitud_llm": 0.894,
+      "f1_macro_llm": 0.745,
+      "exactitud_base": 0.83,
+      "f1_macro_base": 0.577
+    }
   },
   "errores_llm": [
     {
@@ -178,7 +208,62 @@
       "id": "REAL-192",
       "real": "consulta_general",
       "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-C2-41",
+      "real": "consulta_general",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-C2-46",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-C3-02",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-C3-03",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-C3-19",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-C3-46",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-C4-18",
+      "real": "agendar_cita",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-C4-24",
+      "real": "agendar_cita",
+      "predicho": "consultar_servicio_producto"
+    },
+    {
+      "id": "REAL-C4-25",
+      "real": "consulta_general",
+      "predicho": "agendar_cita"
+    },
+    {
+      "id": "REAL-C4-34",
+      "real": "agendar_cita",
+      "predicho": "consulta_general"
+    },
+    {
+      "id": "REAL-C4-49",
+      "real": "consultar_servicio_producto",
+      "predicho": "consulta_general"
     }
   ],
-  "advertencia": "Una sola clienta: la muestra no representa la variedad de clientes; la mayoría de los mensajes son de cortesía y logística (consulta general)."
+  "advertencia": "Cuatro clientes, un solo etiquetado sin segundo anotador: la mayoría de los mensajes son de cortesía y logística (consulta general) y la clase consultar tiene pocos casos."
 }

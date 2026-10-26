@@ -1,8 +1,9 @@
 """
 NLU sobre mensajes REALES del historial de WhatsApp (observación NC-09 del comité).
 
-La muestra sale del export seudonimizado de la clienta frecuente (2024-2026):
-mensajes del cliente etiquetados con la guía de anotación de SCRUM-63, sin mirar
+La muestra sale de los export seudonimizados de cuatro clientes (2024-2026):
+148 mensajes de la clienta frecuente y una muestra aleatoria de 50 de cada uno de
+otros tres chats (semilla 42), etiquetados con la guía de anotación de SCRUM-63, sin mirar
 las predicciones; los ruidos de sistema y los mensajes que no permiten decidir se
 descartan (regla R7). El archivo etiquetado vive fuera del repositorio
 (datos_crudos/, LOPDP): aquí solo se guardan métricas agregadas y los id de los
@@ -61,7 +62,7 @@ def mcnemar_exacta(reales, a, b):
         return b01, b10, 1.0
     k = min(b01, b10)
     p = min(1.0, 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n)
-    return b01, b10, round(p, 4)
+    return b01, b10, float(f"{p:.2g}")
 
 
 def resumen(nombre, reales, pred):
@@ -105,17 +106,28 @@ def main():
         pred_llm.append(DEL_BOT.get(clasificar_mensaje(t, cliente).intencion, "consulta_general"))
         print(f"[{i}/{len(textos)}]", end="\r")
 
+    por_cliente = {}
+    for c in sorted({f.get("cliente", "cliente_1") for f in filas}):
+        ix = [i for i, f in enumerate(filas) if f.get("cliente", "cliente_1") == c]
+        r = [reales[i] for i in ix]
+        por_cliente[c] = {"n": len(ix),
+                          "exactitud_llm": round(sum(reales[i] == pred_llm[i] for i in ix) / len(ix), 3),
+                          "f1_macro_llm": round(f1_macro(r, [pred_llm[i] for i in ix]), 3),
+                          "exactitud_base": round(sum(reales[i] == pred_base[i] for i in ix) / len(ix), 3),
+                          "f1_macro_base": round(f1_macro(r, [pred_base[i] for i in ix]), 3)}
+
     llm, tfidf = resumen(f"{MODEL} (prompt {PROMPT_VERSION})", reales, pred_llm), resumen("TF-IDF + RL", reales, pred_base)
     b01, b10, p = mcnemar_exacta(reales, pred_llm, pred_base)
     salida = {
         "muestra": {"n": len(reales), "por_clase": {e: reales.count(e) for e in ETIQUETAS},
-                    "fuente": "export real de WhatsApp de una clienta frecuente (2024-2026), seudonimizado; "
+                    "fuente": "export reales de WhatsApp de cuatro clientes (2024-2026), seudonimizados; "
                               "etiquetado con la guía de SCRUM-63 antes de ver las predicciones"},
         "modelo_de_lenguaje": llm, "linea_base": tfidf,
         "mcnemar": {"acierta_llm_falla_base": b01, "falla_llm_acierta_base": b10, "p_exacta": p},
+        "por_cliente": por_cliente,
         "errores_llm": [{"id": f["id"], "real": r, "predicho": q} for f, r, q in zip(filas, reales, pred_llm) if r != q],
-        "advertencia": "Una sola clienta: la muestra no representa la variedad de clientes; la mayoría de los "
-                       "mensajes son de cortesía y logística (consulta general).",
+        "advertencia": "Cuatro clientes, un solo etiquetado sin segundo anotador: la mayoría de los mensajes son de "
+                       "cortesía y logística (consulta general) y la clase consultar tiene pocos casos.",
     }
     out = DIR / "resultados"
     (out / "nlu_real.json").write_text(json.dumps(salida, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -125,7 +137,11 @@ def main():
         md.append(f"| {r['modelo']} | {r['exactitud']} {r['ic95_exactitud']} | {r['f1_macro']} {r['ic95_f1_macro']} | "
                   f"{' / '.join(str(r['f1_por_clase'][e]) for e in ETIQUETAS)} |")
     md += ["", f"McNemar exacta: el modelo de lenguaje acierta y la línea base falla en {b01} mensajes; al revés en "
-           f"{b10} (p = {p}).", "", salida["advertencia"]]
+           f"{b10} (p = {p}).", "",
+           "| Cliente | n | Exactitud LLM | F1 LLM | Exactitud base | F1 base |", "|---|---|---|---|---|---|"]
+    md += [f"| {c} | {v['n']} | {v['exactitud_llm']} | {v['f1_macro_llm']} | {v['exactitud_base']} | {v['f1_macro_base']} |"
+           for c, v in por_cliente.items()]
+    md += ["", salida["advertencia"]]
     (out / "nlu_real.md").write_text("\n".join(md) + "\n", encoding="utf-8")
     print("\n".join(md))
 
